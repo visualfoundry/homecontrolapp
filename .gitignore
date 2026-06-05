@@ -1,0 +1,13 @@
+# WordPress theme build output
+node_modules/
+css/main.css
+css/main.css.map
+
+# Next.js
+next-app/.next/
+next-app/node_modules/
+next-app/.env.local
+next-app/.env*.local
+
+# OS
+.DS_Store

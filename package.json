@@ -1,0 +1,15 @@
+{
+  "name": "homecontrolapp",
+  "version": "1.0.0",
+  "description": "Home Control App — Genesis child theme SCSS build",
+  "private": true,
+  "scripts": {
+    "sass": "sass scss/main.scss css/main.css --style=compressed --no-source-map",
+    "sass:dev": "sass scss/main.scss css/main.css --style=expanded --source-map",
+    "sass:watch": "sass scss/main.scss css/main.css --watch --style=expanded --source-map",
+    "build": "npm run sass"
+  },
+  "devDependencies": {
+    "sass": "^1.77.0"
+  }
+}

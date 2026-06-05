@@ -1,0 +1,66 @@
+// =============================================================================
+// Mixins — Home Control App
+// =============================================================================
+
+// Safe-area inset helpers (PWA / iOS notch support)
+@mixin safe-top($extra: 0px) {
+  padding-top: calc(env(safe-area-inset-top) + #{$extra});
+}
+
+@mixin safe-bottom($extra: 0px) {
+  padding-bottom: calc(env(safe-area-inset-bottom) + #{$extra});
+}
+
+// Frosted glass / backdrop-blur (tab bar, back button, sheets)
+@mixin frosted($bg: rgba(255, 255, 255, 0.72), $blur: 16px) {
+  background: $bg;
+  backdrop-filter: blur($blur);
+  -webkit-backdrop-filter: blur($blur);
+
+  [data-theme="dark"] & {
+    background: rgba(20, 20, 18, 0.82);
+  }
+}
+
+// Tap highlight reset (all interactive elements)
+@mixin no-tap-highlight {
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+// Min tap target (44px as per design spec)
+@mixin tap-target($size: 44px) {
+  min-width: $size;
+  min-height: $size;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// 2-column tile grid
+@mixin tile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--grid-gap);
+}
+
+// Horizontal scroll row (no scrollbar)
+@mixin h-scroll {
+  display: flex;
+  flex-direction: row;
+  gap: var(--grid-gap);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// Truncate text to one line
+@mixin truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

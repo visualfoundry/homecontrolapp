@@ -1,0 +1,160 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =============================================================================
+   Design Tokens — Home Control App
+   Authoritative source: ../.claude/Claude Design/design_handoff_home_control/README.md
+
+   CSS custom properties declared here; Tailwind utilities reference them via
+   tailwind.config.ts. Light theme is the default (:root); dark is a single
+   attribute override ([data-theme="dark"]) applied to #hca-root by the app.
+   ============================================================================= */
+
+:root {
+  /* User-tunable (defaults; overridden inline per-user at runtime) */
+  --accent:   #E0483D;
+  --radius:   22px;
+  --card-pad: 16px;
+  --font:     -apple-system, system-ui, "Segoe UI", sans-serif;
+
+  /* Light theme */
+  --bg:           #EEEDEA;
+  --card:         #FFFFFF;
+  --text:         #1A1917;
+  --text2:        rgba(60, 58, 54, 0.62);
+  --text3:        rgba(60, 58, 54, 0.40);
+  --sep:          rgba(60, 58, 54, 0.12);
+  --icon-bg:      #F0EFEB;
+  --slider-track: #E7E6E2;
+  --switch-off:   #E0DFDB;
+  --seg-bg:       #E8E7E3;
+  --seg-active:   #FFFFFF;
+  --shadow:       0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 14px rgba(0, 0, 0, 0.05);
+
+  /* Semantic colors */
+  --green: #34A853;
+  --amber: #DD8A0A;
+  --red:   #E0483D;
+
+  /* Section tints */
+  --tint-home:       #E0483D;
+  --tint-lights:     #F0A500;
+  --tint-doors:      #34A853;
+  --tint-climate:    #E07B53;
+  --tint-pool:       #2BB3A3;
+  --tint-music:      #9B5DE5;
+  --tint-fans:       #3D9BE0;
+  --tint-outdoors:   #2BB3A3;
+  --tint-irrigation: #3FA535;
+  --tint-leak:       #5A9BD4;
+  --tint-motion:     #E0483D;
+  --tint-settings:   #8A8A8A;
+  --tint-docs:       #C0793F;
+  --tint-scenes:     #5B7FE0;
+
+  /* Layout */
+  --screen-px:  18px;
+  --grid-gap:   12px;
+  --section-gap: 22px;
+}
+
+[data-theme="dark"] {
+  --bg:           #0E0E0D;
+  --card:         #1B1B19;
+  --text:         #F4F3EF;
+  --text2:        rgba(235, 235, 230, 0.62);
+  --text3:        rgba(235, 235, 230, 0.38);
+  --sep:          rgba(255, 255, 255, 0.08);
+  --icon-bg:      #2A2A27;
+  --slider-track: #2E2D2A;
+  --switch-off:   #3A3A36;
+  --seg-bg:       #232320;
+  --seg-active:   #3C3C38;
+  --shadow:       0 1px 3px rgba(0, 0, 0, 0.4);
+
+  --green: #34D159;
+  --amber: #F0A92B;
+  --red:   #FF5A4D;
+}
+
+/* =============================================================================
+   Global reset
+   ============================================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  height: 100%;
+  background: var(--bg);
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+body {
+  font-family: var(--font);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Hide scrollbars globally (design hides all scroll indicators) */
+* {
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  background: none;
+  border: none;
+  outline: none;
+}
+
+/* =============================================================================
+   Keyframes
+   ============================================================================= */
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Fan usage: animation: spin calc(1.4s - var(--speed) * 0.3s) linear infinite */
+
+@keyframes rainfall {
+  from  { transform: translateY(-14px); opacity: 0; }
+  12%   { opacity: 1; }
+  to    { transform: translateY(168px); opacity: 0.9; }
+}
+
+@keyframes snowfall {
+  from  { transform: translateY(-14px) translateX(0); opacity: 0; }
+  14%   { opacity: 1; }
+  to    { transform: translateY(168px) translateX(14px); opacity: 0.9; }
+}
+
+@keyframes sheet-in {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+@keyframes sheet-out {
+  from { transform: translateY(0); }
+  to   { transform: translateY(100%); }
+}
+
+@keyframes scrim-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}

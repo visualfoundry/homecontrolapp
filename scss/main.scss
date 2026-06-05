@@ -1,0 +1,49 @@
+// =============================================================================
+// main.scss — Home Control App entry point
+//
+// Import order:
+//   1. Abstracts  (tokens/variables, mixins — no output)
+//   2. Base       (reset, keyframes, typography)
+//   3. Layout     (app shell structure)
+//   4. Components (UI primitives — added in Milestone 1)
+//   5. Screens    (screen-specific styles — added in Milestone 4)
+// =============================================================================
+
+// 1. Abstracts
+@use 'abstracts/tokens';
+@use 'abstracts/mixins';
+
+// 2. Base
+@use 'base/reset';
+@use 'base/keyframes';
+@use 'base/typography';
+
+// 3. Layout
+@use 'layout/app';
+
+// 4. Components (Milestone 1 — uncomment as each is added)
+// @use 'components/icon';
+// @use 'components/toggle';
+// @use 'components/slider';
+// @use 'components/card';
+// @use 'components/segmented';
+// @use 'components/tile';
+// @use 'components/avatar';
+// @use 'components/tab-bar';
+// @use 'components/back-button';
+// @use 'components/bottom-sheet';
+// @use 'components/large-title';
+// @use 'components/stat-tile';
+// @use 'components/light-bar';
+
+// 5. Screens (Milestone 4 — uncomment as each is added)
+// @use 'screens/home';
+// @use 'screens/lights';
+// @use 'screens/doors';
+// @use 'screens/climate';
+// @use 'screens/pool';
+// @use 'screens/music';
+// @use 'screens/fans';
+// @use 'screens/scenes';
+// @use 'screens/more';
+// @use 'screens/settings';

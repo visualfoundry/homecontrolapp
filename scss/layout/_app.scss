@@ -1,0 +1,41 @@
+// =============================================================================
+// App shell layout — Home Control App
+// =============================================================================
+
+// Full-height app container (mounts React PWA)
+.hca-app {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  max-width: 430px;     // iPhone-style max-width for PWA
+  margin: 0 auto;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+// Scrollable screen content area (sits above the tab bar)
+.hca-screen {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 var(--screen-px);
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// Overlay host — portal target for bottom sheets, modals (z-index 100)
+.hca-overlay-host {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+
+  &:not(:empty) {
+    pointer-events: auto;
+  }
+}
