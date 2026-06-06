@@ -34,10 +34,10 @@ export function OutdoorsScreen() {
       <LargeTitle title="Outdoors" sub="Pool · Backyard · Doors" />
 
       <SectionTitle>Pool</SectionTitle>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 4 }}>
-        <OutdoorTile o={config.outdoorsPool[0]} icon="bulb" />
-        <OutdoorTile o={config.outdoorsPool[1]} icon="waterfall" />
-        <OutdoorTile o={config.outdoorsPool[2]} icon="bulb" />
+      <div className="hca-tile-grid" style={{ marginBottom: 4 }}>
+        {config.outdoorsPool[0] && <OutdoorTile o={config.outdoorsPool[0]} icon="bulb" />}
+        {config.outdoorsPool[1] && <OutdoorTile o={config.outdoorsPool[1]} icon="waterfall" />}
+        {config.outdoorsPool[2] && <OutdoorTile o={config.outdoorsPool[2]} icon="bulb" />}
         {autolock !== undefined && (
           <Tile
             icon={autolock.on ? 'lock' : 'unlock'}
@@ -83,7 +83,7 @@ export function OutdoorsScreen() {
           </Card>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div className="hca-tile-grid">
           {/* Pergola Fan */}
           {config.outdoorsBackyard[1] && <OutdoorTile o={config.outdoorsBackyard[1]} icon="fan" />}
           {/* Garden Lights */}

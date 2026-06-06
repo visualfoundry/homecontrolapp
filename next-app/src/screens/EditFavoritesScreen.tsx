@@ -85,25 +85,58 @@ export function EditFavoritesScreen() {
       {config.favCatalog.map(g => {
         const avail = g.items.filter(it => !ids.includes(it.id));
         if (avail.length === 0) return null;
+        const hasPlaces = avail.some(it => it.place);
+
+        // Group items by place for sub-headings (only when place is present)
+        const sections: { place: string | undefined; items: typeof avail }[] = [];
+        if (hasPlaces) {
+          let cur: string | undefined;
+          for (const it of avail) {
+            if (it.place !== cur) { cur = it.place; sections.push({ place: cur, items: [] }); }
+            sections[sections.length - 1].items.push(it);
+          }
+        } else {
+          sections.push({ place: undefined, items: avail });
+        }
+
         return (
           <div key={g.group} style={{ marginTop: 22 }}>
             <SectionTitle>{g.group}</SectionTitle>
             <Card pad={false}>
-              {avail.map((it, i) => (
-                <div key={it.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px',
-                  borderBottom: i < avail.length - 1 ? '0.5px solid var(--sep)' : 'none' }}>
-                  {circleBtn('var(--green)', 'plus', () => add(it.id))}
-                  <div style={{ width: 30, height: 30, borderRadius: 9, background: 'var(--icon-bg)', color: 'var(--text2)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>
-                    <Icon name={it.icon as IconName} size={18} />
-                  </div>
-                  <span style={{ flex: 1, fontSize: 16, fontWeight: 540, color: 'var(--text)' }}>{it.label}</span>
+              {sections.map((sec, si) => (
+                <div key={sec.place ?? 'all'}>
+                  {sec.place && (
+                    <div style={{
+                      padding: '8px 14px 4px',
+                      fontSize: 12, fontWeight: 640, letterSpacing: 0.4,
+                      color: 'var(--text3)', textTransform: 'uppercase',
+                      borderTop: si > 0 ? '0.5px solid var(--sep)' : 'none',
+                    }}>
+                      {sec.place}
+                    </div>
+                  )}
+                  {sec.items.map((it, i) => {
+                    const isLastInGroup = si === sections.length - 1 && i === sec.items.length - 1;
+                    const isLastInSection = i === sec.items.length - 1;
+                    return (
+                      <div key={it.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px',
+                        borderBottom: (!isLastInGroup && isLastInSection) || (!isLastInGroup && !isLastInSection) ? '0.5px solid var(--sep)' : 'none' }}>
+                        {circleBtn('var(--green)', 'plus', () => add(it.id))}
+                        <div style={{ width: 30, height: 30, borderRadius: 9, background: 'var(--icon-bg)', color: 'var(--text2)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>
+                          <Icon name={it.icon as IconName} size={18} />
+                        </div>
+                        <span style={{ flex: 1, fontSize: 16, fontWeight: 540, color: 'var(--text)' }}>{it.label}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               ))}
             </Card>
           </div>
         );
       })}
+
       <div style={{ height: 8 }} />
     </div>
   );

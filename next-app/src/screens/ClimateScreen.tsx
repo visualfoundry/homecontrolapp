@@ -41,7 +41,7 @@ export function ClimateScreen() {
       <div style={{ paddingBottom: 18 }}>
         <Segmented options={['Home', 'Away', 'Sleep']} value={hvac} onChange={setHvac} />
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div className="hca-tile-grid">
         {config.climate.map(c => {
           const s = st[c.id] as ThermostatState | undefined;
           if (!s) return null;

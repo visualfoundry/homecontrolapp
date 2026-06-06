@@ -15,7 +15,8 @@ export type IconName =
   | 'garage' | 'grass' | 'person' | 'battery' | 'search' | 'power'
   | 'play' | 'pause' | 'next' | 'prev' | 'waterfall' | 'plus' | 'minus'
   | 'chevron' | 'chevDown' | 'check' | 'bell' | 'bolt' | 'water' | 'refresh'
-  | 'calendar' | 'pool' | 'cloud' | 'rain' | 'snow' | 'pergola' | 'layers';
+  | 'calendar' | 'pool' | 'cloud' | 'rain' | 'snow' | 'pergola' | 'layers'
+  | 'shades' | 'tv';
 
 const ICON_PATHS: Record<IconName, React.ReactNode> = {
   home:      <><path d="M4 11.5 12 5l8 6.5" /><path d="M6 10.3V20h12v-9.7" /></>,
@@ -30,13 +31,13 @@ const ICON_PATHS: Record<IconName, React.ReactNode> = {
   dining:    <><path d="M7 3v8M5 3v4a2 2 0 0 0 4 0V3M7 11v10" /><path d="M16 3c-1.5 0-2.5 2-2.5 5s1 4 2.5 4m0-9c1.5 0 2.5 2 2.5 5s-1 4-2.5 4m0 0v9" /></>,
   away:      <><path d="M14 4h4a1.5 1.5 0 0 1 1.5 1.5v13A1.5 1.5 0 0 1 18 20h-4" /><path d="M4 12h10M10.5 8l4 4-4 4" /></>,
   sun:       <><circle cx="12" cy="12" r="4.2" /><path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6" /></>,
-  fan:       <><circle cx="12" cy="12" r="1.7" /><path d="M12 10.3c0-3 .5-6 2.5-6s2.2 3.5.3 5.2M13.5 12.8c2.2 2 4.8 3.5 5.8 1.8s-1-3.8-3.5-4.3M11.4 13.3c-1 2.8-2.6 5.3-4.5 4.3s-1-4 1.4-5" /></>,
+  fan:       <><circle cx="12" cy="12" r="1.9" /><path d="M12 10.1 C10.8 7.5 11.2 4.5 13 4 C14.8 3.5 14.5 7 12 10.1" /><path d="M12 10.1 C10.8 7.5 11.2 4.5 13 4 C14.8 3.5 14.5 7 12 10.1" transform="rotate(120 12 12)" /><path d="M12 10.1 C10.8 7.5 11.2 4.5 13 4 C14.8 3.5 14.5 7 12 10.1" transform="rotate(240 12 12)" /></>,
   droplet:   <path d="M12 3.5s6 6.6 6 10.5a6 6 0 0 1-12 0c0-3.9 6-10.5 6-10.5Z" />,
   motion:    <><circle cx="12" cy="13" r="1.6" fill="currentColor" stroke="none" /><path d="M8.5 9.5a5 5 0 0 0 0 7M15.5 9.5a5 5 0 0 1 0 7M6 7a8.5 8.5 0 0 0 0 12M18 7a8.5 8.5 0 0 1 0 12" /></>,
   speaker:   <><rect x="6" y="3" width="12" height="18" rx="3" /><circle cx="12" cy="15" r="3.2" /><circle cx="12" cy="7" r="1" fill="currentColor" stroke="none" /></>,
   volume:    <><path d="M4 9.5v5h3.5L12 18V6L7.5 9.5Z" /><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" /></>,
   mute:      <><path d="M4 9.5v5h3.5L12 18V6L7.5 9.5Z" /><path d="m16 9.5 4 5M20 9.5l-4 5" /></>,
-  gear:      <><circle cx="12" cy="12" r="3.2" /><path d="M19.4 13.5a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.1a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9h-.1a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h.1A1.7 1.7 0 0 0 10 3.5v-.1a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.5 1h.1a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" /></>,
+  gear:      <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z" /></>,
   shield:    <path d="M12 3.5 5 6v5.5c0 4.3 3 7.5 7 9 4-1.5 7-4.7 7-9V6Z" />,
   door:      <><path d="M6 21V4.5A1.5 1.5 0 0 1 7.5 3h9A1.5 1.5 0 0 1 18 4.5V21" /><path d="M4 21h16" /><circle cx="14.5" cy="12" r="1" fill="currentColor" stroke="none" /></>,
   garage:    <><path d="M4 21V9l8-5 8 5v12" /><path d="M4 21h16" /><path d="M7 21v-8h10v8M7 16h10" /></>,
@@ -66,6 +67,8 @@ const ICON_PATHS: Record<IconName, React.ReactNode> = {
   snow:      <><path d="M7.5 14.5A4 4 0 0 1 7 6.4 5 5 0 0 1 16.8 5 3.5 3.5 0 0 1 16.5 14.5" /><path d="M9 18.5h.01M12 20h.01M15 18.5h.01M10.5 21h.01M13.5 21h.01" strokeWidth="2.4" /></>,
   pergola:   <><path d="M4 21V8l8-4 8 4v13" /><path d="M4 11h16M4 14.5h16M4 18h16" /></>,
   layers:    <><path d="M12 3 3 8l9 5 9-5-9-5Z" /><path d="m3 12.5 9 5 9-5" /><path d="m3 16.5 9 5 9-5" /></>,
+  shades:    <><rect x="3" y="3.5" width="18" height="17" rx="2" /><path d="M3 8h18M3 12.5h18M3 17h18" /></>,
+  tv:        <><rect x="2" y="3" width="20" height="14" rx="2.5" /><path d="M8 21h8M12 17v4" /></>,
 };
 
 interface IconProps {

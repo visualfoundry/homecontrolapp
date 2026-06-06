@@ -14,10 +14,12 @@ export function CustomizeScreen() {
   const full = tabs.length >= maxTabs;
 
   const add = (id: string) => { if (!full) setPrefs({ tabs: [...tabs, id] }); };
-  const remove = (id: string) => { if (tabs.length > 1) setPrefs({ tabs: tabs.filter(x => x !== id) }); };
+  const remove = (id: string) => { if (id === 'home' || tabs.length <= 1) return; setPrefs({ tabs: tabs.filter(x => x !== id) }); };
   const move = (id: string, dir: -1 | 1) => {
+    if (id === 'home') return;
     const i = tabs.indexOf(id), j = i + dir;
     if (j < 0 || j >= tabs.length) return;
+    if (j === 0) return; // Home is pinned at position 0
     const next = [...tabs];
     [next[i], next[j]] = [next[j], next[i]];
     setPrefs({ tabs: next });
@@ -58,24 +60,30 @@ export function CustomizeScreen() {
       <Card pad={false}>
         {tabs.map((id, i) => {
           const it = sections[id];
+          const pinned = id === 'home';
           return (
-            <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderBottom: '0.5px solid var(--sep)' }}>
+            <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderBottom: '0.5px solid var(--sep)', opacity: pinned ? 0.6 : 1 }}>
               {iconChip(id)}
               <span style={{ flex: 1, fontSize: 16, fontWeight: 580, color: 'var(--text)' }}>{it.name}</span>
-              <div style={{ display: 'flex', gap: 6, marginRight: 4 }}>
-                {roundBtn(
-                  <Icon name="chevDown" size={17} strokeWidth={2.4} style={{ transform: 'rotate(180deg)' }} />,
-                  () => move(id, -1), i === 0,
-                )}
-                {roundBtn(
-                  <Icon name="chevDown" size={17} strokeWidth={2.4} />,
-                  () => move(id, 1), i === tabs.length - 1,
-                )}
-              </div>
-              {roundBtn(
-                <Icon name="minus" size={18} strokeWidth={2.6} />,
-                () => remove(id), tabs.length <= 1, 'var(--red)',
-              )}
+              {pinned
+                ? <span style={{ fontSize: 13, fontWeight: 560, color: 'var(--text3)', marginRight: 6 }}>Pinned</span>
+                : <>
+                    <div style={{ display: 'flex', gap: 6, marginRight: 4 }}>
+                      {roundBtn(
+                        <Icon name="chevDown" size={17} strokeWidth={2.4} style={{ transform: 'rotate(180deg)' }} />,
+                        () => move(id, -1), i <= 1, // can't move up past Home
+                      )}
+                      {roundBtn(
+                        <Icon name="chevDown" size={17} strokeWidth={2.4} />,
+                        () => move(id, 1), i === tabs.length - 1,
+                      )}
+                    </div>
+                    {roundBtn(
+                      <Icon name="minus" size={18} strokeWidth={2.6} />,
+                      () => remove(id), tabs.length <= 1, 'var(--red)',
+                    )}
+                  </>
+              }
             </div>
           );
         })}

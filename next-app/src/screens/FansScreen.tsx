@@ -6,6 +6,7 @@ import { Icon } from '@/components/Icon';
 import { Card } from '@/components/Card';
 import { Toggle } from '@/components/Toggle';
 import { LargeTitle } from '@/components/LargeTitle';
+import { pillBtn } from '@/lib/styles';
 import type { FanState } from '@/types/state';
 
 const SPEEDS = ['Off', 'Low', 'Med', 'High'] as const;
@@ -13,14 +14,15 @@ const SPEEDS = ['Off', 'Low', 'Med', 'High'] as const;
 export function FansScreen() {
   const { st, setD, config } = useHC();
   const onCount = config.fans.filter(f => (st[f.id] as FanState | undefined)?.on).length;
+  const allOff = () => config.fans.forEach(f => setD(f.id, { on: false, speed: 0 }));
 
   return (
     <div>
-      <LargeTitle title="Fans" sub={`${onCount} running`} />
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <LargeTitle title="Fans" sub={`${onCount} running`}
+        right={onCount > 0 ? <button onClick={allOff} style={pillBtn}>All Off</button> : undefined} />
+      <div className="hca-tile-grid">
         {config.fans.map(f => {
-          const s = st[f.id] as FanState | undefined;
-          if (!s) return null;
+          const s = (st[f.id] as FanState | undefined) ?? { on: false, speed: 0 as FanState['speed'] };
           const setSpeed = (sp: number) => setD(f.id, { speed: sp as FanState['speed'], on: sp > 0 });
           const spinDuration = s.on ? `${1.4 - s.speed * 0.3}s` : undefined;
 

@@ -100,6 +100,352 @@ function homecontrolapp_trigger_revalidation( $post_id ) {
 }
 
 // -------------------------------------------------------------------------
+// WPGraphQL — raise per-request result cap (default is 100)
+// -------------------------------------------------------------------------
+add_filter( 'graphql_connection_max_query_amount', function() {
+	return 500;
+} );
+
+// -------------------------------------------------------------------------
+// WPGraphQL — expose CPTs
+// -------------------------------------------------------------------------
+// The 'control' and 'place' CPTs are registered without show_in_graphql; patch them here.
+// 'control-type' is already exposed (controlType / controlTypes).
+
+add_filter( 'register_post_type_args', 'homecontrolapp_graphql_post_type_args', 10, 2 );
+function homecontrolapp_graphql_post_type_args( $args, $post_type ) {
+	if ( $post_type === 'control' ) {
+		$args['show_in_graphql']     = true;
+		$args['graphql_single_name'] = 'control';
+		$args['graphql_plural_name'] = 'controls';
+	}
+	if ( $post_type === 'place' ) {
+		$args['show_in_graphql']     = true;
+		$args['graphql_single_name'] = 'place';
+		$args['graphql_plural_name'] = 'places';
+	}
+	return $args;
+}
+
+// -------------------------------------------------------------------------
+// Admin columns — control-type CPT
+// -------------------------------------------------------------------------
+
+add_filter( 'manage_control-type_posts_columns', 'homecontrolapp_control_type_columns' );
+function homecontrolapp_control_type_columns( $columns ) {
+	unset( $columns['date'] );
+	$columns['control_type_type']    = 'Type';
+	$columns['control_type_class']   = 'Class';
+	$columns['control_type_count']   = 'Controls';
+	return $columns;
+}
+
+// Make Type and Class columns sortable.
+add_filter( 'manage_edit-control-type_sortable_columns', 'homecontrolapp_control_type_sortable_columns' );
+function homecontrolapp_control_type_sortable_columns( $columns ) {
+	$columns['control_type_type']  = 'control_type_type';
+	$columns['control_type_class'] = 'control_type_class';
+	return $columns;
+}
+
+add_action( 'manage_control-type_posts_custom_column', 'homecontrolapp_control_type_column_values', 10, 2 );
+function homecontrolapp_control_type_column_values( $column, $post_id ) {
+	if ( $column === 'control_type_type' ) {
+		echo esc_html( get_field( 'control_type_type', $post_id ) ?: '—' );
+	} elseif ( $column === 'control_type_class' ) {
+		echo esc_html( get_field( 'control_type_class', $post_id ) ?: '—' );
+	} elseif ( $column === 'control_type_count' ) {
+		$count = get_posts( array(
+			'post_type'      => 'control',
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+			'meta_query'     => array(
+				array(
+					'key'     => 'control_type',
+					'value'   => $post_id,
+					'compare' => '=',
+					'type'    => 'NUMERIC',
+				),
+			),
+		) );
+		$n = count( $count );
+		if ( $n > 0 ) {
+			$url = add_query_arg( array(
+				'post_type'           => 'control',
+				'filter_control_type' => $post_id,
+			), admin_url( 'edit.php' ) );
+			printf( '<a href="%s">%d</a>', esc_url( $url ), $n );
+		} else {
+			echo '0';
+		}
+	}
+}
+
+// Filter dropdowns for control-type list.
+add_action( 'restrict_manage_posts', 'homecontrolapp_control_type_filters' );
+function homecontrolapp_control_type_filters( $post_type ) {
+	if ( $post_type !== 'control-type' ) {
+		return;
+	}
+
+	// Collect distinct Type values from existing posts.
+	global $wpdb;
+	$types = $wpdb->get_col(
+		"SELECT DISTINCT meta_value FROM {$wpdb->postmeta}
+		 WHERE meta_key = 'control_type_type' AND meta_value != ''
+		 ORDER BY meta_value ASC"
+	);
+	$current_type = isset( $_GET['filter_ct_type'] ) ? sanitize_text_field( $_GET['filter_ct_type'] ) : '';
+	echo '<select name="filter_ct_type">';
+	echo '<option value="">All Types</option>';
+	foreach ( $types as $t ) {
+		printf(
+			'<option value="%s"%s>%s</option>',
+			esc_attr( $t ),
+			selected( $current_type, $t, false ),
+			esc_html( $t )
+		);
+	}
+	echo '</select>';
+
+	// Collect distinct Class values.
+	$classes = $wpdb->get_col(
+		"SELECT DISTINCT meta_value FROM {$wpdb->postmeta}
+		 WHERE meta_key = 'control_type_class' AND meta_value != ''
+		 ORDER BY meta_value ASC"
+	);
+	$current_class = isset( $_GET['filter_ct_class'] ) ? sanitize_text_field( $_GET['filter_ct_class'] ) : '';
+	echo '<select name="filter_ct_class">';
+	echo '<option value="">All Classes</option>';
+	foreach ( $classes as $c ) {
+		printf(
+			'<option value="%s"%s>%s</option>',
+			esc_attr( $c ),
+			selected( $current_class, $c, false ),
+			esc_html( $c )
+		);
+	}
+	echo '</select>';
+}
+
+// Apply filters and custom sort for control-type.
+add_action( 'pre_get_posts', 'homecontrolapp_control_type_query' );
+function homecontrolapp_control_type_query( $query ) {
+	if ( ! is_admin() || ! $query->is_main_query() ) {
+		return;
+	}
+	if ( $query->get( 'post_type' ) !== 'control-type' ) {
+		return;
+	}
+
+	$meta_query = array();
+
+	if ( ! empty( $_GET['filter_ct_type'] ) ) {
+		$meta_query[] = array(
+			'key'     => 'control_type_type',
+			'value'   => sanitize_text_field( $_GET['filter_ct_type'] ),
+			'compare' => '=',
+		);
+	}
+
+	if ( ! empty( $_GET['filter_ct_class'] ) ) {
+		$meta_query[] = array(
+			'key'     => 'control_type_class',
+			'value'   => sanitize_text_field( $_GET['filter_ct_class'] ),
+			'compare' => '=',
+		);
+	}
+
+	if ( $meta_query ) {
+		$query->set( 'meta_query', $meta_query );
+	}
+
+	$orderby = $query->get( 'orderby' );
+	if ( in_array( $orderby, array( 'control_type_type', 'control_type_class' ), true ) ) {
+		$query->set( 'meta_key', $orderby );
+		$query->set( 'orderby', 'meta_value' );
+	}
+}
+
+// -------------------------------------------------------------------------
+// Admin columns — control CPT
+// -------------------------------------------------------------------------
+
+// IoX hub choices (value => label), matching the ACF select field definition.
+function homecontrolapp_iox_choices() {
+	return array(
+		'0' => 'Control',
+		'1' => 'Master',
+		'2' => 'Rooms',
+		'3' => 'Cinema',
+		'4' => 'Exterior',
+	);
+}
+
+add_filter( 'manage_control_posts_columns', 'homecontrolapp_control_columns' );
+function homecontrolapp_control_columns( $columns ) {
+	unset( $columns['date'] );
+	$columns['control_isy']     = 'IoX';
+	$columns['control_address'] = 'Address / Var ID';
+	$columns['control_place']   = 'Location';
+	$columns['control_type']    = 'Control Type';
+	return $columns;
+}
+
+// Make IoX, Location, and Control Type columns sortable.
+add_filter( 'manage_edit-control_sortable_columns', 'homecontrolapp_control_sortable_columns' );
+function homecontrolapp_control_sortable_columns( $columns ) {
+	$columns['control_isy']   = 'control_isy';
+	$columns['control_place'] = 'control_place';
+	$columns['control_type']  = 'control_type';
+	return $columns;
+}
+
+add_action( 'manage_control_posts_custom_column', 'homecontrolapp_control_column_values', 10, 2 );
+function homecontrolapp_control_column_values( $column, $post_id ) {
+	switch ( $column ) {
+		case 'control_isy':
+			$val     = get_post_meta( $post_id, 'control_isy', true );
+			$choices = homecontrolapp_iox_choices();
+			echo esc_html( $choices[ $val ] ?? ( $val ?: '—' ) );
+			break;
+		case 'control_address':
+			$address = get_field( 'control_address', $post_id )
+				?: get_field( 'control_variable_id', $post_id )
+				?: '—';
+			echo esc_html( $address );
+			break;
+		case 'control_place':
+			$place_id   = get_field( 'control_place', $post_id );
+			$place_post = $place_id ? get_post( $place_id ) : null;
+			echo esc_html( $place_post ? $place_post->post_title : '—' );
+			break;
+		case 'control_type':
+			$type_id   = get_field( 'control_type', $post_id );
+			$type_post = $type_id ? get_post( $type_id ) : null;
+			echo esc_html( $type_post ? $type_post->post_title : '—' );
+			break;
+	}
+}
+
+// Filter dropdowns above the list table.
+add_action( 'restrict_manage_posts', 'homecontrolapp_control_filters' );
+function homecontrolapp_control_filters( $post_type ) {
+	if ( $post_type !== 'control' ) {
+		return;
+	}
+
+	// IoX filter.
+	$current_iox = isset( $_GET['filter_control_isy'] ) ? sanitize_text_field( $_GET['filter_control_isy'] ) : '';
+	echo '<select name="filter_control_isy">';
+	echo '<option value="">All IoX Hubs</option>';
+	foreach ( homecontrolapp_iox_choices() as $val => $label ) {
+		printf(
+			'<option value="%s"%s>%s</option>',
+			esc_attr( $val ),
+			selected( $current_iox, $val, false ),
+			esc_html( $label )
+		);
+	}
+	echo '</select>';
+
+	// Location filter.
+	$places = get_posts( array(
+		'post_type'      => 'place',
+		'posts_per_page' => -1,
+		'orderby'        => 'title',
+		'order'          => 'ASC',
+		'post_status'    => 'publish',
+	) );
+	$current_place = isset( $_GET['filter_control_place'] ) ? absint( $_GET['filter_control_place'] ) : 0;
+	echo '<select name="filter_control_place">';
+	echo '<option value="">All Locations</option>';
+	foreach ( $places as $p ) {
+		printf(
+			'<option value="%d"%s>%s</option>',
+			$p->ID,
+			selected( $current_place, $p->ID, false ),
+			esc_html( $p->post_title )
+		);
+	}
+	echo '</select>';
+
+	// Control Type filter.
+	$types = get_posts( array(
+		'post_type'      => 'control-type',
+		'posts_per_page' => -1,
+		'orderby'        => 'title',
+		'order'          => 'ASC',
+		'post_status'    => 'publish',
+	) );
+	$current_type = isset( $_GET['filter_control_type'] ) ? absint( $_GET['filter_control_type'] ) : 0;
+	echo '<select name="filter_control_type">';
+	echo '<option value="">All Control Types</option>';
+	foreach ( $types as $t ) {
+		printf(
+			'<option value="%d"%s>%s</option>',
+			$t->ID,
+			selected( $current_type, $t->ID, false ),
+			esc_html( $t->post_title )
+		);
+	}
+	echo '</select>';
+}
+
+// Apply filters and custom sort to the query.
+add_action( 'pre_get_posts', 'homecontrolapp_control_query' );
+function homecontrolapp_control_query( $query ) {
+	if ( ! is_admin() || ! $query->is_main_query() ) {
+		return;
+	}
+	if ( $query->get( 'post_type' ) !== 'control' ) {
+		return;
+	}
+
+	$meta_query = array();
+
+	// Filter: IoX hub.
+	if ( isset( $_GET['filter_control_isy'] ) && $_GET['filter_control_isy'] !== '' ) {
+		$meta_query[] = array(
+			'key'     => 'control_isy',
+			'value'   => sanitize_text_field( $_GET['filter_control_isy'] ),
+			'compare' => '=',
+		);
+	}
+
+	// Filter: Location.
+	if ( ! empty( $_GET['filter_control_place'] ) ) {
+		$meta_query[] = array(
+			'key'     => 'control_place',
+			'value'   => absint( $_GET['filter_control_place'] ),
+			'compare' => '=',
+			'type'    => 'NUMERIC',
+		);
+	}
+
+	// Filter: Control Type.
+	if ( ! empty( $_GET['filter_control_type'] ) ) {
+		$meta_query[] = array(
+			'key'     => 'control_type',
+			'value'   => absint( $_GET['filter_control_type'] ),
+			'compare' => '=',
+			'type'    => 'NUMERIC',
+		);
+	}
+
+	if ( $meta_query ) {
+		$query->set( 'meta_query', $meta_query );
+	}
+
+	// Sort by meta value for IoX, Location, Control Type columns.
+	$orderby = $query->get( 'orderby' );
+	if ( in_array( $orderby, array( 'control_isy', 'control_place', 'control_type' ), true ) ) {
+		$query->set( 'meta_key', $orderby );
+		$query->set( 'orderby', 'meta_value' );
+	}
+}
+
+// -------------------------------------------------------------------------
 // Page template support
 // -------------------------------------------------------------------------
 // The "App Shell" page template (page-app-shell.php) outputs the minimal HTML

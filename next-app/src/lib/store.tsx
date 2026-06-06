@@ -83,13 +83,18 @@ export function useHC(): HCContextValue {
 // ---------------------------------------------------------------------------
 
 const PREFS_KEY = 'hca:prefs';
+const FAVS_KEY  = 'hca:favs';
 
 function loadPrefs(): UserPrefs {
   if (typeof window === 'undefined') return DEFAULT_PREFS;
   try {
     const raw = localStorage.getItem(PREFS_KEY);
     if (!raw) return DEFAULT_PREFS;
-    return { ...DEFAULT_PREFS, ...JSON.parse(raw) } as UserPrefs;
+    const saved = { ...DEFAULT_PREFS, ...JSON.parse(raw) } as UserPrefs;
+    // Ensure Home is always first — guard against old saved prefs that predate this rule
+    if (!saved.tabs.includes('home')) saved.tabs = ['home', ...saved.tabs];
+    else if (saved.tabs[0] !== 'home') saved.tabs = ['home', ...saved.tabs.filter(t => t !== 'home')];
+    return saved;
   } catch {
     return DEFAULT_PREFS;
   }
@@ -103,6 +108,24 @@ function savePrefs(prefs: UserPrefs): void {
   }
 }
 
+function loadFavs(): string[] | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(FAVS_KEY);
+    return raw ? (JSON.parse(raw) as string[]) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveFavs(ids: string[]): void {
+  try {
+    localStorage.setItem(FAVS_KEY, JSON.stringify(ids));
+  } catch {
+    // storage quota exceeded — ignore
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Provider
 // ---------------------------------------------------------------------------
@@ -111,8 +134,26 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
   const [st, setSt] = useState<StateMap>(() => {
     // Seed from full catalog; override prefs-like keys from live config.
     const seed = buildInitialState();
-    seed['_favs']   = { ids: [...config.favorites] };
+    const savedFavs = loadFavs(); // null on server (window undefined), real value on client
+    seed['_favs']   = { ids: savedFavs ?? [...config.favorites] };
     seed['_scenes'] = { ids: [...config.sceneDefault] };
+    // Seed automation state for every scene room from the real config.
+    // buildInitialState() uses mock IDs; config.sceneRooms may have WP IDs.
+    for (const r of config.sceneRooms) {
+      if (!(`auto:${r.id}` in seed)) {
+        seed[`auto:${r.id}`] = {
+          automated: true, motion: false, doorOpen: false,
+          manual: false, nightDim: false, intensity: 50,
+        };
+      }
+    }
+    // Seed device state for light scene rooms so FavTile can render them.
+    // Real state comes from the service once connected; this is the pre-connect default.
+    for (const r of config.lightSceneRooms) {
+      if (!(r.id in seed)) {
+        seed[r.id] = { on: false };
+      }
+    }
     return seed;
   });
   const [stack, setStack] = useState<string[]>(['home']);
@@ -123,9 +164,6 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
 
   // Load saved prefs after hydration (must not run on server)
   useEffect(() => { setPrefsState(loadPrefs()); }, []);
-
-  // Persist prefs whenever they change (skip the initial DEFAULT_PREFS render)
-  useEffect(() => { savePrefs(prefs); }, [prefs]);
 
   // Apply theme attribute to #hca-root whenever theme pref changes
   useEffect(() => {
@@ -156,13 +194,28 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
     function reseed() {
       fetchState().then((live) => {
         if (!alive) return;
-        setSt((prev) => ({
-          // Keep user-owned keys intact, overwrite device-control keys from server.
-          '_favs':   prev['_favs'],
-          '_scenes': prev['_scenes'],
-          '_global': prev['_global'],
-          ...live,
-        }));
+        setSt((prev) => {
+          // Preserve user-owned and automation keys; overwrite device-control keys from server.
+          // auto:* keys are not managed by the device service (see setD comment below).
+          const preserved: StateMap = {
+            '_favs':   prev['_favs'],
+            '_scenes': prev['_scenes'],
+            '_global': prev['_global'],
+          };
+          for (const [k, v] of Object.entries(prev)) {
+            if (k.startsWith('auto:')) preserved[k] = v;
+          }
+          // Light scene room IDs are plain WP numbers not in the mock service —
+          // preserve them so favoured scene tiles survive reseeds.
+          for (const r of config.lightSceneRooms) {
+            if (r.id in prev && !(r.id in live)) preserved[r.id] = prev[r.id];
+          }
+          // Strip user-owned keys from live state — they must never overwrite preserved values.
+          const deviceState = Object.fromEntries(
+            Object.entries(live).filter(([k]) => !k.startsWith('_') && !k.startsWith('auto:') && !k.startsWith('person:')),
+          );
+          return { ...preserved, ...deviceState };
+        });
       }).catch(() => {
         // Service unreachable — keep using seed state.
       });
@@ -199,6 +252,9 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
       ...prev,
       [id]: { ...(prev[id] ?? {}), ...patch } as StateMap[string],
     }));
+    if (id === '_favs' && 'ids' in patch) {
+      saveFavs(patch.ids as string[]);
+    }
     const isDeviceControl =
       !id.startsWith('_') &&
       !id.startsWith('person:') &&
@@ -225,7 +281,11 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
   );
 
   const setPrefs = useCallback((patch: Partial<UserPrefs>) => {
-    setPrefsState((prev) => ({ ...prev, ...patch }));
+    setPrefsState((prev) => {
+      const next = { ...prev, ...patch };
+      savePrefs(next);
+      return next;
+    });
   }, []);
 
   const value: HCContextValue = {

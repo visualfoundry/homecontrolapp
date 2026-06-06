@@ -76,6 +76,7 @@ export interface FavItem {
   id: string;   // matches a device id in state
   icon: string;
   label: string;
+  place?: string; // optional sub-group header (e.g. room name within Lights)
 }
 
 export interface FavGroup {
@@ -95,6 +96,13 @@ export interface SceneRoomConfig {
   type: SceneRoomType;
   hasDoor: boolean;
   hasNightDim: boolean;
+  // Optional: actual WP device IDs for associated controls in the same place.
+  // Presence of an ID means the control exists and should be shown.
+  motionId?:   string;  // Motion Sensor
+  switchId?:   string;  // Override Switch
+  autoId?:     string;  // Auto Switch
+  doorId?:     string;  // Door Interior
+  nightDimId?: string;  // Door Switch LED (night LEDs)
 }
 
 // ---------------------------------------------------------------------------
@@ -130,43 +138,54 @@ export interface HomeConfig {
 }
 
 // ---------------------------------------------------------------------------
-// Raw WPGraphQL response shape (Relay-style nodes wrappers, used by config.ts)
+// Raw WPGraphQL response shape — real WP CPT/ACF structure
 // ---------------------------------------------------------------------------
 
-interface DeviceConfigRaw {
-  id: string;
-  name: string;
-  class: DeviceClass;
-  room: { node: { id: string } };
-  icon: string;
-  tint: string;
-  order: number;
-  meta?: DeviceMeta;
+export interface ControlTypeFieldsRaw {
+  controlTypeClass:  string | null;
+  controlTypeType:   string | null;
+  controlTypeMethod: string | null;
 }
 
-interface RoomConfigRaw {
-  id: string;
-  name: string;
-  order: number;
-  devices: { nodes: DeviceConfigRaw[] };
+export interface ControlTypeNodeRaw {
+  databaseId: number;
+  title: string;
+  controlTypeFields: ControlTypeFieldsRaw | null;
+}
+
+export interface PlaceNodeRaw {
+  databaseId: number;
+  title: string;
+}
+
+export interface ControlFieldsRaw {
+  controlIsy: string[] | null;
+  controlIsyControlType: string | null;
+  controlAddress: string | null;
+  controlVariableId: number | null;
+  controlType:  { nodes: ControlTypeNodeRaw[] } | null;
+  controlPlace: { nodes: PlaceNodeRaw[] } | null;
+}
+
+export interface ControlNodeRaw {
+  databaseId: number;
+  title: string;
+  controlFields: ControlFieldsRaw | null;
 }
 
 export interface HomeConfigRaw {
-  rooms:      { nodes: RoomConfigRaw[] };
-  scenes:     { nodes: SceneConfig[] };
-  sceneRooms: { nodes: SceneRoomConfig[] };
-  favCatalog: { groups: FavGroup[] };
-  people:     { nodes: PersonConfig[] };
-  layout:     LayoutConfig;
+  controls: { nodes: ControlNodeRaw[] };
 }
 
 // ---------------------------------------------------------------------------
 // Device catalog types (mirrors data.js structure, used by AppConfig)
 // ---------------------------------------------------------------------------
 
-export interface LightDevice   { id: string; name: string }
-export interface LightRoom     { room: string; lights: LightDevice[] }
-export interface ExteriorDoor  { id: string; name: string }
+export interface LightDevice      { id: string; name: string; kind?: 'dimmer' | 'switch' }
+export interface LightSceneDevice { id: string; steps: number }
+export interface LightRoom        { room: string; lights: LightDevice[]; scene?: LightSceneDevice }
+export interface LightSceneRoom   { id: string; name: string; steps: number }
+export interface ExteriorDoor  { id: string; name: string; autoLockId?: string }
 export interface InteriorSensor{ id: string; name: string }
 export interface ClimateZone   { id: string; name: string }
 export interface MusicZone     { id: string; name: string }
@@ -189,6 +208,7 @@ export type SceneSchedules = Record<SceneRoomTypeKey, Record<TimeOfDayKey, strin
 export interface AppConfig {
   scenes: SceneConfig[];
   sceneDefault: string[];
+  lightSceneRooms: LightSceneRoom[];
   people: PersonConfig[];
   lightRooms: LightRoom[];
   doorsExterior: ExteriorDoor[];
@@ -196,12 +216,14 @@ export interface AppConfig {
   climate: ClimateZone[];
   musicZones: MusicZone[];
   fans: FanDevice[];
+  tvs: SettingItem[];
   irrigationPrograms: IrrigationProgram[];
   irrigationZones: IrrigationZone[];
   leakSensors: SensorDevice[];
   motionSensors: SensorDevice[];
   outdoorsPool: OutdoorDevice[];
   outdoorsBackyard: OutdoorDevice[];
+  whoIsHome: SettingItem[];
   settingsSecurity: SettingItem[];
   settingsEnvironment: SettingItem[];
   settingsSchedules: SettingItem[];

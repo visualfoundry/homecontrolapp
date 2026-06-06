@@ -56,47 +56,77 @@ export async function gql<T>(
   return json.data;
 }
 
+interface PagedConnection<N> {
+  nodes: N[];
+  pageInfo: { hasNextPage: boolean; endCursor: string | null };
+}
+
+type PagedResult<N> = { controls: PagedConnection<N> };
+
+/**
+ * Fetch all pages of the controls connection, following cursors until done.
+ * Each page uses up to 500 items (matching the WPGraphQL cap raised in the theme).
+ */
+export async function gqlAllControls<N>(
+  query: string,
+): Promise<N[]> {
+  const all: N[] = [];
+  let cursor: string | null = null;
+
+  do {
+    const variables: Record<string, unknown> = cursor ? { after: cursor } : {};
+    const data: PagedResult<N> = await gql<PagedResult<N>>(query, variables);
+    all.push(...data.controls.nodes);
+    cursor = data.controls.pageInfo.hasNextPage ? data.controls.pageInfo.endCursor : null;
+  } while (cursor !== null);
+
+  return all;
+}
+
 // ---------------------------------------------------------------------------
-// HomeConfig query — matches the shape in config-contract.md
+// HomeConfig query — fetches all controls from the WP CPT/ACF structure.
+// ACF fields exposed via WPGraphQL for ACF v2 (field groups: controlFields,
+// controlTypeFields). Device IDs are WP databaseId (string-cast).
 // ---------------------------------------------------------------------------
 
 export const HOME_CONFIG_QUERY = /* GraphQL */ `
-  query HomeConfig {
-    rooms(first: 100) {
+  query HomeConfig($after: String) {
+    controls(first: 500, after: $after) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
       nodes {
-        id
-        name
-        order
-        devices {
-          nodes {
-            id
-            name
-            class
-            room { node { id } }
-            icon
-            tint
-            order
-            meta { unit setpointMin setpointMax modeOptions speedSteps }
+        databaseId
+        title
+        controlFields {
+          controlIsy
+          controlIsyControlType
+          controlAddress
+          controlVariableId
+          controlType {
+            nodes {
+              ... on ControlType {
+                databaseId
+                title
+                controlTypeFields {
+                  controlTypeClass
+                  controlTypeType
+                  controlTypeMethod
+                }
+              }
+            }
+          }
+          controlPlace {
+            nodes {
+              ... on Place {
+                databaseId
+                title
+              }
+            }
           }
         }
       }
-    }
-    scenes(first: 100) {
-      nodes { id name icon tint order }
-    }
-    sceneRooms(first: 100) {
-      nodes { id name type hasDoor hasNightDim }
-    }
-    favCatalog {
-      groups { group items { id icon label } }
-    }
-    people(first: 50) {
-      nodes { id name }
-    }
-    layout {
-      dashboardSceneIds
-      dashboardFavIds
-      defaultTabs
     }
   }
 `;

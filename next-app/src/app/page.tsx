@@ -1,9 +1,9 @@
-import { AppShell } from '@/components/AppShell';
+import { ClientShell } from '@/components/ClientShell';
 import { fetchConfig } from '@/lib/config';
 
 // Root page — fetches config at build/ISR time, passes it to the PWA shell.
-// AppShell is a client component; this page is the server entry point.
+// ClientShell hosts the ssr:false dynamic import (not allowed in Server Components).
 export default async function Home() {
   const config = await fetchConfig();
-  return <AppShell config={config} />;
+  return <ClientShell config={config} />;
 }

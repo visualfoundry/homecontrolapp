@@ -21,10 +21,13 @@ export const SECTIONS: Record<string, SectionDef> = {
   pool:       { name: 'Pool',       icon: 'pool',     tint: '#2BB3A3' },
   music:      { name: 'Music',      icon: 'speaker',  tint: '#9B5DE5' },
   fans:       { name: 'Fans',       icon: 'fan',      tint: '#3D9BE0' },
+  tv:         { name: 'TV',         icon: 'tv',       tint: '#1A7AC4' },
   outdoors:   { name: 'Outdoors',   icon: 'pergola',  tint: '#2BB3A3' },
   irrigation: { name: 'Irrigation', icon: 'grass',    tint: '#3FA535' },
   leak:       { name: 'Water Leak', icon: 'droplet',  tint: '#5A9BD4' },
   motion:     { name: 'Motion',     icon: 'motion',   tint: '#E0483D' },
+  cinema:     { name: 'Cinema',     icon: 'film',     tint: '#7A5AE0' },
+  whoshome:   { name: "Who's Home",  icon: 'person',   tint: '#34A853' },
   settings:   { name: 'Settings',   icon: 'gear',     tint: '#8A8A8A' },
   docs:       { name: 'Docs',       icon: 'calendar', tint: '#C0793F' },
 } as const;
@@ -39,8 +42,8 @@ export const MAX_TABS = 4;
  */
 export const SCREEN_IDS = [
   'home', 'lights', 'doors', 'climate', 'pool',
-  'music', 'fans', 'irrigation', 'leak', 'motion',
-  'outdoors', 'settings', 'docs', 'customize', 'more',
+  'music', 'fans', 'tv', 'irrigation', 'leak', 'motion',
+  'outdoors', 'cinema', 'whoshome', 'settings', 'docs', 'customize', 'more',
   'scenes', 'editfav', 'editscenes',
 ] as const;
 

@@ -27,6 +27,7 @@ import type {
   SceneRoomConfig,
   SceneSchedules,
   FavGroup,
+  LightSceneRoom,
 } from '@/types/config';
 import type { StateMap } from '@/types/state';
 
@@ -192,6 +193,17 @@ const FAN_NAMES = [
 const fans: FanDevice[] = FAN_NAMES.map((name, i) => ({ id: `fan-${i}`, name }));
 
 // ---------------------------------------------------------------------------
+// TVs
+// ---------------------------------------------------------------------------
+
+const tvs: SettingItem[] = [
+  { id: 'tv-cinema',  name: 'Cinema TV'          },
+  { id: 'tv-gym',     name: 'Gym TV'             },
+  { id: 'tv-living',  name: 'Living Room TV'     },
+  { id: 'tv-master',  name: 'Master Bedroom TV'  },
+];
+
+// ---------------------------------------------------------------------------
 // Irrigation
 // ---------------------------------------------------------------------------
 
@@ -265,8 +277,9 @@ const settingsSecurity: SettingItem[] = [
 const settingsEnvironment: SettingItem[] = [
   { id: 'e-amb-ext', name: 'Ambient Light Low Exterior' },
   { id: 'e-amb-int', name: 'Ambient Light Low Interior' },
-  { id: 'e-cin-scr', name: 'Cinema Screen Down'         },
-  { id: 'e-cin-tv',  name: 'Cinema TV On'               },
+  { id: 'e-cin-scr',    name: 'Cinema Screen Down'    },
+  { id: 'e-cin-tv',    name: 'Cinema TV On'          },
+  { id: 'e-cin-shades', name: 'Cinema Shades Down'   },
   { id: 'e-lr-tv',   name: 'Living Room TV On'          },
   { id: 'e-cold',    name: 'Outside Cold (<45°)'        },
   { id: 'e-freeze',  name: 'Outside Freezing (<34°)'    },
@@ -304,6 +317,11 @@ const sceneRooms: SceneRoomConfig[] = [
   { id: 'hall',    name: 'Hallways',       type: 'hall',    hasDoor: false, hasNightDim: false },
   { id: 'laundry', name: 'Laundry',        type: 'utility', hasDoor: true,  hasNightDim: false },
 ];
+
+// Mock light scene rooms — mirrors sceneRooms with a default step count of 3.
+const lightSceneRooms: LightSceneRoom[] = sceneRooms
+  .map(r => ({ id: r.id, name: r.name, steps: 3 }))
+  .sort((a, b) => a.name.localeCompare(b.name));
 
 const sceneSchedules: SceneSchedules = {
   bedroom: { Morning: 'Wake Up',        Day: 'Off',      Evening: 'Relax',        Night: 'Night-light'     },
@@ -346,12 +364,24 @@ const favCatalog: FavGroup[] = [
     { id: 'fan-2',        icon: 'fan',       label: 'Gym Fan'        },
     { id: 'fan-7',        icon: 'fan',       label: 'Pergola Fan'    },
   ]},
+  { group: 'TV', items: [
+    { id: 'tv-living',    icon: 'tv',        label: 'Living Room TV' },
+    { id: 'tv-master',    icon: 'tv',        label: 'Master Bedroom' },
+    { id: 'tv-cinema',    icon: 'tv',        label: 'Cinema TV'      },
+    { id: 'tv-gym',       icon: 'tv',        label: 'Gym TV'         },
+  ]},
   { group: 'Outdoor', items: [
     { id: 'ob-garden',    icon: 'grass',     label: 'Garden Lights'  },
     { id: 'ob-feature',   icon: 'waterfall', label: 'Water Feature'  },
     { id: 'op-fall',      icon: 'waterfall', label: 'Pool Waterfall' },
     { id: 'ob-pergola-l', icon: 'bulb',      label: 'Pergola Light'  },
   ]},
+  { group: 'Cinema', items: [
+    { id: 'e-cin-tv',     icon: 'grid',      label: 'Theatre'        },
+    { id: 'e-cin-scr',    icon: 'chevDown',  label: 'Screen Down'    },
+    { id: 'e-cin-shades', icon: 'shades',    label: 'Window Shades'  },
+  ]},
+  { group: 'Scenes', items: lightSceneRooms.map(r => ({ id: r.id, icon: 'bulb' as const, label: r.name })) },
 ];
 
 // ---------------------------------------------------------------------------
@@ -368,16 +398,19 @@ export const MOCK_CONFIG: AppConfig = {
   climate,
   musicZones,
   fans,
+  tvs,
   irrigationPrograms,
   irrigationZones,
   leakSensors,
   motionSensors,
   outdoorsPool,
   outdoorsBackyard,
+  whoIsHome: settingsSecurity,
   settingsSecurity,
   settingsEnvironment,
   settingsSchedules,
   sceneRooms,
+  lightSceneRooms,
   sceneSchedules,
   favorites,
   favCatalog,
@@ -436,6 +469,9 @@ export function buildInitialState(): StateMap {
   fans.forEach((f, i) => {
     s[f.id] = i === 4 ? { on: true, speed: 2 } : { on: false, speed: 0 };
   });
+
+  // TVs
+  tvs.forEach(t => { s[t.id] = { on: false }; });
 
   // Irrigation
   irrigationPrograms.forEach(p => { s[p.id] = { on: false }; });

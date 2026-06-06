@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useHC } from '@/lib/store';
 import { Icon } from '@/components/Icon';
-import { Toggle } from '@/components/Toggle';
+import { Toggle } from '@/components/Toggle'; // used for room master toggle
 import { Slider } from '@/components/Slider';
 import { Card } from '@/components/Card';
 import { Segmented } from '@/components/Segmented';
@@ -11,14 +11,16 @@ import { LargeTitle } from '@/components/LargeTitle';
 import { pillBtn } from '@/lib/styles';
 import type { LightState } from '@/types/state';
 
-function LightBar({ id, name }: { id: string; name: string }) {
+function LightBar({ id, name, snap }: { id: string; name: string; snap?: boolean }) {
   const { st, setD } = useHC();
-  const s = st[id] as LightState;
-  if (!s) return null;
-  const set = (level: number) => setD(id, { level, on: level > 0 });
+  const s = (st[id] as LightState | undefined) ?? { on: false, level: 0 };
+  const set = (level: number) => {
+    const snapped = snap ? (level >= 50 ? 100 : 0) : level;
+    setD(id, { level: snapped, on: snapped > 0 });
+  };
   const toggle = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setD(id, { on: !s.on, level: !s.on ? (s.level || 100) : s.level });
+    setD(id, { on: !s.on, level: !s.on ? 100 : 0 });
   };
   return (
     <div style={{ position: 'relative', height: 54, borderRadius: 15, overflow: 'hidden', background: 'var(--slider-track)', touchAction: 'none', userSelect: 'none' }}>
@@ -30,7 +32,7 @@ function LightBar({ id, name }: { id: string; name: string }) {
           </span>
           <span style={{ fontSize: 15, fontWeight: 600, color: s.on ? '#5c3d00' : 'var(--text)', letterSpacing: -0.2 }}>{name}</span>
         </div>
-        <span style={{ fontSize: 13.5, fontWeight: 600, color: s.on ? '#7a5200' : 'var(--text3)' }}>{s.on ? s.level + '%' : 'Off'}</span>
+        <span style={{ fontSize: 13.5, fontWeight: 600, color: s.on ? '#7a5200' : 'var(--text3)' }}>{s.on ? (snap ? '100%' : s.level + '%') : 'Off'}</span>
       </div>
     </div>
   );
@@ -74,7 +76,9 @@ export function LightsScreen() {
                 <Toggle on={roomOn} onChange={masterToggle} accent="var(--amber)" size={0.85} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {r.lights.map(l => <LightBar key={l.id} id={l.id} name={l.name} />)}
+                {r.lights.map(l =>
+                  <LightBar key={l.id} id={l.id} name={l.name} snap={l.kind === 'switch'} />
+                )}
               </div>
             </Card>
           );

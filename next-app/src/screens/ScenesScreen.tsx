@@ -18,7 +18,7 @@ import type { SceneRoomTypeKey, TimeOfDayKey } from '@/types/config';
 
 function roomStatus(room: SceneRoomConfig, a: AutomationState, scene: string) {
   if (!a.automated) return { label: 'Automation disabled', dot: 'var(--text3)', tone: 'off' };
-  if (room.hasDoor && !a.doorOpen) return { label: 'Door closed · motion paused', dot: '#5B7FE0', tone: 'door' };
+  if (room.doorId && !a.doorOpen) return { label: 'Door closed · motion paused', dot: '#5B7FE0', tone: 'door' };
   if (a.manual) return { label: 'Manual switch · resumes when motion stops', dot: 'var(--amber)', tone: 'manual' };
   if (a.motion) return { label: `${scene} · active now`, dot: 'var(--green)', tone: 'active' };
   return { label: `${scene} · waiting for motion`, dot: 'var(--text3)', tone: 'idle' };
@@ -30,17 +30,20 @@ type Control = {
 };
 
 function roomControls(room: SceneRoomConfig, a: AutomationState, motionDisabled: boolean): Control[] {
-  const c: Control[] = [
-    { key: 'motion', icon: 'motion', label: 'Motion', value: a.motion ? 'Detected' : 'Clear',
-      color: '#DD8A0A', on: a.motion, dim: motionDisabled, patch: { motion: !a.motion } },
-  ];
-  if (room.hasDoor) {
+  const c: Control[] = [];
+  if (room.motionId !== undefined) {
+    c.push({ key: 'motion', icon: 'motion', label: 'Motion', value: a.motion ? 'Detected' : 'Clear',
+      color: '#DD8A0A', on: a.motion, dim: motionDisabled, patch: { motion: !a.motion } });
+  }
+  if (room.doorId !== undefined) {
     c.push({ key: 'doorOpen', icon: 'door', label: 'Door', value: a.doorOpen ? 'Open' : 'Closed',
       color: '#5B7FE0', on: !a.doorOpen, dim: false, patch: { doorOpen: !a.doorOpen } });
   }
-  c.push({ key: 'manual', icon: 'power', label: 'Switch', value: a.manual ? 'Manual' : 'Auto',
-    color: 'var(--amber)', on: a.manual, dim: false, patch: { manual: !a.manual } });
-  if (room.hasNightDim) {
+  if (room.switchId !== undefined) {
+    c.push({ key: 'manual', icon: 'power', label: 'Switch', value: a.manual ? 'Manual' : 'Auto',
+      color: 'var(--amber)', on: a.manual, dim: false, patch: { manual: !a.manual } });
+  }
+  if (room.nightDimId !== undefined) {
     c.push({ key: 'nightDim', icon: 'moon', label: 'Night LEDs', value: a.nightDim ? 'Dimmed' : 'Normal',
       color: '#7A5AE0', on: a.nightDim, dim: false, patch: { nightDim: !a.nightDim } });
   }
@@ -155,7 +158,7 @@ export function ScenesScreen() {
 
       <div style={{ paddingTop: 14, paddingBottom: 8, display: 'flex', flexDirection: 'column', gap: compact ? 10 : 13 }}>
         {rooms.map(({ r, a, scene, status }) => {
-          const motionDisabled = r.hasDoor && !a.doorOpen;
+          const motionDisabled = !!r.doorId && !a.doorOpen;
           const controls = roomControls(r, a, motionDisabled);
 
           if (compact) {
@@ -165,7 +168,7 @@ export function ScenesScreen() {
                   <span style={{ width: 9, height: 9, borderRadius: 5, background: status.dot, flex: '0 0 auto' }} />
                   <div style={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 640, letterSpacing: -0.3, color: 'var(--text)',
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.name}</div>
-                  <AutoPill on={a.automated} onTap={() => set(r.id, { automated: !a.automated })} />
+                  {r.autoId !== undefined && <AutoPill on={a.automated} onTap={() => set(r.id, { automated: !a.automated })} />}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 14px 13px' }}>
                   <div style={{ flex: 1, opacity: a.automated ? 1 : 0.5 }}>

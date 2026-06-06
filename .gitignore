@@ -2,12 +2,18 @@
 node_modules/
 css/main.css
 css/main.css.map
+scss/main.css
+scss/main.css.map
 
 # Next.js
 next-app/.next/
 next-app/node_modules/
 next-app/.env.local
 next-app/.env*.local
+next-app/tsconfig.tsbuildinfo
+
+# Claude local settings
+.claude/settings.local.json
 
 # OS
 .DS_Store

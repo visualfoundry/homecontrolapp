@@ -339,7 +339,7 @@ export function PoolScreen() {
       {/* Lighting & Features */}
       <div style={{ marginTop: 22 }}>
         <SectionTitle>Lighting & Features</SectionTitle>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div className="hca-tile-grid">
           {config.outdoorsPool.map(o => {
             const s = st[o.id] as OutdoorState | undefined;
             if (!s) return null;

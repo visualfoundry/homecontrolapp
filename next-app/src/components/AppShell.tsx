@@ -18,6 +18,7 @@
 import React, { useEffect, useRef } from 'react';
 import { HCProvider, useHC } from '@/lib/store';
 import { TabBar } from '@/components/TabBar';
+import { Sidebar } from '@/components/Sidebar';
 import { BackButton } from '@/components/BackButton';
 import { isTabSlot } from '@/lib/sections';
 import type { AppConfig } from '@/types/config';
@@ -39,6 +40,9 @@ import { ScenesScreen } from '@/screens/ScenesScreen';
 import { EditFavoritesScreen } from '@/screens/EditFavoritesScreen';
 import { EditScenesScreen } from '@/screens/EditScenesScreen';
 import { DocsScreen } from '@/screens/DocsScreen';
+import { CinemaScreen } from '@/screens/CinemaScreen';
+import { WhosHomeScreen } from '@/screens/WhosHomeScreen';
+import { TVScreen } from '@/screens/TVScreen';
 
 // ---------------------------------------------------------------------------
 // Placeholder screen — removed when real screens land in Milestone 4
@@ -77,10 +81,13 @@ const SCREEN_COMPONENTS: Record<string, React.FC> = {
   pool:       PoolScreen,
   music:      MusicScreen,
   fans:       FansScreen,
+  tv:         TVScreen,
   irrigation: IrrigationScreen,
   leak:       LeakScreen,
   motion:     MotionScreen,
   outdoors:   OutdoorsScreen,
+  cinema:     CinemaScreen,
+  whoshome:   WhosHomeScreen,
   settings:   SettingsScreen,
   more:       MoreScreen,
   customize:  CustomizeScreen,
@@ -111,56 +118,57 @@ function Shell() {
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
   }, [current]);
 
+  const dark = prefs.theme === 'dark';
+
   return (
-    <div
-      style={{
-        position: 'relative',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        background: 'var(--bg)',
-        fontFamily: 'var(--font)',
-        color: 'var(--text)',
-      }}
-    >
-      {/* Back button for secondary screens */}
-      {showBack && <BackButton />}
+    <div className="hca-shell">
+      {/* Sidebar — hidden on phone, visible on tablet via CSS */}
+      <Sidebar current={current} tabs={prefs.tabs} go={go} dark={dark} />
 
-      {/* Scrollable screen content */}
-      <div
-        ref={scrollRef}
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          overflowX: 'hidden',
-          paddingTop: showBack ? 90 : 56,
-          paddingBottom: 24,
-          paddingLeft: 'var(--screen-px)',
-          paddingRight: 'var(--screen-px)',
-          scrollbarWidth: 'none',
-        }}
-      >
-        <ScreenRenderer id={current} />
+      {/* Main content column */}
+      <div className="hca-shell-main">
+        {/* Back button for secondary screens */}
+        {showBack && <BackButton />}
+
+        {/* Scrollable screen content */}
+        <div
+          ref={scrollRef}
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            paddingTop: showBack ? 90 : 56,
+            paddingBottom: 24,
+            paddingLeft: 'var(--screen-px)',
+            paddingRight: 'var(--screen-px)',
+            scrollbarWidth: 'none',
+          }}
+        >
+          <ScreenRenderer id={current} />
+        </div>
+
+        {/* Tab bar — hidden on tablet via CSS (.hca-tab-bar-phone) */}
+        <div className="hca-tab-bar-phone">
+          <TabBar
+            current={current}
+            tabs={prefs.tabs}
+            go={go}
+            dark={dark}
+          />
+        </div>
+
+        {/* Overlay host — portal target for bottom sheets (z-index 90) */}
+        <div
+          ref={overlayRef}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 90,
+            pointerEvents: 'none',
+          }}
+        />
       </div>
-
-      {/* Tab bar */}
-      <TabBar
-        current={current}
-        tabs={prefs.tabs}
-        go={go}
-        dark={prefs.theme === 'dark'}
-      />
-
-      {/* Overlay host — portal target for bottom sheets (z-index 90) */}
-      <div
-        ref={overlayRef}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          zIndex: 90,
-          pointerEvents: 'none',
-        }}
-      />
     </div>
   );
 }
