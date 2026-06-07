@@ -12,8 +12,8 @@ next-app/.env.local
 next-app/.env*.local
 next-app/tsconfig.tsbuildinfo
 
-# Claude local settings
-.claude/settings.local.json
+# Claude
+.claude/
 
 # OS
 .DS_Store
