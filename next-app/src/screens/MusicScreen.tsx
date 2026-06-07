@@ -6,6 +6,7 @@ import { Icon } from '@/components/Icon';
 import { Card, SectionTitle } from '@/components/Card';
 import { Toggle } from '@/components/Toggle';
 import { Slider } from '@/components/Slider';
+import { SpeakerRow } from '@/components/SpeakerRow';
 import { LargeTitle } from '@/components/LargeTitle';
 import type { SpeakerState } from '@/types/state';
 
@@ -25,7 +26,7 @@ const iconBtn: React.CSSProperties = {
 
 export function MusicScreen() {
   const { st, setD, config } = useHC();
-  // Track pre-mute volumes so we can restore them on unmute
+  // Track pre-mute volumes so we can restore them on unmute (global mute only)
   const preMuteVols = useRef<Map<string, number>>(new Map());
   // Capture starting volumes + average when a global-slider drag begins
   const dragBaseVols = useRef<Map<string, number>>(new Map());
@@ -83,17 +84,6 @@ export function MusicScreen() {
     }
   };
 
-  const muteSpeaker = (id: string, vol: number) => {
-    const muted = vol === 0;
-    if (muted) {
-      setD(id, { vol: preMuteVols.current.get(id) ?? 30 });
-      preMuteVols.current.delete(id);
-    } else {
-      preMuteVols.current.set(id, vol);
-      setD(id, { vol: 0 });
-    }
-  };
-
   return (
     <div>
       <LargeTitle title="Music" sub={`${playing} of ${zones.length} playing`}
@@ -143,25 +133,8 @@ export function MusicScreen() {
       {/* Per-speaker list */}
       <SectionTitle>Speakers</SectionTitle>
       <Card pad={false} style={{ padding: '6px 14px' }}>
-        {zones.map(({ id, name, s }, i) => (
-          <div key={id} style={{ padding: '13px 2px', borderBottom: i < zones.length - 1 ? '0.5px solid var(--sep)' : 'none' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 }}>
-              <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>{name}</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <button onClick={() => muteSpeaker(id, s.vol)}
-                  style={{ ...iconBtn, opacity: s.on ? 1 : 0.35, color: (s.on && s.vol === 0) ? 'var(--accent)' : 'var(--text2)' }}>
-                  <Icon name={s.on && s.vol > 0 ? 'volume' : 'mute'} size={18} />
-                </button>
-                <Toggle on={s.on} onChange={(v) => setD(id, { on: v, vol: v && !s.vol ? 30 : s.vol })} size={0.82} />
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-              <Slider value={s.vol} onChange={(v) => setD(id, { vol: v, on: v > 0 })} height={30} disabled={!s.on} />
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text3)', minWidth: 30, textAlign: 'right' }}>
-                {s.on ? (s.vol === 0 ? 'Muted' : `${s.vol}%`) : '–'}
-              </span>
-            </div>
-          </div>
+        {zones.map((z, i) => (
+          <SpeakerRow key={z.id} zone={z} last={i === zones.length - 1} />
         ))}
       </Card>
     </div>

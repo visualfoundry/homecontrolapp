@@ -18,6 +18,11 @@ export function EditFavoritesScreen() {
   const lookup: Record<string, FavItem & { group: string }> = {};
   config.favCatalog.forEach(g => g.items.forEach(it => { lookup[it.id] = { ...it, group: g.group }; }));
 
+  // Group order: keep catalog order but push 'Lights' to the bottom (stable sort).
+  const orderedGroups = [...config.favCatalog].sort((a, b) =>
+    a.group === 'Lights' ? 1 : b.group === 'Lights' ? -1 : 0,
+  );
+
   const setIds = (next: string[]) => setD('_favs', { ids: next });
   const remove = (id: string) => setIds(ids.filter(x => x !== id));
   const add = (id: string) => setIds([...ids, id]);
@@ -82,7 +87,7 @@ export function EditFavoritesScreen() {
         </Card>
       )}
 
-      {config.favCatalog.map(g => {
+      {orderedGroups.map(g => {
         const avail = g.items.filter(it => !ids.includes(it.id));
         if (avail.length === 0) return null;
         const hasPlaces = avail.some(it => it.place);
@@ -98,6 +103,10 @@ export function EditFavoritesScreen() {
         } else {
           sections.push({ place: undefined, items: avail });
         }
+
+        // Alpha-sort items within each section, and place sub-sections by name.
+        sections.forEach(sec => sec.items.sort((a, b) => a.label.localeCompare(b.label)));
+        if (hasPlaces) sections.sort((a, b) => (a.place ?? '').localeCompare(b.place ?? ''));
 
         return (
           <div key={g.group} style={{ marginTop: 22 }}>

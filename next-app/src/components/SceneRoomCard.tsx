@@ -107,14 +107,26 @@ function CompactControl({ icon, color, on, dim, onTap, title }: Omit<Control, 'k
   );
 }
 
-function IntensityRow({ value, onChange, compact }: { value: number; onChange: (v: number) => void; compact?: boolean }) {
+// `steps` (2–6) makes the slider snap to discrete stops (N intervals / N+1
+// stops incl. 0). Since % is meaningless per fitting, the readout shows the
+// step (e.g. "2/4") rather than a percentage. Intensity is still stored 0–100.
+function IntensityRow({ value, onChange, compact, steps }: {
+  value: number; onChange: (v: number) => void; compact?: boolean; steps?: number;
+}) {
+  const stepped = !!steps && steps >= 2;
+  const X = steps ?? 1;
+  const idx = stepped ? Math.max(0, Math.min(X, Math.round((value / 100) * X))) : value;
+  const sliderProps = stepped
+    ? { value: idx, min: 0, max: X, step: 1, onChange: (i: number) => onChange(Math.round((i / X) * 100)) }
+    : { value, min: 0, max: 100, step: 1, onChange };
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-      <Slider value={value} onChange={onChange} min={0} max={100}
-        icon={<Icon name="bulb" size={18} />} fill="var(--accent)" height={compact ? 34 : 38} />
+      <Slider {...sliderProps} icon={<Icon name="bulb" size={18} />} fill="var(--accent)" height={compact ? 34 : 38} />
       {!compact && (
         <span style={{ minWidth: 42, textAlign: 'right', fontVariantNumeric: 'tabular-nums',
-          fontSize: 15, fontWeight: 640, color: 'var(--text2)', letterSpacing: -0.3 }}>{value}%</span>
+          fontSize: 15, fontWeight: 640, color: 'var(--text2)', letterSpacing: -0.3 }}>
+          {stepped ? `${idx}/${X}` : `${value}%`}
+        </span>
       )}
     </div>
   );
@@ -124,13 +136,33 @@ function IntensityRow({ value, onChange, compact }: { value: number; onChange: (
 // SceneRoomCard
 // ---------------------------------------------------------------------------
 
+// Room name; clickable (→ that place's room page) when `place` is known.
+function RoomTitle({ name, place, size, go }: {
+  name: string; place?: string; size: number; go: (id: string) => void;
+}) {
+  const titleStyle: React.CSSProperties = {
+    fontSize: size, fontWeight: size >= 17 ? 650 : 640, letterSpacing: -0.3, color: 'var(--text)',
+    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+  };
+  if (!place) return <div style={titleStyle}>{name}</div>;
+  return (
+    <button type="button" onClick={(e) => { e.stopPropagation(); go(`room:${place}`); }}
+      style={{ display: 'flex', alignItems: 'center', gap: 4, maxWidth: '100%',
+        border: 'none', background: 'none', padding: 0, cursor: 'pointer',
+        color: 'var(--text3)', WebkitTapHighlightColor: 'transparent' }}>
+      <span style={titleStyle}>{name}</span>
+      <Icon name="chevron" size={size - 2} />
+    </button>
+  );
+}
+
 export function SceneRoomCard({ room, a, scene, compact }: {
   room: SceneRoomConfig;
   a: AutomationState;
   scene: string;
   compact?: boolean;
 }) {
-  const { setD } = useHC();
+  const { setD, go } = useHC();
   const set = (patch: Partial<AutomationState>) => setD('auto:' + room.id, patch);
   const status = roomStatus(room, a, scene);
   const motionDisabled = !!room.doorId && !a.doorOpen;
@@ -141,13 +173,14 @@ export function SceneRoomCard({ room, a, scene, compact }: {
       <Card pad={false} style={{ overflow: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px 10px' }}>
           <span style={{ width: 9, height: 9, borderRadius: 5, background: status.dot, flex: '0 0 auto' }} />
-          <div style={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 640, letterSpacing: -0.3, color: 'var(--text)',
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{room.name}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <RoomTitle name={room.name} place={room.place} size={16} go={go} />
+          </div>
           {room.autoId !== undefined && <AutoPill on={a.automated} onTap={() => set({ automated: !a.automated })} />}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 14px 13px' }}>
           <div style={{ flex: 1, opacity: a.automated ? 1 : 0.5 }}>
-            <IntensityRow value={a.intensity} onChange={(v) => set({ intensity: v })} compact />
+            <IntensityRow value={a.intensity} onChange={(v) => set({ intensity: v })} compact steps={room.steps} />
           </div>
           <div style={{ display: 'flex', gap: 7, flex: '0 0 auto' }}>
             {controls.map(c => (
@@ -167,14 +200,14 @@ export function SceneRoomCard({ room, a, scene, compact }: {
         <span style={{ width: 10, height: 10, borderRadius: 5, background: status.dot, flex: '0 0 auto',
           boxShadow: status.tone === 'active' ? '0 0 0 4px rgba(52,168,83,0.16)' : 'none' }} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 17, fontWeight: 650, letterSpacing: -0.3, color: 'var(--text)' }}>{room.name}</div>
+          <RoomTitle name={room.name} place={room.place} size={17} go={go} />
           <div style={{ fontSize: 13, color: 'var(--text2)', fontWeight: 500, marginTop: 1,
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{status.label}</div>
         </div>
         <AutoPill on={a.automated} onTap={() => set({ automated: !a.automated })} />
       </div>
       <div style={{ padding: '0 15px 13px', opacity: a.automated ? 1 : 0.5 }}>
-        <IntensityRow value={a.intensity} onChange={(v) => set({ intensity: v })} />
+        <IntensityRow value={a.intensity} onChange={(v) => set({ intensity: v })} steps={room.steps} />
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '0 12px 13px' }}>
         {controls.map(({ key: ck, patch, ...rest }) => (

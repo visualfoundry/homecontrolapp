@@ -102,6 +102,8 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     lightSceneRoomsRaw.push({ id, name: displayName, steps });
 
     const room = inferSceneRoom(id, displayName);
+    room.steps = steps;
+    if (place) room.place = place;
     if (place) {
       const byType = controlsByPlaceType.get(place) ?? new Map();
       const motionId   = byType.get('Motion Sensor');
@@ -277,6 +279,13 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     .map(n => ({ id: toId(n), name: n.title }))
     .sort(byName);
 
+  // --- Device id → place map (for assembling per-place room pages) --------
+  const controlPlaces: Record<string, string> = {};
+  for (const n of controls) {
+    const place = getPlace(n);
+    if (place) controlPlaces[toId(n)] = place;
+  }
+
   // --- Garage light scene: the 'Light Scene N Step' control in place 'Garage'
   const garageSceneId = sceneByPlace.get('Garage')?.id ?? null;
 
@@ -321,6 +330,10 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
   const doorsGroup = doorsExterior.length > 0
     ? [{ group: 'Doors', items: doorsExterior.map(d => ({ id: d.id, icon: 'lock' as const, label: d.name })) }]
     : [];
+  // One 'Garage Doors' group — the open/closed car doors
+  const garageCarGroup = garageCarDoors.length > 0
+    ? [{ group: 'Garage Doors', items: garageCarDoors.map(d => ({ id: d.id, icon: 'garage' as const, label: d.name })) }]
+    : [];
   const scenesGroup = lightSceneRoomsRaw.length > 0
     ? [{ group: 'Scenes', items: lightSceneRoomsRaw.map(r => ({ id: r.id, icon: 'bulb' as const, label: r.name })) }]
     : [];
@@ -328,15 +341,18 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
   // Drop the mock 'Doors' group when we have live exterior doors to replace it with.
   const HANDLED_GROUPS = ['Lights', 'Music', 'Fans', 'TV', 'Scenes'];
   const otherMockGroups = MOCK_CONFIG.favCatalog.filter(
-    g => !HANDLED_GROUPS.includes(g.group) && !(doorsGroup.length > 0 && g.group === 'Doors'),
+    g => !HANDLED_GROUPS.includes(g.group)
+      && !(doorsGroup.length > 0 && g.group === 'Doors')
+      && !(garageCarGroup.length > 0 && g.group === 'Garage Doors'),
   );
   const favCatalog = lightFavItems.length > 0
-    ? [...lightsGroup, ...musicGroup, ...fansGroup, ...tvGroup, ...doorsGroup, ...otherMockGroups, ...scenesGroup]
+    ? [...lightsGroup, ...musicGroup, ...fansGroup, ...tvGroup, ...doorsGroup, ...garageCarGroup, ...otherMockGroups, ...scenesGroup]
     : [
         ...MOCK_CONFIG.favCatalog.filter(
           g => g.group !== 'Scenes' && !(doorsGroup.length > 0 && g.group === 'Doors'),
         ),
         ...doorsGroup,
+        ...garageCarGroup,
         ...scenesGroup,
       ];
 
@@ -373,6 +389,7 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     garageCarDoors:      garageCarDoors.length      > 0 ? garageCarDoors      : MOCK_CONFIG.garageCarDoors,
     garageCars:          garageCars.length          > 0 ? garageCars          : MOCK_CONFIG.garageCars,
     garageSceneId:       sceneRoomsRaw.length       > 0 ? garageSceneId       : MOCK_CONFIG.garageSceneId,
+    controlPlaces:       Object.keys(controlPlaces).length > 0 ? controlPlaces  : MOCK_CONFIG.controlPlaces,
     sceneRooms:          sceneRoomsRaw.length       > 0 ? sceneRoomsRaw       : MOCK_CONFIG.sceneRooms,
     lightSceneRooms:     lightSceneRoomsRaw.length  > 0 ? lightSceneRoomsRaw  : MOCK_CONFIG.lightSceneRooms,
   };

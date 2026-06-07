@@ -98,6 +98,11 @@ export interface SceneRoomConfig {
   type: SceneRoomType;
   hasDoor: boolean;
   hasNightDim: boolean;
+  /** Number of intensity steps from the 'Light Scene N Step' control type
+   *  (N = 2–6). The slider snaps to N intervals (N+1 stops incl. 0). */
+  steps?: number;
+  /** Place (room) this scene belongs to — nav target for its room page. */
+  place?: string;
   // Optional: actual WP device IDs for associated controls in the same place.
   // Presence of an ID means the control exists and should be shown.
   motionId?:   string;  // Motion Sensor
@@ -240,6 +245,8 @@ export interface AppConfig {
   sceneSchedules: SceneSchedules;
   favorites: string[];
   favCatalog: FavGroup[];
+  /** Device id → place (room) title. Used to assemble per-place room pages. */
+  controlPlaces: Record<string, string>;
 }
 
 // ---------------------------------------------------------------------------

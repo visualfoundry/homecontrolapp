@@ -44,6 +44,7 @@ import { DocsScreen } from '@/screens/DocsScreen';
 import { CinemaScreen } from '@/screens/CinemaScreen';
 import { WhosHomeScreen } from '@/screens/WhosHomeScreen';
 import { TVScreen } from '@/screens/TVScreen';
+import { RoomScreen } from '@/screens/RoomScreen';
 
 // ---------------------------------------------------------------------------
 // Placeholder screen — removed when real screens land in Milestone 4
@@ -100,6 +101,11 @@ const SCREEN_COMPONENTS: Record<string, React.FC> = {
 };
 
 function ScreenRenderer({ id }: { id: string }) {
+  // Per-place room pages: "room:<place>". Garage keeps its bespoke page.
+  if (id.startsWith('room:')) {
+    const place = id.slice(5);
+    return place === 'Garage' ? <GarageScreen /> : <RoomScreen place={place} />;
+  }
   const Screen = SCREEN_COMPONENTS[id];
   if (Screen) return <Screen />;
   return <PlaceholderScreen id={id} />;

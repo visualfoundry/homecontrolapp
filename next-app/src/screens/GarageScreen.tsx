@@ -4,9 +4,9 @@ import React from 'react';
 import { useHC } from '@/lib/store';
 import { Icon } from '@/components/Icon';
 import { Card, SectionTitle } from '@/components/Card';
-import { Tile } from '@/components/Tile';
 import { Toggle } from '@/components/Toggle';
 import { ExteriorDoorRow } from '@/components/ExteriorDoorRow';
+import { CarDoorTile } from '@/components/CarDoorTile';
 import { SceneRoomCard } from '@/components/SceneRoomCard';
 import { LargeTitle } from '@/components/LargeTitle';
 import type { FlagState, LockState, ContactSensorState, AutomationState, GlobalState } from '@/types/state';
@@ -59,21 +59,7 @@ export function GarageScreen() {
             Garage Car Doors
           </SectionTitle>
           <div className="hca-tile-grid" style={{ marginBottom: 22 }}>
-            {carDoors.map(d => {
-              const open = (st[d.id] as ContactSensorState | undefined)?.open ?? false;
-              return (
-                <Tile
-                  key={d.id}
-                  icon="garage"
-                  name={d.name}
-                  status={open ? 'Open' : 'Closed'}
-                  active={open}
-                  activeColor="var(--amber)"
-                  glow
-                  onTap={() => setD(d.id, { open: !open })}
-                />
-              );
-            })}
+            {carDoors.map(d => <CarDoorTile key={d.id} door={d} />)}
           </div>
         </>
       )}

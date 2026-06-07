@@ -11,7 +11,11 @@ import { Avatar } from '@/components/Avatar';
 import { LargeTitle } from '@/components/LargeTitle';
 import { iconBtn, pillBtn } from '@/lib/styles';
 import { Slider } from '@/components/Slider';
-import type { LightState, LockState, SpeakerState, FanState, GlobalState, FavsState, ScenesListState, PersonState, PoolState, AutomationState } from '@/types/state';
+import { SceneRoomCard } from '@/components/SceneRoomCard';
+import { speakerName } from '@/components/SpeakerRow';
+import { CarDoorTile } from '@/components/CarDoorTile';
+import type { LightState, LockState, ContactSensorState, SpeakerState, FanState, GlobalState, FavsState, ScenesListState, PersonState, PoolState, AutomationState } from '@/types/state';
+import type { SceneRoomTypeKey, TimeOfDayKey } from '@/types/config';
 
 // ── Scrollable stat pill ──────────────────────────────────────────────────────
 function StatTile({ icon, label, value, tint, onTap }: {
@@ -42,20 +46,26 @@ function StatTile({ icon, label, value, tint, onTap }: {
 function FavTile({ id, icon, label }: { id: string; icon: React.ComponentProps<typeof Icon>['name']; label: string }) {
   const { st, setD } = useHC();
   const s = st[id] ?? { on: false, level: 0 };
-  const isLight = 'level' in s || icon === 'bulb';
   const isDoor = 'locked' in s;
-  const on = isDoor ? (s as LockState).locked : (s as { on?: boolean }).on ?? false;
+  const isContact = 'open' in s;
+  const isLight = !isDoor && !isContact && ('level' in s || icon === 'bulb');
+  const on = isDoor ? (s as LockState).locked
+    : isContact ? (s as ContactSensorState).open
+    : (s as { on?: boolean }).on ?? false;
   const toggle = () => {
     if (isDoor) setD(id, { locked: !(s as LockState).locked });
+    else if (isContact) setD(id, { open: !(s as ContactSensorState).open });
     else if (isLight) { const ls = s as LightState; setD(id, { on: !ls.on, level: !ls.on ? (ls.level || 100) : (ls.level ?? 100) }); }
     else setD(id, { on: !(s as { on: boolean }).on });
   };
   const status = isDoor
     ? ((s as LockState).locked ? 'Locked' : 'Unlocked')
+    : isContact ? ((s as ContactSensorState).open ? 'Open' : 'Closed')
     : isLight ? ((s as LightState).on ? `On · ${(s as LightState).level}%` : 'Off')
     : ((s as { on: boolean }).on ? 'On' : 'Off');
   const color = isDoor
     ? ((s as LockState).locked ? 'var(--green)' : 'var(--red)')
+    : isContact ? 'var(--amber)'
     : isLight ? 'var(--amber)' : 'var(--accent)';
   const icn: React.ComponentProps<typeof Icon>['name'] =
     isDoor ? ((s as LockState).locked ? 'lock' : 'unlock') : icon;
@@ -135,102 +145,51 @@ function SpeakerFavTile({ id, label }: { id: string; label: string }) {
   const s = (st[id] as SpeakerState | undefined) ?? { on: false, vol: 0 };
   const set = (vol: number) => setD(id, { vol, on: vol > 0 });
   const toggle = () => setD(id, { on: !s.on, vol: !s.on ? (s.vol || 30) : s.vol });
-  return (
-    <div style={{ gridColumn: 'span 2', position: 'relative', height: 54, borderRadius: 'var(--radius)', overflow: 'hidden', background: 'var(--slider-track)', touchAction: 'none', userSelect: 'none' }}>
-      <Slider value={s.on ? s.vol : 0} onChange={set} height={54} track="transparent" fill="linear-gradient(90deg,#6a4a7a,#9b6ab0)" />
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px', pointerEvents: 'none' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-          <span onClick={toggle} style={{ pointerEvents: 'auto', cursor: 'pointer', color: s.on ? '#fff' : 'var(--text3)', display: 'flex' }}>
-            <Icon name="speaker" size={21} strokeWidth={1.9} />
-          </span>
-          <span style={{ fontSize: 15, fontWeight: 600, color: s.on ? '#fff' : 'var(--text)', letterSpacing: -0.2 }}>{label}</span>
-        </div>
-        <span style={{ fontSize: 13.5, fontWeight: 600, color: s.on ? 'rgba(255,255,255,0.85)' : 'var(--text3)' }}>
-          {s.on ? `${s.vol}%` : 'Off'}
+  const pct = s.on ? s.vol : 0;
+  const name = speakerName(label);
+
+  // Row content, rendered twice: a dark base (legible on the white tile) and a
+  // white copy clipped to the filled region (legible over the purple fill).
+  const row = (color: string, statusColor: string, clickable: boolean) => (
+    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px', pointerEvents: 'none' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+        <span onClick={clickable ? toggle : undefined} style={{ pointerEvents: clickable ? 'auto' : 'none', cursor: 'pointer', color, display: 'flex' }}>
+          <Icon name="speaker" size={21} strokeWidth={1.9} />
         </span>
+        <span style={{ fontSize: 15, fontWeight: 600, color, letterSpacing: -0.2 }}>{name}</span>
+      </div>
+      <span style={{ fontSize: 13.5, fontWeight: 600, color: statusColor }}>
+        {s.on ? `${s.vol}%` : 'Off'}
+      </span>
+    </div>
+  );
+
+  return (
+    <div style={{ gridColumn: 'span 2', position: 'relative', height: 54, borderRadius: 'var(--radius)', overflow: 'hidden', background: 'var(--card)', boxShadow: 'var(--shadow)', touchAction: 'none', userSelect: 'none' }}>
+      <Slider value={pct} onChange={set} height={54} track="transparent" fill="linear-gradient(90deg,#6a4a7a,#9b6ab0)" />
+      {/* dark base — visible over the white background */}
+      {row('var(--text)', 'var(--text2)', true)}
+      {/* white copy — clipped to the filled width, visible over the purple fill */}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', clipPath: `inset(0 ${100 - pct}% 0 0)`, transition: 'clip-path 80ms linear' }}>
+        {row('#fff', 'rgba(255,255,255,0.85)', false)}
       </div>
     </div>
   );
 }
 
-function SceneFavTile({ id, label }: { id: string; label: string }) {
-  const { st, setD, config } = useHC();
-    const room = config.sceneRooms.find(r => r.id === id);
-    const a = st[`auto:${id}`] as AutomationState | undefined;
-    if (!room || !a) return null;
-    const set = (patch: Partial<AutomationState>) => setD(`auto:${id}`, patch);
-    return (
-      <div style={{ gridColumn: 'span 2' }}>
-        <Card pad={false} style={{ overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px 10px' }}>
-            <span style={{ width: 9, height: 9, borderRadius: 5, flex: '0 0 auto',
-              background: !a.automated ? 'var(--text3)' : a.motion ? 'var(--green)' : 'var(--text3)' }} />
-            <div style={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 640, letterSpacing: -0.3,
-              color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {label}
-            </div>
-            {room.autoId !== undefined && (
-              <button onClick={() => set({ automated: !a.automated })} style={{
-                display: 'flex', alignItems: 'center', gap: 6, flex: '0 0 auto',
-                border: 'none', cursor: 'pointer', borderRadius: 999, padding: '7px 13px 7px 11px',
-                fontSize: 13.5, fontWeight: 640, letterSpacing: -0.2,
-                background: a.automated ? 'var(--accent)' : 'var(--icon-bg)',
-                color: a.automated ? '#fff' : 'var(--text2)',
-                WebkitTapHighlightColor: 'transparent', transition: 'all .18s',
-              }}>
-                <Icon name="power" size={15} strokeWidth={2.3} />{a.automated ? 'Auto' : 'Off'}
-              </button>
-            )}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 14px 13px' }}>
-            <div style={{ flex: 1, opacity: a.automated ? 1 : 0.5 }}>
-              <Slider value={a.intensity} onChange={(v) => set({ intensity: v })} min={0} max={100}
-                icon={<Icon name="bulb" size={18} />} fill="var(--accent)" height={34} />
-            </div>
-            <div style={{ display: 'flex', gap: 7, flex: '0 0 auto' }}>
-              {room.motionId !== undefined && (
-                <button onClick={() => set({ motion: !a.motion })} title={`Motion: ${a.motion ? 'Detected' : 'Clear'}`}
-                  style={{ width: 38, height: 38, borderRadius: 11, border: 'none', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: a.motion ? '#DD8A0A' : 'var(--icon-bg)', color: a.motion ? '#fff' : 'var(--text3)',
-                    opacity: !a.automated || (!!room.doorId && !a.doorOpen) ? 0.45 : 1,
-                    WebkitTapHighlightColor: 'transparent' }}>
-                  <Icon name="motion" size={19} />
-                </button>
-              )}
-              {room.doorId !== undefined && (
-                <button onClick={() => set({ doorOpen: !a.doorOpen })} title={`Door: ${a.doorOpen ? 'Open' : 'Closed'}`}
-                  style={{ width: 38, height: 38, borderRadius: 11, border: 'none', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: !a.doorOpen ? '#5B7FE0' : 'var(--icon-bg)', color: !a.doorOpen ? '#fff' : 'var(--text3)',
-                    WebkitTapHighlightColor: 'transparent' }}>
-                  <Icon name="door" size={19} />
-                </button>
-              )}
-              {room.switchId !== undefined && (
-                <button onClick={() => set({ manual: !a.manual })} title={`Switch: ${a.manual ? 'Manual' : 'Auto'}`}
-                  style={{ width: 38, height: 38, borderRadius: 11, border: 'none', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: a.manual ? 'var(--amber)' : 'var(--icon-bg)', color: a.manual ? '#fff' : 'var(--text3)',
-                    WebkitTapHighlightColor: 'transparent' }}>
-                  <Icon name="power" size={19} />
-                </button>
-              )}
-              {room.nightDimId !== undefined && (
-                <button onClick={() => set({ nightDim: !a.nightDim })} title={`Night LEDs: ${a.nightDim ? 'Dimmed' : 'Normal'}`}
-                  style={{ width: 38, height: 38, borderRadius: 11, border: 'none', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: a.nightDim ? '#7A5AE0' : 'var(--icon-bg)', color: a.nightDim ? '#fff' : 'var(--text3)',
-                    WebkitTapHighlightColor: 'transparent' }}>
-                  <Icon name="moon" size={19} />
-                </button>
-              )}
-            </div>
-          </div>
-        </Card>
-      </div>
-    );
-  }
+function SceneFavTile({ id }: { id: string; label: string }) {
+  const { st, config } = useHC();
+  const room = config.sceneRooms.find(r => r.id === id);
+  const a = st[`auto:${id}`] as AutomationState | undefined;
+  if (!room || !a) return null;
+  const tod = (st['_global'] as GlobalState).timeOfDay as TimeOfDayKey;
+  const scene = config.sceneSchedules[room.type as SceneRoomTypeKey]?.[tod] ?? '—';
+  return (
+    <div style={{ gridColumn: 'span 2' }}>
+      <SceneRoomCard room={room} a={a} scene={scene} compact />
+    </div>
+  );
+}
 
 export function HomeScreen() {
   const { st, setD, go, config } = useHC();
@@ -282,6 +241,7 @@ export function HomeScreen() {
   const sceneById = Object.fromEntries(config.scenes.map(s => [s.id, s]));
   const favLookup = Object.fromEntries(config.favCatalog.flatMap(g => g.items.map(it => [it.id, it])));
   const lightSceneIds = new Set(config.lightSceneRooms.map(r => r.id));
+  const carDoorIds = new Set(config.garageCarDoors.map(d => d.id));
 
   const greetings: Record<string, string> = { Morning: 'Good morning', Day: 'Good afternoon', Evening: 'Good evening', Night: 'Good night' };
 
@@ -410,6 +370,9 @@ export function HomeScreen() {
               if (!it) return null;
               if (lightSceneIds.has(id)) {
                 return <SceneFavTile key={id} id={id} label={it.label} />;
+              }
+              if (carDoorIds.has(id)) {
+                return <CarDoorTile key={id} door={{ id, name: it.label }} />;
               }
               if (it.icon === 'bulb' && !lightSceneIds.has(id)) {
                 return <LightFavTile key={id} id={id} label={it.label} />;

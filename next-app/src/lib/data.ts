@@ -332,24 +332,24 @@ const garageCars: SettingItem[] = [
 // ---------------------------------------------------------------------------
 
 const sceneRooms: SceneRoomConfig[] = [
-  { id: 'alex',    name: 'Alex Bedroom',   type: 'bedroom', hasDoor: true,  hasNightDim: true  },
-  { id: 'master',  name: 'Master Bedroom', type: 'bedroom', hasDoor: true,  hasNightDim: true  },
-  { id: 'guest',   name: 'Guest Bedroom',  type: 'bedroom', hasDoor: true,  hasNightDim: true  },
-  { id: 'gbath',   name: 'Guest Bathroom', type: 'bath',    hasDoor: true,  hasNightDim: true  },
-  { id: 'kitchen', name: 'Kitchen',        type: 'living',  hasDoor: false, hasNightDim: false },
-  { id: 'dining',  name: 'Dining Room',    type: 'living',  hasDoor: true,  hasNightDim: false },
-  { id: 'library', name: 'Library',        type: 'living',  hasDoor: true,  hasNightDim: false },
-  { id: 'cinema',  name: 'Cinema',         type: 'living',  hasDoor: true,  hasNightDim: false },
-  { id: 'gym',     name: 'Gym',            type: 'utility', hasDoor: true,  hasNightDim: false },
-  { id: 'studio',  name: 'Studio',         type: 'utility', hasDoor: true,  hasNightDim: false },
-  { id: 'hall',    name: 'Hallways',       type: 'hall',    hasDoor: false, hasNightDim: false },
-  { id: 'laundry', name: 'Laundry',        type: 'utility', hasDoor: true,  hasNightDim: false },
-  { id: 'garage',  name: 'Garage',         type: 'utility', hasDoor: false, hasNightDim: false },
+  { id: 'alex',    name: 'Alex Bedroom',   type: 'bedroom', hasDoor: true,  hasNightDim: true,  steps: 3, place: 'Alex Bedroom'   },
+  { id: 'master',  name: 'Master Bedroom', type: 'bedroom', hasDoor: true,  hasNightDim: true,  steps: 4, place: 'Master Bedroom' },
+  { id: 'guest',   name: 'Guest Bedroom',  type: 'bedroom', hasDoor: true,  hasNightDim: true,  steps: 3, place: 'Guest Bedroom'  },
+  { id: 'gbath',   name: 'Guest Bathroom', type: 'bath',    hasDoor: true,  hasNightDim: true,  steps: 2, place: 'Guest Bathroom' },
+  { id: 'kitchen', name: 'Kitchen',        type: 'living',  hasDoor: false, hasNightDim: false, steps: 5, place: 'Kitchen'        },
+  { id: 'dining',  name: 'Dining Room',    type: 'living',  hasDoor: true,  hasNightDim: false, steps: 3, place: 'Dining Room'    },
+  { id: 'library', name: 'Library',        type: 'living',  hasDoor: true,  hasNightDim: false, steps: 4, place: 'Library'        },
+  { id: 'cinema',  name: 'Cinema',         type: 'living',  hasDoor: true,  hasNightDim: false, steps: 6, place: 'Cinema'         },
+  { id: 'gym',     name: 'Gym',            type: 'utility', hasDoor: true,  hasNightDim: false, steps: 3, place: 'Gym'            },
+  { id: 'studio',  name: 'Studio',         type: 'utility', hasDoor: true,  hasNightDim: false, steps: 3, place: 'Studio'         },
+  { id: 'hall',    name: 'Hallways',       type: 'hall',    hasDoor: false, hasNightDim: false, steps: 2, place: 'Hallways'       },
+  { id: 'laundry', name: 'Laundry',        type: 'utility', hasDoor: true,  hasNightDim: false, steps: 3, place: 'Laundry'        },
+  { id: 'garage',  name: 'Garage',         type: 'utility', hasDoor: false, hasNightDim: false, steps: 2, place: 'Garage'         },
 ];
 
-// Mock light scene rooms — mirrors sceneRooms with a default step count of 3.
+// Mock light scene rooms — mirrors sceneRooms, carrying the same step count.
 const lightSceneRooms: LightSceneRoom[] = sceneRooms
-  .map(r => ({ id: r.id, name: r.name, steps: 3 }))
+  .map(r => ({ id: r.id, name: r.name, steps: r.steps ?? 3 }))
   .sort((a, b) => a.name.localeCompare(b.name));
 
 const sceneSchedules: SceneSchedules = {
@@ -382,6 +382,10 @@ const favCatalog: FavGroup[] = [
     { id: 'd-garage',     icon: 'lock',      label: 'Garage'         },
     { id: 'd-backyard',   icon: 'lock',      label: 'Backyard'       },
     { id: 'd-porch',      icon: 'lock',      label: 'Porch'          },
+  ]},
+  { group: 'Garage Doors', items: [
+    { id: 'g-car-1',      icon: 'garage',    label: 'Garage Car Door 1' },
+    { id: 'g-car-2',      icon: 'garage',    label: 'Garage Car Door 2' },
   ]},
   { group: 'Music', items: [
     { id: 'm-living',     icon: 'speaker',   label: 'Music'          },
@@ -449,6 +453,13 @@ export const MOCK_CONFIG: AppConfig = {
   sceneSchedules,
   favorites,
   favCatalog,
+  // Device id → place. Lights resolve via lightRooms; this covers the other
+  // device classes shown on per-place room pages (best-effort for mock).
+  controlPlaces: {
+    'm-dining': 'Dining Room', 'm-kitchen': 'Kitchen', 'm-library': 'Library',
+    'm-living': 'Living Room', 'm-pergola': 'Pergola',
+    'g-car-1': 'Garage', 'g-car-2': 'Garage',
+  },
 };
 
 // ---------------------------------------------------------------------------
