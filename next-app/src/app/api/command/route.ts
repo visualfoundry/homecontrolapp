@@ -2,16 +2,14 @@
 //
 // Body shapes (per state-contract.md):
 //   { "target": "lr-main",  "patch":  { "level": 40 } }
-//   { "target": "d-front",  "patch":  { "locked": true } }
 //   { "target": "movie",    "action": "activate" }
-//   { "target": "iz-bg",    "action": "run" }
 //
-// Returns 202 immediately. After ~200 ms the mock emits the matching /stream
-// patch so the optimistic→reconcile cycle (M4) runs end to end.
-//
-// In M5 the client POSTs to STATE_API_BASE_URL/command on the real service.
+// Proxy boundary: forward to the real service's POST /command when
+// STATE_API_BASE_URL is set (translating target id), else apply to the mock.
+// Returns 202 immediately; the confirmed patch arrives on /stream.
 
 import { applyCommand } from '@/lib/mock-state';
+import { STATE_API_BASE_URL, commandTargetToStateId } from '@/lib/state-service';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -34,7 +32,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing target' }, { status: 400 });
   }
 
-  applyCommand(body.target, body.patch, body.action);
+  if (!STATE_API_BASE_URL) {
+    applyCommand(body.target, body.patch, body.action);
+    return new Response(null, { status: 202 });
+  }
 
-  return new Response(null, { status: 202 });
+  try {
+    const target = await commandTargetToStateId(body.target);
+    const res = await fetch(`${STATE_API_BASE_URL}/command`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...body, target }),
+    });
+    return new Response(null, { status: res.status === 202 ? 202 : res.status });
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'command proxy failed' },
+      { status: 502 },
+    );
+  }
 }

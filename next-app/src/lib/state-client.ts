@@ -7,7 +7,10 @@
 
 import type { StateMap } from '@/types/state';
 
-const BASE = process.env.NEXT_PUBLIC_STATE_API_BASE_URL ?? '';
+// Same-origin Next proxy (/api/{state,stream,command}) by default — the proxy
+// forwards to the real service (STATE_API_BASE_URL) or serves the mock. Override
+// only to bypass the proxy and hit a state service directly (needs CORS).
+const BASE = process.env.NEXT_PUBLIC_STATE_API_BASE_URL ?? '/api';
 
 // ---------------------------------------------------------------------------
 // GET /state — full snapshot

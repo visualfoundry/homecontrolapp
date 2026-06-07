@@ -460,6 +460,8 @@ export const MOCK_CONFIG: AppConfig = {
     'm-living': 'Living Room', 'm-pergola': 'Pergola',
     'g-car-1': 'Garage', 'g-car-2': 'Garage',
   },
+  // Mock keys already match config ids, so no translation needed in mock mode.
+  controlStateIds: {},
   weatherTempId: 'wx-temp',
   weatherHighId: 'wx-high',
   weatherLowId: 'wx-low',

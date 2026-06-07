@@ -247,6 +247,9 @@ export interface AppConfig {
   favCatalog: FavGroup[];
   /** Device id → place (room) title. Used to assemble per-place room pages. */
   controlPlaces: Record<string, string>;
+  /** Config id (databaseId) → state-service id (ISY device address or variable id).
+   *  Used by the /api proxy to reconcile config ids with state ids. */
+  controlStateIds: Record<string, string>;
   /** Device ids of the Weather Variable controls (temperature/conditions), or null. */
   weatherTempId: string | null;
   weatherHighId: string | null;

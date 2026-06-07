@@ -286,6 +286,27 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     if (place) controlPlaces[toId(n)] = place;
   }
 
+  // --- Config id → state-service id map ------------------------------------
+  // The state service keys by the ISY id, which depends on the control type:
+  //   'Device'   → control_address (Insteon device address)
+  //   'Variable' → control_variable_id (ISY variable id)
+  // (If addresses/variable ids collide across the 5 EISYs, namespace this with
+  //  controlIsy — single place to change.)
+  const stateIdForControl = (n: (typeof controls)[0]): string | null => {
+    const cf = n.controlFields;
+    if (!cf) return null;
+    if (cf.controlIsyControlType === 'Device') return cf.controlAddress ?? null;
+    if (cf.controlIsyControlType === 'Variable') {
+      return cf.controlVariableId != null ? String(cf.controlVariableId) : null;
+    }
+    return null;
+  };
+  const controlStateIds: Record<string, string> = {};
+  for (const n of controls) {
+    const sid = stateIdForControl(n);
+    if (sid) controlStateIds[toId(n)] = sid;
+  }
+
   // --- Weather: hub variables (current/high/low temp + conditions) ---------
   const ctrlIdByType = (title: string) => {
     const n = controls.find(c => ctTitle(c) === title);
@@ -400,6 +421,7 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     garageCars:          garageCars.length          > 0 ? garageCars          : MOCK_CONFIG.garageCars,
     garageSceneId:       sceneRoomsRaw.length       > 0 ? garageSceneId       : MOCK_CONFIG.garageSceneId,
     controlPlaces:       Object.keys(controlPlaces).length > 0 ? controlPlaces  : MOCK_CONFIG.controlPlaces,
+    controlStateIds:     Object.keys(controlStateIds).length > 0 ? controlStateIds : MOCK_CONFIG.controlStateIds,
     weatherTempId:       weatherTempId ?? MOCK_CONFIG.weatherTempId,
     weatherHighId:       weatherHighId ?? MOCK_CONFIG.weatherHighId,
     weatherLowId:        weatherLowId  ?? MOCK_CONFIG.weatherLowId,
