@@ -165,10 +165,20 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
   // Load saved prefs after hydration (must not run on server)
   useEffect(() => { setPrefsState(loadPrefs()); }, []);
 
-  // Apply theme attribute to #hca-root whenever theme pref changes
+  // Apply theme attribute to #hca-root whenever theme pref changes.
+  // 'system' follows the OS preference and re-applies when it changes.
   useEffect(() => {
     const root = document.getElementById('hca-root');
-    if (root) root.setAttribute('data-theme', prefs.theme);
+    if (!root) return;
+    if (prefs.theme !== 'system') {
+      root.setAttribute('data-theme', prefs.theme);
+      return;
+    }
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const apply = () => root.setAttribute('data-theme', mq.matches ? 'dark' : 'light');
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
   }, [prefs.theme]);
 
   // Apply dynamic CSS vars for user-tunable tokens

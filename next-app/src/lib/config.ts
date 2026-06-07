@@ -245,22 +245,54 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  // --- Settings: security vs environment ---------------------------------
-  const settingControls = controls.filter(n => getClass(n) === 'setting');
-  const SECURITY_KEYWORDS = /security|car at home|alarm/i;
-  const SCHEDULE_KEYWORDS = /schedule|irrigation/i;
-  const settingsSecurity = settingControls
-    .filter(n => SECURITY_KEYWORDS.test(n.title))
-    .map(n => ({ id: toId(n), name: n.title }));
-  const settingsSchedules = settingControls
-    .filter(n => SCHEDULE_KEYWORDS.test(n.title))
-    .map(n => ({ id: toId(n), name: n.title }));
-  const settingsEnvironment = [
-    ...settingControls.filter(
-      n => !SECURITY_KEYWORDS.test(n.title) && !SCHEDULE_KEYWORDS.test(n.title),
-    ),
-    ...controls.filter(n => ['theatre-screen', 'house-status'].includes(getClass(n) ?? '')),
-  ].map(n => ({ id: toId(n), name: n.title }));
+  // --- Settings: grouped by control type ---------------------------------
+  // Each Settings tile lists controls whose control type matches its name.
+  const ctTitle = (n: (typeof controls)[0]) =>
+    n.controlFields?.controlType?.nodes[0]?.title ?? '';
+  const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name);
+  const settingsByType = (type: string) =>
+    controls
+      .filter(n => ctTitle(n) === type)
+      .map(n => ({ id: toId(n), name: n.title }))
+      .sort(byName);
+  const settingsSecurity    = settingsByType('Security');
+  const settingsHouse       = settingsByType('House Settings');
+  const settingsSchedules   = settingsByType('Schedule');
+  const settingsEnvironment = settingsByType('Environment');
+
+  // --- Garage doors: exterior doors located in the 'Garage' place ---------
+  // These are 'Door Exterior' controls, rendered as lock rows like the Doors page.
+  const garageDoors = controls
+    .filter(n => ctTitle(n) === 'Door Exterior' && getPlace(n) === 'Garage')
+    .map(n => {
+      const place = getPlace(n) ?? '';
+      const autoLockId = autoLockByPlace.get(place);
+      return { id: toId(n), name: n.title, ...(autoLockId ? { autoLockId } : {}) };
+    })
+    .sort(byName);
+
+  // --- Cars: controls with 'Car At Home' in the title ---------------------
+  const garageCars = controls
+    .filter(n => /car at home/i.test(n.title))
+    .map(n => ({ id: toId(n), name: n.title }))
+    .sort(byName);
+
+  // --- Garage light scene: the 'Light Scene N Step' control in place 'Garage'
+  const garageSceneId = sceneByPlace.get('Garage')?.id ?? null;
+
+  // --- Garage car doors: controls of type 'Garage Car Door' (open/closed) -
+  const garageCarDoors = controls
+    .filter(n => ctTitle(n) === 'Garage Car Door')
+    .map(n => ({ id: toId(n), name: n.title }))
+    .sort(byName);
+
+  // --- Garage: all other controls whose place is 'Garage' -----------------
+  // Exterior doors and car doors get their own sections, so exclude them here.
+  const GARAGE_OWN_TYPES = ['Door Exterior', 'Garage Car Door'];
+  const garage = controls
+    .filter(n => getPlace(n) === 'Garage' && !GARAGE_OWN_TYPES.includes(ctTitle(n)))
+    .map(n => ({ id: toId(n), name: n.title }))
+    .sort(byName);
 
   // --- Favorites catalog — light rooms + music zones + other mock groups + Scenes --------
   // One 'Lights' group — all lights flat, each tagged with place for sub-headings
@@ -285,16 +317,28 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
   const tvGroup = tvFavItems.length > 0
     ? [{ group: 'TV', items: tvFavItems }]
     : [];
+  // One 'Doors' group — all exterior doors
+  const doorsGroup = doorsExterior.length > 0
+    ? [{ group: 'Doors', items: doorsExterior.map(d => ({ id: d.id, icon: 'lock' as const, label: d.name })) }]
+    : [];
   const scenesGroup = lightSceneRoomsRaw.length > 0
     ? [{ group: 'Scenes', items: lightSceneRoomsRaw.map(r => ({ id: r.id, icon: 'bulb' as const, label: r.name })) }]
     : [];
-  // Keep non-Lights, non-Music, non-Fans, non-TV, non-Scenes mock groups (Doors, Outdoor, etc.)
+  // Keep non-Lights, non-Music, non-Fans, non-TV, non-Scenes mock groups (Outdoor, etc.).
+  // Drop the mock 'Doors' group when we have live exterior doors to replace it with.
+  const HANDLED_GROUPS = ['Lights', 'Music', 'Fans', 'TV', 'Scenes'];
   const otherMockGroups = MOCK_CONFIG.favCatalog.filter(
-    g => g.group !== 'Lights' && g.group !== 'Music' && g.group !== 'Fans' && g.group !== 'TV' && g.group !== 'Scenes',
+    g => !HANDLED_GROUPS.includes(g.group) && !(doorsGroup.length > 0 && g.group === 'Doors'),
   );
   const favCatalog = lightFavItems.length > 0
-    ? [...lightsGroup, ...musicGroup, ...fansGroup, ...tvGroup, ...otherMockGroups, ...scenesGroup]
-    : [...MOCK_CONFIG.favCatalog.filter(g => g.group !== 'Scenes'), ...scenesGroup];
+    ? [...lightsGroup, ...musicGroup, ...fansGroup, ...tvGroup, ...doorsGroup, ...otherMockGroups, ...scenesGroup]
+    : [
+        ...MOCK_CONFIG.favCatalog.filter(
+          g => g.group !== 'Scenes' && !(doorsGroup.length > 0 && g.group === 'Doors'),
+        ),
+        ...doorsGroup,
+        ...scenesGroup,
+      ];
 
   return {
     // Not yet in WP CPTs — use mock data
@@ -323,6 +367,12 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     settingsSecurity:    settingsSecurity.length    > 0 ? settingsSecurity    : MOCK_CONFIG.settingsSecurity,
     settingsEnvironment: settingsEnvironment.length > 0 ? settingsEnvironment : MOCK_CONFIG.settingsEnvironment,
     settingsSchedules:   settingsSchedules.length   > 0 ? settingsSchedules   : MOCK_CONFIG.settingsSchedules,
+    settingsHouse:       settingsHouse.length       > 0 ? settingsHouse       : MOCK_CONFIG.settingsHouse,
+    garage:              garage.length              > 0 ? garage              : MOCK_CONFIG.garage,
+    garageDoors:         garageDoors.length         > 0 ? garageDoors         : MOCK_CONFIG.garageDoors,
+    garageCarDoors:      garageCarDoors.length      > 0 ? garageCarDoors      : MOCK_CONFIG.garageCarDoors,
+    garageCars:          garageCars.length          > 0 ? garageCars          : MOCK_CONFIG.garageCars,
+    garageSceneId:       sceneRoomsRaw.length       > 0 ? garageSceneId       : MOCK_CONFIG.garageSceneId,
     sceneRooms:          sceneRoomsRaw.length       > 0 ? sceneRoomsRaw       : MOCK_CONFIG.sceneRooms,
     lightSceneRooms:     lightSceneRoomsRaw.length  > 0 ? lightSceneRoomsRaw  : MOCK_CONFIG.lightSceneRooms,
   };

@@ -6,6 +6,8 @@
 // These types mirror the GraphQL schema and design/data.js catalogs.
 // =============================================================================
 
+import type { SceneView } from '@/types/state';
+
 // ---------------------------------------------------------------------------
 // Device config
 // ---------------------------------------------------------------------------
@@ -223,10 +225,17 @@ export interface AppConfig {
   motionSensors: SensorDevice[];
   outdoorsPool: OutdoorDevice[];
   outdoorsBackyard: OutdoorDevice[];
+  garage: SettingItem[];
+  garageDoors: ExteriorDoor[];
+  garageCarDoors: SettingItem[];
+  garageCars: SettingItem[];
+  /** Scene-room id of the Garage light scene (place 'Garage'), or null. */
+  garageSceneId: string | null;
   whoIsHome: SettingItem[];
   settingsSecurity: SettingItem[];
   settingsEnvironment: SettingItem[];
   settingsSchedules: SettingItem[];
+  settingsHouse: SettingItem[];
   sceneRooms: SceneRoomConfig[];
   sceneSchedules: SceneSchedules;
   favorites: string[];
@@ -238,19 +247,21 @@ export interface AppConfig {
 // ---------------------------------------------------------------------------
 
 export interface UserPrefs {
-  theme: 'light' | 'dark';
+  theme: 'light' | 'dark' | 'system';
   accent: string;
   radius: number;       // 10–30
   density: 'compact' | 'regular' | 'comfy';
   font: 'system' | 'rounded';
   tabs: string[];       // up to 4 section ids for the tab bar
+  sceneView: SceneView; // Scenes screen layout: Detailed / Compact
 }
 
 export const DEFAULT_PREFS: UserPrefs = {
-  theme: 'light',
+  theme: 'system',
   accent: '#E0483D',
   radius: 22,
   density: 'regular',
   font: 'system',
-  tabs: ['home', 'lights', 'doors', 'climate'],
+  tabs: ['home', 'scenes', 'pool', 'music'],
+  sceneView: 'Detailed',
 };

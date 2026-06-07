@@ -25,6 +25,7 @@ import type { AppConfig } from '@/types/config';
 import { HomeScreen } from '@/screens/HomeScreen';
 import { LightsScreen } from '@/screens/LightsScreen';
 import { DoorsScreen } from '@/screens/DoorsScreen';
+import { GarageScreen } from '@/screens/GarageScreen';
 import { ClimateScreen } from '@/screens/ClimateScreen';
 import { PoolScreen } from '@/screens/PoolScreen';
 import { MusicScreen } from '@/screens/MusicScreen';
@@ -77,6 +78,7 @@ const SCREEN_COMPONENTS: Record<string, React.FC> = {
   home:       HomeScreen,
   lights:     LightsScreen,
   doors:      DoorsScreen,
+  garage:     GarageScreen,
   climate:    ClimateScreen,
   pool:       PoolScreen,
   music:      MusicScreen,

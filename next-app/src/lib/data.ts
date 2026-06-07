@@ -299,6 +299,34 @@ const settingsSchedules: SettingItem[] = [
   { id: 'sc-water',    name: 'Water Feature'      },
 ];
 
+const settingsHouse: SettingItem[] = [
+  { id: 'h-guest',   name: 'Guest Mode'        },
+  { id: 'h-eco',     name: 'Eco Mode'          },
+  { id: 'h-quiet',   name: 'Quiet Hours'       },
+];
+
+// Garage doors are exterior-door locks (shared id with doorsExterior 'Garage').
+const garageDoors: ExteriorDoor[] = [
+  { id: 'd-garage',  name: 'Garage'            },
+];
+
+// Garage car doors are open/closed (illuminated when open) — separate from the lock.
+const garageCarDoors: SettingItem[] = [
+  { id: 'g-car-1',   name: 'Garage Car Door 1' },
+  { id: 'g-car-2',   name: 'Garage Car Door 2' },
+];
+
+const garage: SettingItem[] = [
+  { id: 'g-lights',  name: 'Garage Lights'     },
+  { id: 'g-heater',  name: 'Garage Heater'     },
+];
+
+// Cars — controls with 'Car At Home' in the title.
+const garageCars: SettingItem[] = [
+  { id: 'car-greg',  name: 'Car At Home Greg'  },
+  { id: 'car-laura', name: 'Car At Home Laura' },
+];
+
 // ---------------------------------------------------------------------------
 // Scene rooms + schedule names
 // ---------------------------------------------------------------------------
@@ -316,6 +344,7 @@ const sceneRooms: SceneRoomConfig[] = [
   { id: 'studio',  name: 'Studio',         type: 'utility', hasDoor: true,  hasNightDim: false },
   { id: 'hall',    name: 'Hallways',       type: 'hall',    hasDoor: false, hasNightDim: false },
   { id: 'laundry', name: 'Laundry',        type: 'utility', hasDoor: true,  hasNightDim: false },
+  { id: 'garage',  name: 'Garage',         type: 'utility', hasDoor: false, hasNightDim: false },
 ];
 
 // Mock light scene rooms — mirrors sceneRooms with a default step count of 3.
@@ -409,6 +438,12 @@ export const MOCK_CONFIG: AppConfig = {
   settingsSecurity,
   settingsEnvironment,
   settingsSchedules,
+  settingsHouse,
+  garage,
+  garageDoors,
+  garageCarDoors,
+  garageCars,
+  garageSceneId: 'garage',
   sceneRooms,
   lightSceneRooms,
   sceneSchedules,
@@ -510,6 +545,29 @@ export function buildInitialState(): StateMap {
   };
   settingsSchedules.forEach(sc => { s[sc.id] = { on: schSeed[sc.id] ?? false }; });
 
+  const houseSeed: Record<string, boolean> = {
+    'h-eco': true,
+  };
+  settingsHouse.forEach(h => { s[h.id] = { on: houseSeed[h.id] ?? false }; });
+
+  const garageSeed: Record<string, boolean> = {
+    'g-lights': true,
+  };
+  garage.forEach(g => { s[g.id] = { on: garageSeed[g.id] ?? false }; });
+  // Garage doors share ids with doorsExterior (seeded above as LockState).
+
+  // Cars — 'Car At Home' presence flags
+  const carSeed: Record<string, boolean> = {
+    'car-greg': true,
+  };
+  garageCars.forEach(c => { s[c.id] = { on: carSeed[c.id] ?? false }; });
+
+  // Garage car doors — open/closed contact state
+  const garageCarSeed: Record<string, boolean> = {
+    'g-car-1': true,
+  };
+  garageCarDoors.forEach(d => { s[d.id] = { open: garageCarSeed[d.id] ?? false }; });
+
   // Pool
   s['pool'] = {
     pumpOn: true, pumpSpeed: 65,
@@ -533,7 +591,7 @@ export function buildInitialState(): StateMap {
   people.forEach(p => { s[`person:${p.id}`] = { home: homeSeed[p.id] ?? false }; });
 
   // Global
-  s['_global'] = { timeOfDay: 'Day', weather: 'Clear', sceneView: 'Detailed' };
+  s['_global'] = { timeOfDay: 'Day', weather: 'Clear' };
 
   // Prefs (seeded, overridden by user prefs in store)
   s['_favs']   = { ids: [...favorites] };

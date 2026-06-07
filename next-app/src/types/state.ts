@@ -116,7 +116,6 @@ export type SceneView = 'Detailed' | 'Compact';
 export interface GlobalState {
   timeOfDay: TimeOfDay;
   weather: WeatherCondition;
-  sceneView: SceneView;
 }
 
 export interface FavsState {

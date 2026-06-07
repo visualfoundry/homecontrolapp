@@ -43,8 +43,10 @@ export function ClimateScreen() {
       </div>
       <div className="hca-tile-grid">
         {config.climate.map(c => {
-          const s = st[c.id] as ThermostatState | undefined;
-          if (!s) return null;
+          // Default when the state service has no value yet for this zone id,
+          // so live (WP-id) zones still render instead of being dropped.
+          const s = (st[c.id] as ThermostatState | undefined)
+            ?? { temp: 72, mode: 'auto' as const, lo: 68, hi: 76 };
           const nudge = (d: number) => setD(c.id, { temp: Math.round((s.temp + d) * 2) / 2 });
           return (
             <Card key={c.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '16px 12px 14px' }}>

@@ -5,9 +5,18 @@ import { useHC } from '@/lib/store';
 import { Icon } from '@/components/Icon';
 import { Card, SectionTitle } from '@/components/Card';
 import { Toggle } from '@/components/Toggle';
+import { Segmented } from '@/components/Segmented';
 import { LargeTitle } from '@/components/LargeTitle';
 import type { FlagState } from '@/types/state';
-import type { SettingItem } from '@/types/config';
+import type { SettingItem, UserPrefs } from '@/types/config';
+
+const THEME_OPTIONS = ['Light', 'Dark', 'System'] as const;
+const THEME_TO_LABEL: Record<UserPrefs['theme'], string> = {
+  light: 'Light', dark: 'Dark', system: 'System',
+};
+const LABEL_TO_THEME: Record<string, UserPrefs['theme']> = {
+  Light: 'light', Dark: 'dark', System: 'system',
+};
 
 function ToggleList({ items }: { items: SettingItem[] }) {
   const { st, setD } = useHC();
@@ -36,23 +45,31 @@ export function SettingsScreen() {
 
       <SectionTitle>Appearance</SectionTitle>
       <Card pad={false}>
-        <div style={{ display: 'flex', alignItems: 'center', padding: '13px 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', padding: '13px 16px', gap: 13 }}>
           <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--icon-bg)', color: 'var(--text2)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 13 }}>
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <Icon name="moon" size={19} />
           </div>
-          <span style={{ flex: 1, fontSize: 16, fontWeight: 520, color: 'var(--text)' }}>Dark Mode</span>
-          <Toggle
-            on={prefs.theme === 'dark'}
-            onChange={(v) => setPrefs({ theme: v ? 'dark' : 'light' })}
-            size={0.85}
-          />
+          <span style={{ flex: 1, fontSize: 16, fontWeight: 520, color: 'var(--text)' }}>Theme</span>
+          <div style={{ width: 200, flexShrink: 0 }}>
+            <Segmented
+              aria-label="Theme"
+              options={[...THEME_OPTIONS]}
+              value={THEME_TO_LABEL[prefs.theme]}
+              onChange={(label) => setPrefs({ theme: LABEL_TO_THEME[label] })}
+            />
+          </div>
         </div>
       </Card>
 
       <div style={{ marginTop: 22 }}>
         <SectionTitle>Security</SectionTitle>
         <ToggleList items={config.settingsSecurity} />
+      </div>
+
+      <div style={{ marginTop: 22 }}>
+        <SectionTitle>House Settings</SectionTitle>
+        <ToggleList items={config.settingsHouse} />
       </div>
 
       <div style={{ marginTop: 22 }}>

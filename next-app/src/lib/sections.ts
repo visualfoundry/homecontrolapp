@@ -17,6 +17,7 @@ export const SECTIONS: Record<string, SectionDef> = {
   scenes:     { name: 'Scenes',     icon: 'layers',   tint: '#5B7FE0' },
   lights:     { name: 'Lights',     icon: 'bulb',     tint: '#F0A500' },
   doors:      { name: 'Doors',      icon: 'lock',     tint: '#34A853' },
+  garage:     { name: 'Garage',     icon: 'garage',   tint: '#6E7B8F' },
   climate:    { name: 'Climate',    icon: 'thermo',   tint: '#E07B53' },
   pool:       { name: 'Pool',       icon: 'pool',     tint: '#2BB3A3' },
   music:      { name: 'Music',      icon: 'speaker',  tint: '#9B5DE5' },
@@ -41,7 +42,7 @@ export const MAX_TABS = 4;
  * Screen components are registered separately to avoid circular imports.
  */
 export const SCREEN_IDS = [
-  'home', 'lights', 'doors', 'climate', 'pool',
+  'home', 'lights', 'doors', 'garage', 'climate', 'pool',
   'music', 'fans', 'tv', 'irrigation', 'leak', 'motion',
   'outdoors', 'cinema', 'whoshome', 'settings', 'docs', 'customize', 'more',
   'scenes', 'editfav', 'editscenes',
