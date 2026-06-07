@@ -139,6 +139,16 @@ export interface AutomationState {
   intensity: number; // 0–100
 }
 
+/** A numeric hub variable (e.g. 'Weather Variable Current Temperature'). */
+export interface VariableState {
+  value: number;
+}
+
+/** A text hub variable (e.g. 'Weather Variable Weather Conditions'). */
+export interface TextVariableState {
+  text: string;
+}
+
 // ---------------------------------------------------------------------------
 // Union of all record types that can live in the flat state map
 // ---------------------------------------------------------------------------
@@ -161,7 +171,9 @@ export type DeviceRecord =
   | FavsState
   | ScenesListState
   | PersonState
-  | AutomationState;
+  | AutomationState
+  | VariableState
+  | TextVariableState;
 
 /** The full flat state map keyed by device id or special key. */
 export type StateMap = Record<string, DeviceRecord>;

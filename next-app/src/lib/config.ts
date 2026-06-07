@@ -286,6 +286,16 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     if (place) controlPlaces[toId(n)] = place;
   }
 
+  // --- Weather: hub variables (current/high/low temp + conditions) ---------
+  const ctrlIdByType = (title: string) => {
+    const n = controls.find(c => ctTitle(c) === title);
+    return n ? toId(n) : null;
+  };
+  const weatherTempId = ctrlIdByType('Weather Variable Current Temperature');
+  const weatherHighId = ctrlIdByType('Weather Variable Current High Temperature');
+  const weatherLowId  = ctrlIdByType('Weather Variable Current Low Temperature');
+  const weatherCondId = ctrlIdByType('Weather Variable Weather Conditions');
+
   // --- Garage light scene: the 'Light Scene N Step' control in place 'Garage'
   const garageSceneId = sceneByPlace.get('Garage')?.id ?? null;
 
@@ -390,6 +400,10 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     garageCars:          garageCars.length          > 0 ? garageCars          : MOCK_CONFIG.garageCars,
     garageSceneId:       sceneRoomsRaw.length       > 0 ? garageSceneId       : MOCK_CONFIG.garageSceneId,
     controlPlaces:       Object.keys(controlPlaces).length > 0 ? controlPlaces  : MOCK_CONFIG.controlPlaces,
+    weatherTempId:       weatherTempId ?? MOCK_CONFIG.weatherTempId,
+    weatherHighId:       weatherHighId ?? MOCK_CONFIG.weatherHighId,
+    weatherLowId:        weatherLowId  ?? MOCK_CONFIG.weatherLowId,
+    weatherCondId:       weatherCondId ?? MOCK_CONFIG.weatherCondId,
     sceneRooms:          sceneRoomsRaw.length       > 0 ? sceneRoomsRaw       : MOCK_CONFIG.sceneRooms,
     lightSceneRooms:     lightSceneRoomsRaw.length  > 0 ? lightSceneRoomsRaw  : MOCK_CONFIG.lightSceneRooms,
   };

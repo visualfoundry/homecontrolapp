@@ -14,7 +14,16 @@ import { Slider } from '@/components/Slider';
 import { SceneRoomCard } from '@/components/SceneRoomCard';
 import { speakerName } from '@/components/SpeakerRow';
 import { CarDoorTile } from '@/components/CarDoorTile';
-import type { LightState, LockState, ContactSensorState, SpeakerState, FanState, GlobalState, FavsState, ScenesListState, PersonState, PoolState, AutomationState } from '@/types/state';
+import type { LightState, LockState, ContactSensorState, SpeakerState, FanState, GlobalState, FavsState, ScenesListState, PersonState, PoolState, AutomationState, VariableState, TextVariableState, WeatherCondition } from '@/types/state';
+
+// Map a raw weather-conditions string (any source wording) to a visual bucket.
+function mapCondition(text: string): WeatherCondition {
+  const t = text.toLowerCase();
+  if (/(rain|shower|drizzle|storm|thunder)/.test(t)) return 'Rain';
+  if (/(snow|sleet|flurr|ice|hail)/.test(t)) return 'Snow';
+  if (/(cloud|overcast|fog|mist|haze)/.test(t)) return 'Cloudy';
+  return 'Clear';
+}
 import type { SceneRoomTypeKey, TimeOfDayKey } from '@/types/config';
 
 // ── Scrollable stat pill ──────────────────────────────────────────────────────
@@ -210,8 +219,16 @@ export function HomeScreen() {
     ? (config.climate.reduce((sum, c) => sum + ((st[c.id] as { temp?: number } | undefined)?.temp ?? 72), 0) / config.climate.length).toFixed(1)
     : '–';
   const poolTemp = (st['pool'] as PoolState | undefined)?.poolTemp ?? 81;
+  const numVar = (id: string | null) => (id ? (st[id] as VariableState | undefined)?.value : undefined);
+  const weatherTemp = numVar(config.weatherTempId);
+  const weatherHigh = numVar(config.weatherHighId);
+  const weatherLow  = numVar(config.weatherLowId);
 
-  const cond = global.weather;
+  // Weather conditions come from a hub variable; map its text to a visual bucket.
+  const condRaw = config.weatherCondId
+    ? (st[config.weatherCondId] as TextVariableState | undefined)?.text
+    : undefined;
+  const cond = condRaw ? mapCondition(condRaw) : global.weather;
   const skyDark = tod === 'Night';
   const clearSky: Record<string, string> = {
     Morning: 'linear-gradient(160deg,#ffd9a8 0%,#ffc1a0 35%,#a8c8e8 100%)',
@@ -230,10 +247,14 @@ export function HomeScreen() {
   const darkText = skyDark || cond === 'Rain';
   const wIcon: React.ComponentProps<typeof Icon>['name'] =
     cond === 'Clear' ? (skyDark ? 'moon' : 'sun') : cond === 'Cloudy' ? 'cloud' : cond === 'Rain' ? 'rain' : 'snow';
-  const wLabel = cond;
+  const wLabel = condRaw ?? cond;
+  const hiLo = `L:${weatherLow != null ? Math.round(weatherLow) : '–'}° H:${weatherHigh != null ? Math.round(weatherHigh) : '–'}°`;
   const cycleWeather = () => {
     const seq: GlobalState['weather'][] = ['Clear', 'Cloudy', 'Rain', 'Snow'];
-    setD('_global', { weather: seq[(seq.indexOf(cond) + 1) % seq.length] });
+    const next = seq[(seq.indexOf(cond) + 1) % seq.length];
+    // Drive the conditions variable when present (mock toggle), else ambient state.
+    if (config.weatherCondId) setD(config.weatherCondId, { text: next });
+    else setD('_global', { weather: next });
   };
 
   const sceneIds = (st['_scenes'] as ScenesListState).ids;
@@ -276,8 +297,8 @@ export function HomeScreen() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 600, opacity: 0.85 }}>The House</div>
-                <div style={{ fontSize: 46, fontWeight: 300, letterSpacing: -2, lineHeight: 1, marginTop: 6 }}>70°</div>
-                <div style={{ fontSize: 13.5, fontWeight: 500, opacity: 0.85, marginTop: 4 }}>{wLabel} · H:77° L:58°</div>
+                <div style={{ fontSize: 46, fontWeight: 300, letterSpacing: -2, lineHeight: 1, marginTop: 6 }}>{weatherTemp != null ? `${Math.round(weatherTemp)}°` : '–'}</div>
+                <div style={{ fontSize: 13.5, fontWeight: 500, opacity: 0.85, marginTop: 4 }}>{wLabel} · {hiLo}</div>
               </div>
               <button onClick={cycleWeather} style={{
                 background: 'rgba(255,255,255,0.18)', border: 'none', cursor: 'pointer',

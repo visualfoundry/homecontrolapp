@@ -460,6 +460,10 @@ export const MOCK_CONFIG: AppConfig = {
     'm-living': 'Living Room', 'm-pergola': 'Pergola',
     'g-car-1': 'Garage', 'g-car-2': 'Garage',
   },
+  weatherTempId: 'wx-temp',
+  weatherHighId: 'wx-high',
+  weatherLowId: 'wx-low',
+  weatherCondId: 'wx-cond',
 };
 
 // ---------------------------------------------------------------------------
@@ -600,6 +604,12 @@ export function buildInitialState(): StateMap {
     alex: true, greg: true, jeanette: true, penny: true, visitor: true,
   };
   people.forEach(p => { s[`person:${p.id}`] = { home: homeSeed[p.id] ?? false }; });
+
+  // Weather variables (hub variables)
+  s['wx-temp'] = { value: 70 };
+  s['wx-high'] = { value: 77 };
+  s['wx-low']  = { value: 58 };
+  s['wx-cond'] = { text: 'Clear' };
 
   // Global
   s['_global'] = { timeOfDay: 'Day', weather: 'Clear' };
