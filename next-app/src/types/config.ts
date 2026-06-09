@@ -193,7 +193,7 @@ export interface LightDevice      { id: string; name: string; kind?: 'dimmer' | 
 export interface LightSceneDevice { id: string; steps: number }
 export interface LightRoom        { room: string; lights: LightDevice[]; scene?: LightSceneDevice }
 export interface LightSceneRoom   { id: string; name: string; steps: number }
-export interface ExteriorDoor  { id: string; name: string; autoLockId?: string }
+export interface ExteriorDoor  { id: string; name: string; autoLockId?: string; openId?: string }
 export interface InteriorSensor{ id: string; name: string }
 export interface ClimateZone   { id: string; name: string }
 export interface MusicZone     { id: string; name: string }

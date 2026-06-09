@@ -33,6 +33,8 @@ const iconBtn: React.CSSProperties = {
 export function SpeakerRow({ zone, last }: { zone: MusicZone; last?: boolean }) {
   const { st, setD } = useHC();
   const s = (st[zone.id] as SpeakerState | undefined) ?? { on: false, vol: 0 };
+  const [dragVol, setDragVol] = React.useState<number | null>(null);
+  const displayVol = dragVol ?? s.vol;
   // Remember pre-mute volume so we can restore it on unmute.
   const preMuteVol = useRef<number | null>(null);
 
@@ -59,9 +61,9 @@ export function SpeakerRow({ zone, last }: { zone: MusicZone; last?: boolean }) 
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-        <Slider value={s.vol} onChange={(v) => setD(zone.id, { vol: v, on: v > 0 })} height={30} disabled={!s.on} />
+        <Slider value={displayVol} onChange={setDragVol} onCommit={(v) => { setDragVol(null); setD(zone.id, { vol: v, on: v > 0 }); }} height={30} disabled={!s.on} />
         <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text3)', minWidth: 30, textAlign: 'right' }}>
-          {s.on ? (s.vol === 0 ? 'Muted' : `${s.vol}%`) : '–'}
+          {s.on ? (displayVol === 0 ? 'Muted' : `${displayVol}%`) : '–'}
         </span>
       </div>
     </div>

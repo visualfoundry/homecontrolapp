@@ -15,6 +15,7 @@ import React, { useCallback, useRef } from 'react';
 interface SliderProps {
   value: number;
   onChange?: (value: number) => void;
+  onCommit?: (value: number) => void;
   min?: number;
   max?: number;
   step?: number;
@@ -29,6 +30,7 @@ interface SliderProps {
 export function Slider({
   value,
   onChange,
+  onCommit,
   min = 0,
   max = 100,
   step = 1,
@@ -41,6 +43,7 @@ export function Slider({
 }: SliderProps) {
   const ref = useRef<HTMLDivElement>(null);
   const decimals = (String(step).split('.')[1] ?? '').length;
+  const lastVal = useRef<number>(value);
 
   const compute = useCallback(
     (clientX: number) => {
@@ -49,8 +52,9 @@ export function Slider({
       const r = el.getBoundingClientRect();
       const p = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
       const raw = min + p * (max - min);
-      const snapped = Math.round(raw / step) * step;
-      onChange?.(Number(snapped.toFixed(decimals)));
+      const snapped = Number((Math.round(raw / step) * step).toFixed(decimals));
+      lastVal.current = snapped;
+      onChange?.(snapped);
     },
     [onChange, min, max, step, decimals],
   );
@@ -66,11 +70,12 @@ export function Slider({
       const up = () => {
         window.removeEventListener('pointermove', move);
         window.removeEventListener('pointerup', up);
+        onCommit?.(lastVal.current);
       };
       window.addEventListener('pointermove', move);
       window.addEventListener('pointerup', up);
     },
-    [disabled, compute],
+    [disabled, compute, onCommit],
   );
 
   const pct = ((value - min) / (max - min)) * 100;

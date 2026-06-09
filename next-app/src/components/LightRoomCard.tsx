@@ -19,8 +19,15 @@ import type { LightRoom } from '@/types/config';
 export function LightBar({ id, name, snap }: { id: string; name: string; snap?: boolean }) {
   const { st, setD } = useHC();
   const s = (st[id] as LightState | undefined) ?? { on: false, level: 0 };
-  const set = (level: number) => {
+  const [dragLevel, setDragLevel] = React.useState<number | null>(null);
+  const displayLevel = dragLevel ?? (s.on ? s.level : 0);
+
+  const onDrag = (level: number) => {
+    setDragLevel(snap ? (level >= 50 ? 100 : 0) : level);
+  };
+  const onCommit = (level: number) => {
     const snapped = snap ? (level >= 50 ? 100 : 0) : level;
+    setDragLevel(null);
     setD(id, { level: snapped, on: snapped > 0 });
   };
   const toggle = (e: React.MouseEvent) => {
@@ -29,7 +36,7 @@ export function LightBar({ id, name, snap }: { id: string; name: string; snap?: 
   };
   return (
     <div style={{ position: 'relative', height: 54, borderRadius: 15, overflow: 'hidden', background: 'var(--slider-track)', touchAction: 'none', userSelect: 'none' }}>
-      <Slider value={s.on ? s.level : 0} onChange={set} height={54} track="transparent" fill="linear-gradient(90deg,#f5b942,#ffd86b)" />
+      <Slider value={displayLevel} onChange={onDrag} onCommit={onCommit} height={54} track="transparent" fill="linear-gradient(90deg,#f5b942,#ffd86b)" />
       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px', pointerEvents: 'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
           <span onClick={toggle} style={{ pointerEvents: 'auto', cursor: 'pointer', color: s.on ? '#8a5a00' : 'var(--text3)', display: 'flex' }}>
@@ -37,7 +44,7 @@ export function LightBar({ id, name, snap }: { id: string; name: string; snap?: 
           </span>
           <span style={{ fontSize: 15, fontWeight: 600, color: s.on ? '#5c3d00' : 'var(--text)', letterSpacing: -0.2 }}>{name}</span>
         </div>
-        <span style={{ fontSize: 13.5, fontWeight: 600, color: s.on ? '#7a5200' : 'var(--text3)' }}>{s.on ? (snap ? '100%' : s.level + '%') : 'Off'}</span>
+        <span style={{ fontSize: 13.5, fontWeight: 600, color: s.on ? '#7a5200' : 'var(--text3)' }}>{s.on ? (snap ? '100%' : displayLevel + '%') : 'Off'}</span>
       </div>
     </div>
   );

@@ -22,6 +22,9 @@ export function ExteriorDoorRow({ door, last }: { door: ExteriorDoor; last?: boo
   const autoLock = door.autoLockId
     ? (st[door.autoLockId] as FlagState | undefined)?.on ?? false
     : undefined;
+  // Open/closed sensor: locked=true → DON fired → door is physically open
+  const openState = door.openId ? (st[door.openId] as LockState | undefined) : undefined;
+  const open = openState?.locked ?? false;
 
   return (
     <div style={{
@@ -30,11 +33,15 @@ export function ExteriorDoorRow({ door, last }: { door: ExteriorDoor; last?: boo
     }}>
       <div style={{
         width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-        background: locked ? 'rgba(52,168,83,0.12)' : 'rgba(224,72,61,0.12)',
-        color: locked ? 'var(--green)' : 'var(--red)',
+        background: door.openId
+          ? (open ? 'rgba(52,168,83,0.12)' : 'rgba(255,165,0,0.12)')
+          : (locked ? 'rgba(52,168,83,0.12)' : 'rgba(224,72,61,0.12)'),
+        color: door.openId
+          ? (open ? 'var(--green)' : 'var(--amber)')
+          : (locked ? 'var(--green)' : 'var(--red)'),
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        <Icon name={locked ? 'lock' : 'unlock'} size={20} />
+        <Icon name={door.openId ? 'door' : (locked ? 'lock' : 'unlock')} size={20} />
       </div>
       <span style={{ flex: 1, fontSize: 16, fontWeight: 560, color: 'var(--text)' }}>{doorName(door.name)}</span>
       {autoLock !== undefined && (

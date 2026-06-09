@@ -89,14 +89,18 @@ function LightFavTile({ id, label }: { id: string; label: string }) {
   const { st, setD, config } = useHC();
   const s = (st[id] as LightState | undefined) ?? { on: false, level: 0 };
   const snap = config.lightRooms.flatMap(r => r.lights).find(l => l.id === id)?.kind === 'switch';
-  const set = (level: number) => {
+  const [dragLevel, setDragLevel] = React.useState<number | null>(null);
+  const displayLevel = dragLevel ?? (s.on ? s.level : 0);
+  const onDrag = (level: number) => setDragLevel(snap ? (level >= 50 ? 100 : 0) : level);
+  const onCommit = (level: number) => {
     const v = snap ? (level >= 50 ? 100 : 0) : level;
+    setDragLevel(null);
     setD(id, { level: v, on: v > 0 });
   };
   const toggle = () => setD(id, { on: !s.on, level: !s.on ? 100 : 0 });
   return (
     <div style={{ gridColumn: 'span 2', position: 'relative', height: 54, borderRadius: 'var(--radius)', overflow: 'hidden', background: 'var(--slider-track)', touchAction: 'none', userSelect: 'none' }}>
-      <Slider value={s.on ? s.level : 0} onChange={set} height={54} track="transparent" fill="linear-gradient(90deg,#f5b942,#ffd86b)" />
+      <Slider value={displayLevel} onChange={onDrag} onCommit={onCommit} height={54} track="transparent" fill="linear-gradient(90deg,#f5b942,#ffd86b)" />
       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px', pointerEvents: 'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
           <span onClick={toggle} style={{ pointerEvents: 'auto', cursor: 'pointer', color: s.on ? '#8a5a00' : 'var(--text3)', display: 'flex' }}>
@@ -105,7 +109,7 @@ function LightFavTile({ id, label }: { id: string; label: string }) {
           <span style={{ fontSize: 15, fontWeight: 600, color: s.on ? '#5c3d00' : 'var(--text)', letterSpacing: -0.2 }}>{label}</span>
         </div>
         <span style={{ fontSize: 13.5, fontWeight: 600, color: s.on ? '#7a5200' : 'var(--text3)' }}>
-          {s.on ? (snap ? '100%' : `${s.level}%`) : 'Off'}
+          {s.on ? (snap ? '100%' : `${displayLevel}%`) : 'Off'}
         </span>
       </div>
     </div>
@@ -152,9 +156,9 @@ function FanFavTile({ id, label }: { id: string; label: string }) {
 function SpeakerFavTile({ id, label }: { id: string; label: string }) {
   const { st, setD } = useHC();
   const s = (st[id] as SpeakerState | undefined) ?? { on: false, vol: 0 };
-  const set = (vol: number) => setD(id, { vol, on: vol > 0 });
+  const [dragVol, setDragVol] = React.useState<number | null>(null);
+  const pct = dragVol ?? (s.on ? s.vol : 0);
   const toggle = () => setD(id, { on: !s.on, vol: !s.on ? (s.vol || 30) : s.vol });
-  const pct = s.on ? s.vol : 0;
   const name = speakerName(label);
 
   // Row content, rendered twice: a dark base (legible on the white tile) and a
@@ -168,14 +172,14 @@ function SpeakerFavTile({ id, label }: { id: string; label: string }) {
         <span style={{ fontSize: 15, fontWeight: 600, color, letterSpacing: -0.2 }}>{name}</span>
       </div>
       <span style={{ fontSize: 13.5, fontWeight: 600, color: statusColor }}>
-        {s.on ? `${s.vol}%` : 'Off'}
+        {s.on ? `${pct}%` : 'Off'}
       </span>
     </div>
   );
 
   return (
     <div style={{ gridColumn: 'span 2', position: 'relative', height: 54, borderRadius: 'var(--radius)', overflow: 'hidden', background: 'var(--card)', boxShadow: 'var(--shadow)', touchAction: 'none', userSelect: 'none' }}>
-      <Slider value={pct} onChange={set} height={54} track="transparent" fill="linear-gradient(90deg,#6a4a7a,#9b6ab0)" />
+      <Slider value={pct} onChange={setDragVol} onCommit={(v) => { setDragVol(null); setD(id, { vol: v, on: v > 0 }); }} height={54} track="transparent" fill="linear-gradient(90deg,#6a4a7a,#9b6ab0)" />
       {/* dark base — visible over the white background */}
       {row('var(--text)', 'var(--text2)', true)}
       {/* white copy — clipped to the filled width, visible over the purple fill */}

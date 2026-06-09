@@ -151,7 +151,7 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
       ...(sceneByPlace.has(room) ? { scene: sceneByPlace.get(room) } : {}),
     }));
 
-  // --- Doors (exterior locks + per-door auto-lock) ------------------------
+  // --- Doors (exterior locks + per-door auto-lock + open/closed sensor) ---
   // Build place → autoLockId from 'Door Lock' controls
   const autoLockByPlace = new Map<string, string>();
   for (const n of controls) {
@@ -160,12 +160,29 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
       if (place) autoLockByPlace.set(place, toId(n));
     }
   }
+  // 'Door Exterior' controls with " Open" suffix are open/closed contact sensors.
+  // Pair them with the lock control for the same place via openId.
+  const doorOpenByPlace = new Map<string, string>();
+  for (const n of controls) {
+    if ((n.controlFields?.controlType?.nodes[0]?.title ?? '') === 'Door Exterior' && /\bOpen$/i.test(n.title)) {
+      const place = getPlace(n) ?? '';
+      if (place) doorOpenByPlace.set(place, toId(n));
+    }
+  }
   const doorsExterior = controls
-    .filter(n => (n.controlFields?.controlType?.nodes[0]?.title ?? '') === 'Door Exterior')
+    .filter(n =>
+      (n.controlFields?.controlType?.nodes[0]?.title ?? '') === 'Door Exterior' &&
+      !/\bOpen$/i.test(n.title),
+    )
     .map(n => {
       const place = getPlace(n) ?? '';
       const autoLockId = autoLockByPlace.get(place);
-      return { id: toId(n), name: n.title, ...(autoLockId ? { autoLockId } : {}) };
+      const openId = doorOpenByPlace.get(place);
+      return {
+        id: toId(n), name: n.title,
+        ...(autoLockId ? { autoLockId } : {}),
+        ...(openId ? { openId } : {}),
+      };
     })
     .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -269,11 +286,16 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
   // --- Garage doors: exterior doors located in the 'Garage' place ---------
   // These are 'Door Exterior' controls, rendered as lock rows like the Doors page.
   const garageDoors = controls
-    .filter(n => ctTitle(n) === 'Door Exterior' && getPlace(n) === 'Garage')
+    .filter(n => ctTitle(n) === 'Door Exterior' && getPlace(n) === 'Garage' && !/\bOpen$/i.test(n.title))
     .map(n => {
       const place = getPlace(n) ?? '';
       const autoLockId = autoLockByPlace.get(place);
-      return { id: toId(n), name: n.title, ...(autoLockId ? { autoLockId } : {}) };
+      const openId = doorOpenByPlace.get(place);
+      return {
+        id: toId(n), name: n.title,
+        ...(autoLockId ? { autoLockId } : {}),
+        ...(openId ? { openId } : {}),
+      };
     })
     .sort(byName);
 
@@ -302,10 +324,8 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     const ns = `eisy${eisyIdx}`;
     if (cf.controlIsyControlType === 'Device') {
       if (!cf.controlAddress) return null;
-      const ctTitle = n.controlFields?.controlType?.nodes[0]?.title ?? '';
-      // FanLinc fan motor is sub-node 1; WP stores only the base address
-      const address = ctTitle === 'Fan' ? `${cf.controlAddress} 1` : cf.controlAddress;
-      return `${ns}/${address}`;
+      // WP stores the 3-byte base address; all primary Insteon nodes are sub-node 1
+      return `${ns}/${cf.controlAddress} 1`;
     }
     if (cf.controlIsyControlType === 'Variable') {
       return cf.controlVariableId != null ? `${ns}/var/${cf.controlVariableId}` : null;

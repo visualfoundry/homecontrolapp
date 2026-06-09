@@ -47,7 +47,7 @@ export function DoorsScreen() {
               }}>
                 <div style={{
                   width: 34, height: 34, borderRadius: 10, background: 'var(--icon-bg)',
-                  color: open ? 'var(--amber)' : 'var(--text2)',
+                  color: open ? 'var(--green)' : 'var(--amber)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 13,
                 }}>
                   <Icon name="door" size={20} />
@@ -58,7 +58,7 @@ export function DoorsScreen() {
                     <Icon name="battery" size={20} />
                   </span>
                 )}
-                <span style={{ fontSize: 14, fontWeight: 640, color: open ? 'var(--amber)' : 'var(--green)' }}>
+                <span style={{ fontSize: 14, fontWeight: 640, color: open ? 'var(--green)' : 'var(--amber)' }}>
                   {open ? 'Open' : 'Closed'}
                 </span>
               </div>

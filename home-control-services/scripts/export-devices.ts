@@ -167,9 +167,9 @@ function buildDevicesMap(controls: ControlNode[]): {
     const cls = titleToClass(ctTitle);
 
     if (cf.controlIsyControlType === 'Device' && cf.controlAddress) {
-      // FanLinc fan motor is always sub-node 1; WP stores the 3-byte base address
-      // but EISY REST API requires the full node address including the node suffix.
-      const address = cls === 'fan' ? `${cf.controlAddress} 1` : cf.controlAddress;
+      // WP stores the 3-byte Insteon base address; EISY REST API requires the
+      // full node address. All primary nodes are sub-node 1.
+      const address = `${cf.controlAddress} 1`;
       const stateId = `eisy${eisyIdx}/${address}`;
       devices[stateId] = {
         type: 'device',
