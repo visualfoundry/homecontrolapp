@@ -68,7 +68,7 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
   // Used to attach associated controls to each scene room.
   // First occurrence wins for places with multiple sensors of the same type.
   const SCENE_ASSOC_TYPES = new Set([
-    'Motion Sensor', 'Override Switch', 'Auto Switch', 'Door Interior', 'Door Switch LED',
+    'Motion Sensor', 'Override Switch', 'Auto Switch', 'Door Interior', 'Door Switch LED', 'Timer Wait',
   ]);
   const controlsByPlaceType = new Map<string, Map<string, string>>();
   for (const n of controls) {
@@ -106,16 +106,18 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     if (place) room.place = place;
     if (place) {
       const byType = controlsByPlaceType.get(place) ?? new Map();
-      const motionId   = byType.get('Motion Sensor');
-      const switchId   = byType.get('Override Switch');
-      const autoId     = byType.get('Auto Switch');
-      const doorId     = byType.get('Door Interior');
-      const nightDimId = byType.get('Door Switch LED');
-      if (motionId)   room.motionId   = motionId;
-      if (switchId)   room.switchId   = switchId;
-      if (autoId)     room.autoId     = autoId;
-      if (doorId)     room.doorId     = doorId;
-      if (nightDimId) room.nightDimId = nightDimId;
+      const motionId    = byType.get('Motion Sensor');
+      const switchId    = byType.get('Override Switch');
+      const autoId      = byType.get('Auto Switch');
+      const doorId      = byType.get('Door Interior');
+      const nightDimId  = byType.get('Door Switch LED');
+      const timerWaitId = byType.get('Timer Wait');
+      if (motionId)    room.motionId    = motionId;
+      if (switchId)    room.switchId    = switchId;
+      if (autoId)      room.autoId      = autoId;
+      if (doorId)      room.doorId      = doorId;
+      if (nightDimId)  room.nightDimId  = nightDimId;
+      if (timerWaitId) room.timerWaitId = timerWaitId;
       // Sync booleans with actual presence (used by mock fallback path)
       room.hasDoor    = !!doorId;
       room.hasNightDim = !!nightDimId;
@@ -182,7 +184,8 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
   // --- Fans ---------------------------------------------------------------
   const fans = controls
     .filter(n => (n.controlFields?.controlType?.nodes[0]?.title ?? '') === 'Fan')
-    .map(n => ({ id: toId(n), name: n.title }));
+    .map(n => ({ id: toId(n), name: n.title }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   // --- TVs ----------------------------------------------------------------
   const tvs = controls
@@ -232,18 +235,19 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     .filter(n => getClass(n) === 'override' && EXTERIOR_PLACES.has(getPlace(n) ?? ''))
     .map(n => ({ id: toId(n), name: n.title, kind: 'toggle' as const }));
 
-  // --- Who's Home: controls with control-type title 'Security' ------------
+  // --- Who's Home: all Geolocation controls (any 'Geolocation *' control type)
   const whoIsHome = controls
-    .filter(n => (n.controlFields?.controlType?.nodes[0]?.title ?? '') === 'Security')
-    .map(n => ({ id: toId(n), name: n.title }));
+    .filter(n => /^Geolocation\b/i.test(n.controlFields?.controlType?.nodes[0]?.title ?? ''))
+    .map(n => ({ id: toId(n), name: n.title }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
-  // --- People (presence): control type 'Geolocation <Name>' ---------------
-  // e.g. control type title "Geolocation Alex" → person name "Alex"
+  // --- People (presence): all 'Geolocation' control type controls ----------
+  // WP control titles are "Geo <Name> at Home" → extract the person name.
   const people = controls
-    .filter(n => /^Geolocation\s+\S/i.test(n.controlFields?.controlType?.nodes[0]?.title ?? ''))
+    .filter(n => /^Geolocation\b/i.test(n.controlFields?.controlType?.nodes[0]?.title ?? ''))
     .map(n => ({
       id: toId(n),
-      name: (n.controlFields?.controlType?.nodes[0]?.title ?? '').replace(/^Geolocation\s+/i, '').trim(),
+      name: n.title.replace(/^Geo\s+/i, '').replace(/\s+at\s+home$/i, '').trim(),
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -287,17 +291,24 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
   }
 
   // --- Config id → state-service id map ------------------------------------
-  // The state service keys by the ISY id, which depends on the control type:
-  //   'Device'   → control_address (Insteon device address)
-  //   'Variable' → control_variable_id (ISY variable id)
-  // (If addresses/variable ids collide across the 5 EISYs, namespace this with
-  //  controlIsy — single place to change.)
+  // The aggregator service keys state by namespaced ISY id:
+  //   Device:   eisy{N}/{address}     e.g. "eisy0/14 35 EB 1"
+  //   Variable: eisy{N}/var/{id}      e.g. "eisy2/var/42"
+  // controlIsy[0] is the EISY index (0–4); absent defaults to 0.
   const stateIdForControl = (n: (typeof controls)[0]): string | null => {
     const cf = n.controlFields;
     if (!cf) return null;
-    if (cf.controlIsyControlType === 'Device') return cf.controlAddress ?? null;
+    const eisyIdx = cf.controlIsy?.[0] ?? '0';
+    const ns = `eisy${eisyIdx}`;
+    if (cf.controlIsyControlType === 'Device') {
+      if (!cf.controlAddress) return null;
+      const ctTitle = n.controlFields?.controlType?.nodes[0]?.title ?? '';
+      // FanLinc fan motor is sub-node 1; WP stores only the base address
+      const address = ctTitle === 'Fan' ? `${cf.controlAddress} 1` : cf.controlAddress;
+      return `${ns}/${address}`;
+    }
     if (cf.controlIsyControlType === 'Variable') {
-      return cf.controlVariableId != null ? String(cf.controlVariableId) : null;
+      return cf.controlVariableId != null ? `${ns}/var/${cf.controlVariableId}` : null;
     }
     return null;
   };
@@ -306,6 +317,11 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     const sid = stateIdForControl(n);
     if (sid) controlStateIds[toId(n)] = sid;
   }
+
+  // --- House Status (time-of-day) variable ----------------------------------
+  // Single numeric variable (WP post 473): value 1=Morning, 2=Day, 3=Evening, 4=Night.
+  const houseStatusControl = controls.find(n => n.databaseId === 473);
+  const houseStatusId: string | null = houseStatusControl ? toId(houseStatusControl) : null;
 
   // --- Weather: hub variables (current/high/low temp + conditions) ---------
   const ctrlIdByType = (title: string) => {
@@ -426,6 +442,7 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     weatherHighId:       weatherHighId ?? MOCK_CONFIG.weatherHighId,
     weatherLowId:        weatherLowId  ?? MOCK_CONFIG.weatherLowId,
     weatherCondId:       weatherCondId ?? MOCK_CONFIG.weatherCondId,
+    houseStatusId:       houseStatusId ?? MOCK_CONFIG.houseStatusId,
     sceneRooms:          sceneRoomsRaw.length       > 0 ? sceneRoomsRaw       : MOCK_CONFIG.sceneRooms,
     lightSceneRooms:     lightSceneRoomsRaw.length  > 0 ? lightSceneRoomsRaw  : MOCK_CONFIG.lightSceneRooms,
   };

@@ -105,11 +105,12 @@ export interface SceneRoomConfig {
   place?: string;
   // Optional: actual WP device IDs for associated controls in the same place.
   // Presence of an ID means the control exists and should be shown.
-  motionId?:   string;  // Motion Sensor
-  switchId?:   string;  // Override Switch
-  autoId?:     string;  // Auto Switch
-  doorId?:     string;  // Door Interior
-  nightDimId?: string;  // Door Switch LED (night LEDs)
+  motionId?:    string;  // Motion Sensor
+  switchId?:    string;  // Override Switch
+  autoId?:      string;  // Auto Switch
+  doorId?:      string;  // Door Interior
+  nightDimId?:  string;  // Door Switch LED (night LEDs)
+  timerWaitId?: string;  // Timer Wait variable (motion timer)
 }
 
 // ---------------------------------------------------------------------------
@@ -255,6 +256,8 @@ export interface AppConfig {
   weatherHighId: string | null;
   weatherLowId: string | null;
   weatherCondId: string | null;
+  /** Device id of the House Status variable (value 1=Morning, 2=Day, 3=Evening, 4=Night). */
+  houseStatusId: string | null;
 }
 
 // ---------------------------------------------------------------------------

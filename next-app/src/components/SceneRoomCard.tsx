@@ -33,16 +33,16 @@ export type Control = {
 
 export function roomControls(room: SceneRoomConfig, a: AutomationState, motionDisabled: boolean): Control[] {
   const c: Control[] = [];
-  if (room.motionId !== undefined) {
+  if (room.timerWaitId !== undefined) {
     c.push({ key: 'motion', icon: 'motion', label: 'Motion', value: a.motion ? 'Detected' : 'Clear',
-      color: '#DD8A0A', on: a.motion, dim: motionDisabled, patch: { motion: !a.motion } });
+      color: '#DD8A0A', on: a.motion, dim: false, patch: { motion: !a.motion } });
   }
   if (room.doorId !== undefined) {
     c.push({ key: 'doorOpen', icon: 'door', label: 'Door', value: a.doorOpen ? 'Open' : 'Closed',
       color: '#5B7FE0', on: !a.doorOpen, dim: false, patch: { doorOpen: !a.doorOpen } });
   }
   if (room.switchId !== undefined) {
-    c.push({ key: 'manual', icon: 'power', label: 'Switch', value: a.manual ? 'Manual' : 'Auto',
+    c.push({ key: 'manual', icon: 'person', label: 'Manual Override', value: a.manual ? 'On' : 'Off',
       color: 'var(--amber)', on: a.manual, dim: false, patch: { manual: !a.manual } });
   }
   if (room.nightDimId !== undefined) {
@@ -107,14 +107,15 @@ function CompactControl({ icon, color, on, dim, onTap, title }: Omit<Control, 'k
   );
 }
 
-// `steps` (2–6) makes the slider snap to discrete stops (N intervals / N+1
-// stops incl. 0). Since % is meaningless per fitting, the readout shows the
-// step (e.g. "2/4") rather than a percentage. Intensity is still stored 0–100.
+// `steps` (2–6) makes the slider snap to discrete stops. An N-step scene has N
+// stops (0..N-1), i.e. N-1 intervals. Since % is meaningless per fitting, the
+// readout shows the step (e.g. "2/3") rather than a percentage. Intensity is
+// still stored 0–100.
 function IntensityRow({ value, onChange, compact, steps }: {
   value: number; onChange: (v: number) => void; compact?: boolean; steps?: number;
 }) {
   const stepped = !!steps && steps >= 2;
-  const X = steps ?? 1;
+  const X = Math.max(1, (steps ?? 2) - 1); // intervals between stops (stops = steps)
   const idx = stepped ? Math.max(0, Math.min(X, Math.round((value / 100) * X))) : value;
   const sliderProps = stepped
     ? { value: idx, min: 0, max: X, step: 1, onChange: (i: number) => onChange(Math.round((i / X) * 100)) }
@@ -156,17 +157,98 @@ function RoomTitle({ name, place, size, go }: {
   );
 }
 
+/** Route a control button tap to the correct EISY-aware setter. */
+function dispatchControl(
+  key: string,
+  ea: AutomationState,
+  setDnd: (v: boolean) => void,
+  setNightDim: (v: boolean) => void,
+  setMotion: (v: boolean) => void,
+  setDoor: (v: boolean) => void,
+  set: (patch: Partial<AutomationState>) => void,
+  patch: Partial<AutomationState>,
+) {
+  if (key === 'manual')   return setDnd(!ea.manual);
+  if (key === 'nightDim') return setNightDim(!ea.nightDim);
+  if (key === 'motion')   return setMotion(!ea.motion);
+  if (key === 'doorOpen') return setDoor(!ea.doorOpen);
+  set(patch);
+}
+
 export function SceneRoomCard({ room, a, scene, compact }: {
   room: SceneRoomConfig;
   a: AutomationState;
   scene: string;
   compact?: boolean;
 }) {
-  const { setD, go } = useHC();
+  const { st, setD, go } = useHC();
+
+  // Read live values from real device state (EISY) when the corresponding id is wired.
+  const automated = room.autoId
+    ? ((st[room.autoId] as { on?: boolean } | undefined)?.on ?? a.automated)
+    : a.automated;
+  const manual = room.switchId
+    ? ((st[room.switchId] as { on?: boolean } | undefined)?.on ?? a.manual)
+    : a.manual;
+  // nightDim is inverted: EISY value 1 (on) means LEDs are NOT dimmed; 0 (off) means dimmed.
+  const nightDimRaw = (st[room.nightDimId ?? ''] as { on?: boolean } | undefined)?.on;
+  const nightDim = room.nightDimId
+    ? (nightDimRaw !== undefined ? !nightDimRaw : a.nightDim)
+    : a.nightDim;
+  // Timer Wait variable: { on: true } = motion active (timer running), false = clear.
+  const motionRaw = st[room.timerWaitId ?? ''] as { on?: boolean } | undefined;
+  const motion = room.timerWaitId
+    ? (motionRaw?.on ?? a.motion)
+    : a.motion;
+  // Door: variable gives { open: bool } (1=open, 0=closed); fall back to local state.
+  const doorRaw = st[room.doorId ?? ''] as { open?: boolean; on?: boolean } | undefined;
+  const doorOpen = room.doorId
+    ? (doorRaw?.open ?? doorRaw?.on ?? a.doorOpen)
+    : a.doorOpen;
+  // Intensity: read step number directly from the EISY scene variable (room.id is the
+  // Light Scene N Step control — its variable stores the current step 0..N-1).
+  // An N-step scene has N stops, i.e. N-1 intervals between 0% and 100%.
+  const stepIntervals = Math.max(1, (room.steps ?? 2) - 1);
+  const sceneStep = room.steps
+    ? (st[room.id] as { value?: number } | undefined)?.value
+    : undefined;
+  const intensity = room.steps && sceneStep !== undefined
+    ? Math.round((sceneStep / stepIntervals) * 100)
+    : a.intensity;
+  const ea: AutomationState = { ...a, automated, manual, nightDim, motion, intensity, doorOpen };
+
   const set = (patch: Partial<AutomationState>) => setD('auto:' + room.id, patch);
-  const status = roomStatus(room, a, scene);
-  const motionDisabled = !!room.doorId && !a.doorOpen;
-  const controls = roomControls(room, a, motionDisabled);
+  const setIntensity = (v: number) => {
+    if (room.steps) {
+      const step = Math.round((v / 100) * stepIntervals); // 0..N-1
+      setD(room.id, { value: step });
+    }
+    setD('auto:' + room.id, { intensity: v });
+  };
+  const setAuto = (v: boolean) => {
+    if (room.autoId) setD(room.autoId, { on: v });
+    setD('auto:' + room.id, { automated: v });
+  };
+  const setDnd = (v: boolean) => {
+    if (room.switchId) setD(room.switchId, { on: v });
+    setD('auto:' + room.id, { manual: v });
+  };
+  const setNightDim = (v: boolean) => {
+    if (room.nightDimId) setD(room.nightDimId, { on: !v }); // inverted: dimmed=true sends on=false
+    setD('auto:' + room.id, { nightDim: v });
+  };
+  const setMotion = (v: boolean) => {
+    if (room.timerWaitId) setD(room.timerWaitId, { on: v });
+    setD('auto:' + room.id, { motion: v });
+  };
+  const setDoor = (v: boolean) => {
+    if (room.doorId) setD(room.doorId, { open: v }); // ISY variable: 1=open, 0=closed
+    setD('auto:' + room.id, { doorOpen: v });
+  };
+
+  const status = roomStatus(room, ea, scene);
+  const motionDisabled = !!room.doorId && !ea.doorOpen;
+  const controls = roomControls(room, ea, motionDisabled);
 
   if (compact) {
     return (
@@ -176,17 +258,17 @@ export function SceneRoomCard({ room, a, scene, compact }: {
           <div style={{ flex: 1, minWidth: 0 }}>
             <RoomTitle name={room.name} place={room.place} size={16} go={go} />
           </div>
-          {room.autoId !== undefined && <AutoPill on={a.automated} onTap={() => set({ automated: !a.automated })} />}
+          {room.autoId !== undefined && <AutoPill on={ea.automated} onTap={() => setAuto(!ea.automated)} />}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 14px 13px' }}>
-          <div style={{ flex: 1, opacity: a.automated ? 1 : 0.5 }}>
-            <IntensityRow value={a.intensity} onChange={(v) => set({ intensity: v })} compact steps={room.steps} />
+          <div style={{ flex: 1, opacity: ea.automated ? 1 : 0.5 }}>
+            <IntensityRow value={ea.intensity} onChange={setIntensity} compact steps={room.steps} />
           </div>
           <div style={{ display: 'flex', gap: 7, flex: '0 0 auto' }}>
             {controls.map(c => (
               <CompactControl key={c.key} icon={c.icon} color={c.color} on={c.on}
-                dim={!a.automated || c.dim} title={`${c.label}: ${c.value}`}
-                onTap={() => set(c.patch)} />
+                dim={!ea.automated || c.dim} title={`${c.label}: ${c.value}`}
+                onTap={() => dispatchControl(c.key, ea, setDnd, setNightDim, setMotion, setDoor, set, c.patch)} />
             ))}
           </div>
         </div>
@@ -204,14 +286,15 @@ export function SceneRoomCard({ room, a, scene, compact }: {
           <div style={{ fontSize: 13, color: 'var(--text2)', fontWeight: 500, marginTop: 1,
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{status.label}</div>
         </div>
-        <AutoPill on={a.automated} onTap={() => set({ automated: !a.automated })} />
+        <AutoPill on={ea.automated} onTap={() => setAuto(!ea.automated)} />
       </div>
-      <div style={{ padding: '0 15px 13px', opacity: a.automated ? 1 : 0.5 }}>
-        <IntensityRow value={a.intensity} onChange={(v) => set({ intensity: v })} steps={room.steps} />
+      <div style={{ padding: '0 15px 13px', opacity: ea.automated ? 1 : 0.5 }}>
+        <IntensityRow value={ea.intensity} onChange={setIntensity} steps={room.steps} />
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '0 12px 13px' }}>
         {controls.map(({ key: ck, patch, ...rest }) => (
-          <StateControl key={ck} {...rest} patch={patch} onTap={() => set(patch)} />
+          <StateControl key={ck} {...rest} patch={patch}
+            onTap={() => dispatchControl(ck, ea, setDnd, setNightDim, setMotion, setDoor, set, patch)} />
         ))}
       </div>
     </Card>

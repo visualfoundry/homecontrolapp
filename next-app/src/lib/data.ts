@@ -438,7 +438,7 @@ export const MOCK_CONFIG: AppConfig = {
   motionSensors,
   outdoorsPool,
   outdoorsBackyard,
-  whoIsHome: settingsSecurity,
+  whoIsHome: settingsSecurity.filter(s => /at home/i.test(s.name)),
   settingsSecurity,
   settingsEnvironment,
   settingsSchedules,
@@ -466,6 +466,7 @@ export const MOCK_CONFIG: AppConfig = {
   weatherHighId: 'wx-high',
   weatherLowId: 'wx-low',
   weatherCondId: 'wx-cond',
+  houseStatusId: 'hs-status',
 };
 
 // ---------------------------------------------------------------------------
@@ -567,6 +568,9 @@ export function buildInitialState(): StateMap {
   };
   settingsHouse.forEach(h => { s[h.id] = { on: houseSeed[h.id] ?? false }; });
 
+  // House Status variable — value 1=Morning, 2=Day, 3=Evening, 4=Night
+  s['hs-status'] = { value: 2 };
+
   const garageSeed: Record<string, boolean> = {
     'g-lights': true,
   };
@@ -601,11 +605,11 @@ export function buildInitialState(): StateMap {
     ],
   };
 
-  // Presence
+  // Presence (geolocation flags — same shape as EISY flag variables)
   const homeSeed: Record<string, boolean> = {
     alex: true, greg: true, jeanette: true, penny: true, visitor: true,
   };
-  people.forEach(p => { s[`person:${p.id}`] = { home: homeSeed[p.id] ?? false }; });
+  people.forEach(p => { s[p.id] = { on: homeSeed[p.id] ?? false }; });
 
   // Weather variables (hub variables)
   s['wx-temp'] = { value: 70 };

@@ -1,0 +1,2422 @@
+{
+  "eisy2/var/281": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "numeric-var",
+    "varId": 281,
+    "varType": 2
+  },
+  "eisy2/var/105": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 105,
+    "varType": 2
+  },
+  "eisy2/var/78": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 78,
+    "varType": 2
+  },
+  "eisy0/var/25": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 25,
+    "varType": 2
+  },
+  "eisy0/var/19": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "toggle",
+    "varId": 19,
+    "varType": 2
+  },
+  "eisy0/var/18": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "toggle",
+    "varId": 18,
+    "varType": 2
+  },
+  "eisy0/var/17": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "toggle",
+    "varId": 17,
+    "varType": 2
+  },
+  "eisy0/var/16": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "toggle",
+    "varId": 16,
+    "varType": 2
+  },
+  "eisy0/var/15": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "toggle",
+    "varId": 15,
+    "varType": 2
+  },
+  "eisy0/var/22": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "toggle",
+    "varId": 22,
+    "varType": 2
+  },
+  "eisy0/var/20": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 20,
+    "varType": 2
+  },
+  "eisy0/var/21": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "toggle",
+    "varId": 21,
+    "varType": 2
+  },
+  "eisy0/var/28": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 28,
+    "varType": 2
+  },
+  "eisy0/var/43": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 43,
+    "varType": 2
+  },
+  "eisy0/var/105": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 105,
+    "varType": 2
+  },
+  "eisy4/4F 83 8": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "motion-sensor",
+    "address": "4F 83 8"
+  },
+  "eisy4/4F 86 27": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "motion-sensor",
+    "address": "4F 86 27"
+  },
+  "eisy4/var/52": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "flag",
+    "varId": 52,
+    "varType": 2
+  },
+  "eisy0/var/37": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 37,
+    "varType": 2
+  },
+  "eisy3/var/210": {
+    "type": "variable",
+    "eisyIdx": 3,
+    "class": "flag",
+    "varId": 210,
+    "varType": 2
+  },
+  "eisy4/var/57": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "toggle",
+    "varId": 57,
+    "varType": 2
+  },
+  "eisy4/var/153": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "flag",
+    "varId": 153,
+    "varType": 2
+  },
+  "eisy1/46 EB F8": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "flag",
+    "address": "46 EB F8"
+  },
+  "eisy0/var/143": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "numeric-var",
+    "varId": 143,
+    "varType": 2
+  },
+  "eisy0/var/151": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "numeric-var",
+    "varId": 151,
+    "varType": 2
+  },
+  "eisy0/var/155": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "numeric-var",
+    "varId": 155,
+    "varType": 2
+  },
+  "eisy0/var/141": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "numeric-var",
+    "varId": 141,
+    "varType": 2
+  },
+  "eisy0/var/140": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "numeric-var",
+    "varId": 140,
+    "varType": 2
+  },
+  "eisy0/var/147": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "numeric-var",
+    "varId": 147,
+    "varType": 2
+  },
+  "eisy0/var/148": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "numeric-var",
+    "varId": 148,
+    "varType": 2
+  },
+  "eisy0/var/132": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "numeric-var",
+    "varId": 132,
+    "varType": 2
+  },
+  "eisy0/var/133": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "numeric-var",
+    "varId": 133,
+    "varType": 2
+  },
+  "eisy0/var/131": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "numeric-var",
+    "varId": 131,
+    "varType": 2
+  },
+  "eisy0/var/32": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 32,
+    "varType": 2
+  },
+  "eisy0/var/35": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 35,
+    "varType": 2
+  },
+  "eisy4/var/59": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "toggle",
+    "varId": 59,
+    "varType": 2
+  },
+  "eisy4/var/61": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "flag",
+    "varId": 61,
+    "varType": 2
+  },
+  "eisy3/39 A5 50": {
+    "type": "device",
+    "eisyIdx": 3,
+    "class": "light-dimmer",
+    "address": "39 A5 50"
+  },
+  "eisy1/4B B9 B8 1": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "fan",
+    "address": "4B B9 B8 1"
+  },
+  "eisy4/var/149": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "flag",
+    "varId": 149,
+    "varType": 2
+  },
+  "eisy4/var/150": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "flag",
+    "varId": 150,
+    "varType": 2
+  },
+  "eisy4/var/148": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "flag",
+    "varId": 148,
+    "varType": 2
+  },
+  "eisy0/var/39": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 39,
+    "varType": 2
+  },
+  "eisy4/46 9 38": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "light-switch",
+    "address": "46 9 38"
+  },
+  "eisy4/3D 40 6": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "light-switch",
+    "address": "3D 40 6"
+  },
+  "eisy4/48 80 BC 1": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "fan",
+    "address": "48 80 BC 1"
+  },
+  "eisy4/46 10 A2 1": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "fan",
+    "address": "46 10 A2 1"
+  },
+  "eisy2/3D 3F 6E 1": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "fan",
+    "address": "3D 3F 6E 1"
+  },
+  "eisy2/3D 38 53 1": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "fan",
+    "address": "3D 38 53 1"
+  },
+  "eisy2/3D 33 10 1": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "fan",
+    "address": "3D 33 10 1"
+  },
+  "eisy2/3D 3F 66 1": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "fan",
+    "address": "3D 3F 66 1"
+  },
+  "eisy2/3D 3D 26 1": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "fan",
+    "address": "3D 3D 26 1"
+  },
+  "eisy2/3D 3C 59 1": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "fan",
+    "address": "3D 3C 59 1"
+  },
+  "eisy2/3D 46 37 1": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "fan",
+    "address": "3D 46 37 1"
+  },
+  "eisy2/3D 24 92 1": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "fan",
+    "address": "3D 24 92 1"
+  },
+  "eisy4/var/137": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "numeric-var",
+    "varId": 137,
+    "varType": 2
+  },
+  "eisy4/var/113": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "toggle",
+    "varId": 113,
+    "varType": 2
+  },
+  "eisy4/var/112": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "flag",
+    "varId": 112,
+    "varType": 2
+  },
+  "eisy4/var/139": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "numeric-var",
+    "varId": 139,
+    "varType": 2
+  },
+  "eisy4/var/85": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "toggle",
+    "varId": 85,
+    "varType": 2
+  },
+  "eisy4/var/77": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "flag",
+    "varId": 77,
+    "varType": 2
+  },
+  "eisy4/var/138": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "numeric-var",
+    "varId": 138,
+    "varType": 2
+  },
+  "eisy4/var/73": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "toggle",
+    "varId": 73,
+    "varType": 2
+  },
+  "eisy4/var/72": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "flag",
+    "varId": 72,
+    "varType": 2
+  },
+  "eisy1/37 B8 EB": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "motion-sensor",
+    "address": "37 B8 EB"
+  },
+  "eisy0/var/166": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 166,
+    "varType": 2
+  },
+  "eisy0/var/5": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 5,
+    "varType": 2
+  },
+  "eisy0/var/40": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 40,
+    "varType": 2
+  },
+  "eisy2/3C D8 82": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3C D8 82"
+  },
+  "eisy2/var/328": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "varId": 328,
+    "varType": 2
+  },
+  "eisy2/var/264": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "varId": 264,
+    "varType": 2
+  },
+  "eisy2/var/256": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "varId": 256,
+    "varType": 2
+  },
+  "eisy2/var/208": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "varId": 208,
+    "varType": 2
+  },
+  "eisy2/var/224": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "varId": 224,
+    "varType": 2
+  },
+  "eisy2/var/320": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "varId": 320,
+    "varType": 2
+  },
+  "eisy2/var/280": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "varId": 280,
+    "varType": 2
+  },
+  "eisy2/var/297": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "numeric-var",
+    "varId": 297,
+    "varType": 2
+  },
+  "eisy1/var/142": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "flag",
+    "varId": 142,
+    "varType": 2
+  },
+  "eisy1/var/140": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "flag",
+    "varId": 140,
+    "varType": 2
+  },
+  "eisy1/var/136": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "flag",
+    "varId": 136,
+    "varType": 2
+  },
+  "eisy1/var/138": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "flag",
+    "varId": 138,
+    "varType": 2
+  },
+  "eisy1/var/132": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "flag",
+    "varId": 132,
+    "varType": 2
+  },
+  "eisy0/var/192": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 192,
+    "varType": 2
+  },
+  "eisy0/var/190": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 190,
+    "varType": 2
+  },
+  "eisy0/var/191": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 191,
+    "varType": 2
+  },
+  "eisy1/var/234": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "flag",
+    "varId": 234,
+    "varType": 2
+  },
+  "eisy2/3C DE 2D": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3C DE 2D"
+  },
+  "eisy0/var/34": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 34,
+    "varType": 2
+  },
+  "eisy0/var/49": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 49,
+    "varType": 2
+  },
+  "eisy0/var/50": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 50,
+    "varType": 2
+  },
+  "eisy0/var/47": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 47,
+    "varType": 2
+  },
+  "eisy0/var/46": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 46,
+    "varType": 2
+  },
+  "eisy0/var/45": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 45,
+    "varType": 2
+  },
+  "eisy0/var/44": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 44,
+    "varType": 2
+  },
+  "eisy0/var/198": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "contact-sensor",
+    "varId": 198,
+    "varType": 2
+  },
+  "eisy0/var/197": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "contact-sensor",
+    "varId": 197,
+    "varType": 2
+  },
+  "eisy0/var/196": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "contact-sensor",
+    "varId": 196,
+    "varType": 2
+  },
+  "eisy0/var/195": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "contact-sensor",
+    "varId": 195,
+    "varType": 2
+  },
+  "eisy1/34 53 B9": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "thermostat",
+    "address": "34 53 B9"
+  },
+  "eisy1/34 53 6C": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "thermostat",
+    "address": "34 53 6C"
+  },
+  "eisy1/34 55 5D": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "thermostat",
+    "address": "34 55 5D"
+  },
+  "eisy1/34 52 DD": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "thermostat",
+    "address": "34 52 DD"
+  },
+  "eisy0/var/3": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 3,
+    "varType": 2
+  },
+  "eisy0/var/111": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 111,
+    "varType": 2
+  },
+  "eisy0/var/1": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "numeric-var",
+    "varId": 1,
+    "varType": 2
+  },
+  "eisy1/var/130": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "flag",
+    "varId": 130,
+    "varType": 2
+  },
+  "eisy0/var/13": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 13,
+    "varType": 2
+  },
+  "eisy0/var/12": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 12,
+    "varType": 2
+  },
+  "eisy3/var/209": {
+    "type": "variable",
+    "eisyIdx": 3,
+    "class": "flag",
+    "varId": 209,
+    "varType": 2
+  },
+  "eisy1/var/75": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "toggle",
+    "varId": 75,
+    "varType": 2
+  },
+  "eisy1/var/72": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "toggle",
+    "varId": 72,
+    "varType": 2
+  },
+  "eisy1/var/57": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "toggle",
+    "varId": 57,
+    "varType": 2
+  },
+  "eisy1/var/90": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "toggle",
+    "varId": 90,
+    "varType": 2
+  },
+  "eisy4/var/90": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "flag",
+    "varId": 90,
+    "varType": 2
+  },
+  "eisy4/var/101": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "flag",
+    "varId": 101,
+    "varType": 2
+  },
+  "eisy3/var/202": {
+    "type": "variable",
+    "eisyIdx": 3,
+    "class": "flag",
+    "varId": 202,
+    "varType": 2
+  },
+  "eisy1/var/226": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "flag",
+    "varId": 226,
+    "varType": 2
+  },
+  "eisy1/var/219": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "toggle",
+    "varId": 219,
+    "varType": 2
+  },
+  "eisy1/var/210": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "flag",
+    "varId": 210,
+    "varType": 2
+  },
+  "eisy1/var/202": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "flag",
+    "varId": 202,
+    "varType": 2
+  },
+  "eisy2/var/202": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "flag",
+    "varId": 202,
+    "varType": 2
+  },
+  "eisy2/var/210": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "flag",
+    "varId": 210,
+    "varType": 2
+  },
+  "eisy2/var/218": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "flag",
+    "varId": 218,
+    "varType": 2
+  },
+  "eisy2/var/226": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "flag",
+    "varId": 226,
+    "varType": 2
+  },
+  "eisy2/var/258": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "flag",
+    "varId": 258,
+    "varType": 2
+  },
+  "eisy2/var/234": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "flag",
+    "varId": 234,
+    "varType": 2
+  },
+  "eisy2/var/242": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "flag",
+    "varId": 242,
+    "varType": 2
+  },
+  "eisy2/var/250": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "flag",
+    "varId": 250,
+    "varType": 2
+  },
+  "eisy2/var/266": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "flag",
+    "varId": 266,
+    "varType": 2
+  },
+  "eisy2/var/282": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "flag",
+    "varId": 282,
+    "varType": 2
+  },
+  "eisy2/var/290": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "flag",
+    "varId": 290,
+    "varType": 2
+  },
+  "eisy2/var/274": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "flag",
+    "varId": 274,
+    "varType": 2
+  },
+  "eisy2/var/298": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "flag",
+    "varId": 298,
+    "varType": 2
+  },
+  "eisy2/var/306": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "flag",
+    "varId": 306,
+    "varType": 2
+  },
+  "eisy2/var/313": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "numeric-var",
+    "varId": 313,
+    "varType": 2
+  },
+  "eisy2/var/314": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "flag",
+    "varId": 314,
+    "varType": 2
+  },
+  "eisy2/var/322": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "flag",
+    "varId": 322,
+    "varType": 2
+  },
+  "eisy4/var/91": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "toggle",
+    "varId": 91,
+    "varType": 2
+  },
+  "eisy4/var/102": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "toggle",
+    "varId": 102,
+    "varType": 2
+  },
+  "eisy4/var/88": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "toggle",
+    "varId": 88,
+    "varType": 2
+  },
+  "eisy4/var/100": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "toggle",
+    "varId": 100,
+    "varType": 2
+  },
+  "eisy2/var/259": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 259,
+    "varType": 2
+  },
+  "eisy4/var/55": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "flag",
+    "varId": 55,
+    "varType": 2
+  },
+  "eisy3/var/56": {
+    "type": "variable",
+    "eisyIdx": 3,
+    "class": "contact-sensor",
+    "varId": 56,
+    "varType": 2
+  },
+  "eisy1/var/209": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "numeric-var",
+    "varId": 209,
+    "varType": 2
+  },
+  "eisy4/var/128": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "numeric-var",
+    "varId": 128,
+    "varType": 2
+  },
+  "eisy4/var/60": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "numeric-var",
+    "varId": 60,
+    "varType": 2
+  },
+  "eisy3/var/201": {
+    "type": "variable",
+    "eisyIdx": 3,
+    "class": "numeric-var",
+    "varId": 201,
+    "varType": 2
+  },
+  "eisy2/var/321": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "numeric-var",
+    "varId": 321,
+    "varType": 2
+  },
+  "eisy2/var/305": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "numeric-var",
+    "varId": 305,
+    "varType": 2
+  },
+  "eisy2/var/273": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "numeric-var",
+    "varId": 273,
+    "varType": 2
+  },
+  "eisy2/var/249": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "numeric-var",
+    "varId": 249,
+    "varType": 2
+  },
+  "eisy2/var/241": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "numeric-var",
+    "varId": 241,
+    "varType": 2
+  },
+  "eisy2/var/233": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "numeric-var",
+    "varId": 233,
+    "varType": 2
+  },
+  "eisy2/var/257": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "numeric-var",
+    "varId": 257,
+    "varType": 2
+  },
+  "eisy2/var/225": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "numeric-var",
+    "varId": 225,
+    "varType": 2
+  },
+  "eisy2/var/217": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "numeric-var",
+    "varId": 217,
+    "varType": 2
+  },
+  "eisy2/var/209": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "numeric-var",
+    "varId": 209,
+    "varType": 2
+  },
+  "eisy2/var/201": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "numeric-var",
+    "varId": 201,
+    "varType": 2
+  },
+  "eisy1/var/201": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "numeric-var",
+    "varId": 201,
+    "varType": 2
+  },
+  "eisy1/var/217": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "numeric-var",
+    "varId": 217,
+    "varType": 2
+  },
+  "eisy1/var/225": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "numeric-var",
+    "varId": 225,
+    "varType": 2
+  },
+  "eisy1/var/227": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "toggle",
+    "varId": 227,
+    "varType": 2
+  },
+  "eisy1/var/211": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "toggle",
+    "varId": 211,
+    "varType": 2
+  },
+  "eisy1/var/203": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "toggle",
+    "varId": 203,
+    "varType": 2
+  },
+  "eisy2/var/323": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 323,
+    "varType": 2
+  },
+  "eisy2/var/315": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 315,
+    "varType": 2
+  },
+  "eisy2/var/307": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 307,
+    "varType": 2
+  },
+  "eisy2/var/299": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 299,
+    "varType": 2
+  },
+  "eisy2/var/275": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 275,
+    "varType": 2
+  },
+  "eisy2/var/291": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 291,
+    "varType": 2
+  },
+  "eisy2/var/283": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 283,
+    "varType": 2
+  },
+  "eisy2/var/251": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 251,
+    "varType": 2
+  },
+  "eisy2/var/243": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 243,
+    "varType": 2
+  },
+  "eisy2/var/235": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 235,
+    "varType": 2
+  },
+  "eisy2/var/267": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 267,
+    "varType": 2
+  },
+  "eisy2/var/227": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 227,
+    "varType": 2
+  },
+  "eisy2/var/219": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 219,
+    "varType": 2
+  },
+  "eisy2/var/211": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 211,
+    "varType": 2
+  },
+  "eisy2/var/203": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 203,
+    "varType": 2
+  },
+  "eisy3/var/203": {
+    "type": "variable",
+    "eisyIdx": 3,
+    "class": "toggle",
+    "varId": 203,
+    "varType": 2
+  },
+  "eisy3/var/54": {
+    "type": "variable",
+    "eisyIdx": 3,
+    "class": "toggle",
+    "varId": 54,
+    "varType": 2
+  },
+  "eisy2/var/117": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 117,
+    "varType": 2
+  },
+  "eisy2/var/114": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 114,
+    "varType": 2
+  },
+  "eisy2/var/96": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 96,
+    "varType": 2
+  },
+  "eisy2/var/84": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 84,
+    "varType": 2
+  },
+  "eisy2/var/81": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 81,
+    "varType": 2
+  },
+  "eisy2/var/87": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 87,
+    "varType": 2
+  },
+  "eisy2/var/69": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 69,
+    "varType": 2
+  },
+  "eisy2/var/66": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 66,
+    "varType": 2
+  },
+  "eisy2/var/63": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 63,
+    "varType": 2
+  },
+  "eisy2/var/51": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 51,
+    "varType": 2
+  },
+  "eisy2/var/120": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "toggle",
+    "varId": 120,
+    "varType": 2
+  },
+  "eisy0/var/14": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 14,
+    "varType": 2
+  },
+  "eisy0/var/2": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 2,
+    "varType": 2
+  },
+  "eisy0/var/27": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 27,
+    "varType": 2
+  },
+  "eisy0/var/26": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 26,
+    "varType": 2
+  },
+  "eisy0/var/29": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 29,
+    "varType": 2
+  },
+  "eisy4/3D 3A 8F": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "light-switch",
+    "address": "3D 3A 8F"
+  },
+  "eisy4/3D 42 21": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "light-switch",
+    "address": "3D 42 21"
+  },
+  "eisy4/3D 31 FA": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "light-switch",
+    "address": "3D 31 FA"
+  },
+  "eisy4/3C D7 9D": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "light-dimmer",
+    "address": "3C D7 9D"
+  },
+  "eisy4/4C 69 F4": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "light-switch",
+    "address": "4C 69 F4"
+  },
+  "eisy4/3D 13 A4": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "light-dimmer",
+    "address": "3D 13 A4"
+  },
+  "eisy4/3D 13 AB": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "light-switch",
+    "address": "3D 13 AB"
+  },
+  "eisy4/45 C4 B": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "light-switch",
+    "address": "45 C4 B"
+  },
+  "eisy4/3D 4 CE": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "light-dimmer",
+    "address": "3D 4 CE"
+  },
+  "eisy4/3D 3C C1": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "light-switch",
+    "address": "3D 3C C1"
+  },
+  "eisy4/3B CF CD": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "light-dimmer",
+    "address": "3B CF CD"
+  },
+  "eisy4/3B E8 9D": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "light-switch",
+    "address": "3B E8 9D"
+  },
+  "eisy4/3B DF 4F": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "light-switch",
+    "address": "3B DF 4F"
+  },
+  "eisy4/3D 39 7E": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "light-switch",
+    "address": "3D 39 7E"
+  },
+  "eisy4/3B D7 7F": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "light-switch",
+    "address": "3B D7 7F"
+  },
+  "eisy4/3B E0 23": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "light-switch",
+    "address": "3B E0 23"
+  },
+  "eisy4/3D 3F F6": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "light-switch",
+    "address": "3D 3F F6"
+  },
+  "eisy4/3D 47 4D": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "light-switch",
+    "address": "3D 47 4D"
+  },
+  "eisy4/3D 3F 69": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "light-switch",
+    "address": "3D 3F 69"
+  },
+  "eisy4/3C E6 B9": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "light-dimmer",
+    "address": "3C E6 B9"
+  },
+  "eisy3/3D 13 33": {
+    "type": "device",
+    "eisyIdx": 3,
+    "class": "light-dimmer",
+    "address": "3D 13 33"
+  },
+  "eisy3/44 D8 BD": {
+    "type": "device",
+    "eisyIdx": 3,
+    "class": "light-dimmer",
+    "address": "44 D8 BD"
+  },
+  "eisy3/3D 15 C2": {
+    "type": "device",
+    "eisyIdx": 3,
+    "class": "light-dimmer",
+    "address": "3D 15 C2"
+  },
+  "eisy2/3C E0 D8": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3C E0 D8"
+  },
+  "eisy2/3C D8 7A": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3C D8 7A"
+  },
+  "eisy2/3D 46 3A": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-switch",
+    "address": "3D 46 3A"
+  },
+  "eisy2/3D 46 40": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-switch",
+    "address": "3D 46 40"
+  },
+  "eisy2/3D E 86": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3D E 86"
+  },
+  "eisy2/39 A8 2B": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "39 A8 2B"
+  },
+  "eisy2/3D 12 7F": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3D 12 7F"
+  },
+  "eisy2/3C E5 1D": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3C E5 1D"
+  },
+  "eisy2/3D 46 3B": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-switch",
+    "address": "3D 46 3B"
+  },
+  "eisy2/3D 3A 90": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-switch",
+    "address": "3D 3A 90"
+  },
+  "eisy2/3D 46 39": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-switch",
+    "address": "3D 46 39"
+  },
+  "eisy2/3C D7 BB": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3C D7 BB"
+  },
+  "eisy2/39 A5 F4": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "39 A5 F4"
+  },
+  "eisy2/39 A5 45": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "39 A5 45"
+  },
+  "eisy2/39 A4 64": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "39 A4 64"
+  },
+  "eisy2/39 A7 8E": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "39 A7 8E"
+  },
+  "eisy2/3C EB 71": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3C EB 71"
+  },
+  "eisy2/3D A B8": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3D A B8"
+  },
+  "eisy2/3D C 8D": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3D C 8D"
+  },
+  "eisy2/3D 0 EC": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3D 0 EC"
+  },
+  "eisy2/3D C 30": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3D C 30"
+  },
+  "eisy2/3D 1C 50": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3D 1C 50"
+  },
+  "eisy2/3C E0 E8": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3C E0 E8"
+  },
+  "eisy2/3D 3F 6D": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-switch",
+    "address": "3D 3F 6D"
+  },
+  "eisy2/3D 0 E2": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3D 0 E2"
+  },
+  "eisy2/3C E9 3": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3C E9 3"
+  },
+  "eisy2/3C D9 D": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3C D9 D"
+  },
+  "eisy2/3B CD C5": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3B CD C5"
+  },
+  "eisy2/3D 3E 20": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-switch",
+    "address": "3D 3E 20"
+  },
+  "eisy2/3D 16 67": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3D 16 67"
+  },
+  "eisy2/39 A6 67": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "39 A6 67"
+  },
+  "eisy2/39 A5 A3": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "39 A5 A3"
+  },
+  "eisy2/3C ED C5": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3C ED C5"
+  },
+  "eisy2/3C DE FF": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3C DE FF"
+  },
+  "eisy2/3D 1 74": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3D 1 74"
+  },
+  "eisy2/3D C 3A": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3D C 3A"
+  },
+  "eisy2/3C EF CD": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3C EF CD"
+  },
+  "eisy2/3C DC 98": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3C DC 98"
+  },
+  "eisy2/3C DA FA": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3C DA FA"
+  },
+  "eisy2/3C E4 A4": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3C E4 A4"
+  },
+  "eisy2/3C EB 65": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3C EB 65"
+  },
+  "eisy2/3D 32 0": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-switch",
+    "address": "3D 32 0"
+  },
+  "eisy2/3C E2 17": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3C E2 17"
+  },
+  "eisy2/3D A C3": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "light-dimmer",
+    "address": "3D A C3"
+  },
+  "eisy1/3C EA A": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "light-dimmer",
+    "address": "3C EA A"
+  },
+  "eisy1/3C E5 34": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "light-dimmer",
+    "address": "3C E5 34"
+  },
+  "eisy1/3C FC 89": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "light-dimmer",
+    "address": "3C FC 89"
+  },
+  "eisy1/4C 68 4B": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "flag",
+    "address": "4C 68 4B"
+  },
+  "eisy1/4C 6E 2E": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "flag",
+    "address": "4C 6E 2E"
+  },
+  "eisy1/3C F0 C7": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "light-dimmer",
+    "address": "3C F0 C7"
+  },
+  "eisy1/3D 29 69": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "light-switch",
+    "address": "3D 29 69"
+  },
+  "eisy1/3C DC DD": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "light-dimmer",
+    "address": "3C DC DD"
+  },
+  "eisy1/39 A4 84": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "light-dimmer",
+    "address": "39 A4 84"
+  },
+  "eisy1/32 99 B": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "light-dimmer",
+    "address": "32 99 B"
+  },
+  "eisy1/3D 13 C6": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "light-dimmer",
+    "address": "3D 13 C6"
+  },
+  "eisy1/3C DF D3": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "light-dimmer",
+    "address": "3C DF D3"
+  },
+  "eisy1/3C DF 45": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "light-dimmer",
+    "address": "3C DF 45"
+  },
+  "eisy1/3C DF CE": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "light-dimmer",
+    "address": "3C DF CE"
+  },
+  "eisy1/3D B 1": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "light-dimmer",
+    "address": "3D B 1"
+  },
+  "eisy1/3D 1 A8": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "light-dimmer",
+    "address": "3D 1 A8"
+  },
+  "eisy1/3C D9 47": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "light-dimmer",
+    "address": "3C D9 47"
+  },
+  "eisy1/3C DC EC": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "light-dimmer",
+    "address": "3C DC EC"
+  },
+  "eisy1/3B CD 1C": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "light-dimmer",
+    "address": "3B CD 1C"
+  },
+  "eisy1/3C FC B9": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "light-dimmer",
+    "address": "3C FC B9"
+  },
+  "eisy1/3C D9 6A": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "light-dimmer",
+    "address": "3C D9 6A"
+  },
+  "eisy1/3C D9 DD": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "light-dimmer",
+    "address": "3C D9 DD"
+  },
+  "eisy1/39 A4 D5": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "light-dimmer",
+    "address": "39 A4 D5"
+  },
+  "eisy1/3D 8 2": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "light-dimmer",
+    "address": "3D 8 2"
+  },
+  "eisy1/39 A6 60": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "light-dimmer",
+    "address": "39 A6 60"
+  },
+  "eisy0/var/69": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 69,
+    "varType": 2
+  },
+  "eisy4/var/58": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "flag",
+    "varId": 58,
+    "varType": 2
+  },
+  "eisy4/var/126": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "flag",
+    "varId": 126,
+    "varType": 2
+  },
+  "eisy4/var/125": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "flag",
+    "varId": 125,
+    "varType": 2
+  },
+  "eisy1/var/141": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "speaker",
+    "varId": 141,
+    "varType": 2
+  },
+  "eisy1/var/139": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "speaker",
+    "varId": 139,
+    "varType": 2
+  },
+  "eisy1/var/137": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "speaker",
+    "varId": 137,
+    "varType": 2
+  },
+  "eisy1/var/135": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "speaker",
+    "varId": 135,
+    "varType": 2
+  },
+  "eisy1/var/131": {
+    "type": "variable",
+    "eisyIdx": 1,
+    "class": "speaker",
+    "varId": 131,
+    "varType": 2
+  },
+  "eisy0/var/42": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 42,
+    "varType": 2
+  },
+  "eisy0/var/41": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 41,
+    "varType": 2
+  },
+  "eisy0/var/36": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 36,
+    "varType": 2
+  },
+  "eisy0/var/213": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 213,
+    "varType": 2
+  },
+  "eisy0/var/201": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 201,
+    "varType": 2
+  },
+  "eisy0/var/211": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 211,
+    "varType": 2
+  },
+  "eisy0/var/212": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 212,
+    "varType": 2
+  },
+  "eisy0/var/209": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 209,
+    "varType": 2
+  },
+  "eisy0/var/210": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 210,
+    "varType": 2
+  },
+  "eisy0/var/207": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 207,
+    "varType": 2
+  },
+  "eisy0/var/208": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 208,
+    "varType": 2
+  },
+  "eisy0/var/203": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 203,
+    "varType": 2
+  },
+  "eisy0/var/204": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 204,
+    "varType": 2
+  },
+  "eisy0/var/205": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 205,
+    "varType": 2
+  },
+  "eisy0/var/206": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 206,
+    "varType": 2
+  },
+  "eisy2/var/122": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "contact-sensor",
+    "varId": 122,
+    "varType": 2
+  },
+  "eisy2/var/119": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "contact-sensor",
+    "varId": 119,
+    "varType": 2
+  },
+  "eisy2/var/98": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "contact-sensor",
+    "varId": 98,
+    "varType": 2
+  },
+  "eisy2/var/86": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "contact-sensor",
+    "varId": 86,
+    "varType": 2
+  },
+  "eisy2/var/89": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "contact-sensor",
+    "varId": 89,
+    "varType": 2
+  },
+  "eisy2/var/71": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "contact-sensor",
+    "varId": 71,
+    "varType": 2
+  },
+  "eisy2/var/68": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "contact-sensor",
+    "varId": 68,
+    "varType": 2
+  },
+  "eisy2/var/53": {
+    "type": "variable",
+    "eisyIdx": 2,
+    "class": "contact-sensor",
+    "varId": 53,
+    "varType": 2
+  },
+  "eisy0/3B 1D B": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "lock",
+    "address": "3B 1D B"
+  },
+  "eisy0/45 F6 49": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "lock",
+    "address": "45 F6 49"
+  },
+  "eisy0/3B 22 8F": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "lock",
+    "address": "3B 22 8F"
+  },
+  "eisy0/3B 1A A9": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "lock",
+    "address": "3B 1A A9"
+  },
+  "eisy0/3B 1C F4": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "lock",
+    "address": "3B 1C F4"
+  },
+  "eisy0/32 A0 FF": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "lock",
+    "address": "32 A0 FF"
+  },
+  "eisy4/38 7B FE": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "numeric-var",
+    "address": "38 7B FE"
+  },
+  "eisy4/37 86 69": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "leak-sensor",
+    "address": "37 86 69"
+  },
+  "eisy4/37 83 D8": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "leak-sensor",
+    "address": "37 83 D8"
+  },
+  "eisy4/37 85 74": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "leak-sensor",
+    "address": "37 85 74"
+  },
+  "eisy4/37 84 4A": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "leak-sensor",
+    "address": "37 84 4A"
+  },
+  "eisy4/37 6F E8": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "leak-sensor",
+    "address": "37 6F E8"
+  },
+  "eisy4/54 9C 23": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "leak-sensor",
+    "address": "54 9C 23"
+  },
+  "eisy4/4E 19 F2": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "leak-sensor",
+    "address": "4E 19 F2"
+  },
+  "eisy4/4E 2B 66": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "leak-sensor",
+    "address": "4E 2B 66"
+  },
+  "eisy4/47 B3 16": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "leak-sensor",
+    "address": "47 B3 16"
+  },
+  "eisy4/37 8B A6": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "leak-sensor",
+    "address": "37 8B A6"
+  },
+  "eisy4/37 83 B0": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "leak-sensor",
+    "address": "37 83 B0"
+  },
+  "eisy4/37 A9 3D": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "motion-sensor",
+    "address": "37 A9 3D"
+  },
+  "eisy4/37 B3 DC": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "motion-sensor",
+    "address": "37 B3 DC"
+  },
+  "eisy4/36 7A 56": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "motion-sensor",
+    "address": "36 7A 56"
+  },
+  "eisy4/37 B9 21": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "motion-sensor",
+    "address": "37 B9 21"
+  },
+  "eisy2/37 B1 86": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-sensor",
+    "address": "37 B1 86"
+  },
+  "eisy2/37 BF F4": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-sensor",
+    "address": "37 BF F4"
+  },
+  "eisy2/37 B1 87": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-sensor",
+    "address": "37 B1 87"
+  },
+  "eisy2/36 82 65": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-sensor",
+    "address": "36 82 65"
+  },
+  "eisy2/37 BF D7": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-sensor",
+    "address": "37 BF D7"
+  },
+  "eisy2/37 B1 97": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-sensor",
+    "address": "37 B1 97"
+  },
+  "eisy2/37 C1 F4": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-sensor",
+    "address": "37 C1 F4"
+  },
+  "eisy2/37 B7 4E": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-sensor",
+    "address": "37 B7 4E"
+  },
+  "eisy2/36 A7 A8": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-sensor",
+    "address": "36 A7 A8"
+  },
+  "eisy2/37 B1 93": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-sensor",
+    "address": "37 B1 93"
+  },
+  "eisy2/37 BF D9": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-sensor",
+    "address": "37 BF D9"
+  },
+  "eisy2/55 AA B5": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-sensor",
+    "address": "55 AA B5"
+  },
+  "eisy2/37 B1 7C": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-sensor",
+    "address": "37 B1 7C"
+  },
+  "eisy2/37 B1 AC": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-sensor",
+    "address": "37 B1 AC"
+  },
+  "eisy3/37 B1 65": {
+    "type": "device",
+    "eisyIdx": 3,
+    "class": "motion-sensor",
+    "address": "37 B1 65"
+  },
+  "eisy2/37 A7 B9": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-sensor",
+    "address": "37 A7 B9"
+  },
+  "eisy1/4F 83 AA": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "motion-sensor",
+    "address": "4F 83 AA"
+  },
+  "eisy2/37 BF F6": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-sensor",
+    "address": "37 BF F6"
+  },
+  "eisy1/37 C3 CE": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "motion-sensor",
+    "address": "37 C3 CE"
+  },
+  "eisy1/37 C1 F5": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "motion-sensor",
+    "address": "37 C1 F5"
+  },
+  "eisy1/37 C1 FB": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "motion-sensor",
+    "address": "37 C1 FB"
+  },
+  "eisy1/37 B1 64": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "motion-sensor",
+    "address": "37 B1 64"
+  },
+  "eisy1/37 C3 E7": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "motion-sensor",
+    "address": "37 C3 E7"
+  },
+  "eisy1/37 BF F8": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "motion-sensor",
+    "address": "37 BF F8"
+  },
+  "eisy1/37 BF E7": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "motion-sensor",
+    "address": "37 BF E7"
+  }
+}

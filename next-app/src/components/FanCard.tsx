@@ -5,7 +5,6 @@
 // Shared by the Fans screen and the per-place Room screen.
 // =============================================================================
 
-import React from 'react';
 import { useHC } from '@/lib/store';
 import { Icon } from '@/components/Icon';
 import { Card } from '@/components/Card';
@@ -36,7 +35,7 @@ export function FanCard({ fan }: { fan: FanDevice }) {
         </div>
         <Toggle
           on={s.on}
-          onChange={(v) => setD(fan.id, { on: v, speed: v ? Math.max(1, s.speed) as FanState['speed'] : 0 })}
+          onChange={(v) => setD(fan.id, { on: v })}
           size={0.78}
         />
       </div>

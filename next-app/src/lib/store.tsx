@@ -154,6 +154,18 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
         seed[r.id] = { on: false };
       }
     }
+    // Seed fan state so FanCard has a defined starting value before /state arrives.
+    for (const f of config.fans) {
+      if (!(f.id in seed)) {
+        seed[f.id] = { on: false, speed: 0 };
+      }
+    }
+    // Seed scene room step variables (room.id = Light Scene N Step control).
+    for (const r of config.sceneRooms) {
+      if (r.steps && !(r.id in seed)) {
+        seed[r.id] = { value: 0 };
+      }
+    }
     return seed;
   });
   const [stack, setStack] = useState<string[]>(['home']);
@@ -220,9 +232,18 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
           for (const r of config.lightSceneRooms) {
             if (r.id in prev && !(r.id in live)) preserved[r.id] = prev[r.id];
           }
+          // Fan IDs: preserve current state (optimistic or live) when the
+          // service snapshot doesn't include them (ID not yet mapped in WP).
+          for (const f of config.fans) {
+            if (f.id in prev && !(f.id in live)) preserved[f.id] = prev[f.id];
+          }
+          // Scene room step variables: preserve when not in live snapshot.
+          for (const r of config.sceneRooms) {
+            if (r.steps && r.id in prev && !(r.id in live)) preserved[r.id] = prev[r.id];
+          }
           // Strip user-owned keys from live state — they must never overwrite preserved values.
           const deviceState = Object.fromEntries(
-            Object.entries(live).filter(([k]) => !k.startsWith('_') && !k.startsWith('auto:') && !k.startsWith('person:')),
+            Object.entries(live).filter(([k]) => !k.startsWith('_') && !k.startsWith('auto:')),
           );
           return { ...preserved, ...deviceState };
         });
@@ -267,7 +288,6 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
     }
     const isDeviceControl =
       !id.startsWith('_') &&
-      !id.startsWith('person:') &&
       !id.startsWith('auto:');
     if (isDeviceControl) {
       postCommand(id, patch as Record<string, unknown>);

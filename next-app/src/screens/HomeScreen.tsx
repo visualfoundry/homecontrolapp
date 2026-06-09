@@ -14,7 +14,7 @@ import { Slider } from '@/components/Slider';
 import { SceneRoomCard } from '@/components/SceneRoomCard';
 import { speakerName } from '@/components/SpeakerRow';
 import { CarDoorTile } from '@/components/CarDoorTile';
-import type { LightState, LockState, ContactSensorState, SpeakerState, FanState, GlobalState, FavsState, ScenesListState, PersonState, PoolState, AutomationState, VariableState, TextVariableState, WeatherCondition } from '@/types/state';
+import type { LightState, LockState, ContactSensorState, SpeakerState, FanState, FlagState, GlobalState, FavsState, ScenesListState, PoolState, AutomationState, VariableState, TextVariableState, WeatherCondition } from '@/types/state';
 
 // Map a raw weather-conditions string (any source wording) to a visual bucket.
 function mapCondition(text: string): WeatherCondition {
@@ -203,14 +203,30 @@ function SceneFavTile({ id }: { id: string; label: string }) {
 export function HomeScreen() {
   const { st, setD, go, config } = useHC();
   const global = st['_global'] as GlobalState;
-  const tod = global.timeOfDay;
-  const setTod = (v: string) => setD('_global', { timeOfDay: v as GlobalState['timeOfDay'] });
+
+  // Derive tod from the House Status variable (1=Morning, 2=Day, 3=Evening, 4=Night).
+  // Falls back to _global.timeOfDay if the variable isn't wired.
+  const TOD_VALUES: TimeOfDayKey[] = ['Morning', 'Day', 'Evening', 'Night'];
+  const hsVal = config.houseStatusId
+    ? (st[config.houseStatusId] as { value?: number } | undefined)?.value
+    : undefined;
+  const tod: TimeOfDayKey = (hsVal != null && hsVal >= 1 && hsVal <= 4)
+    ? TOD_VALUES[hsVal - 1]
+    : global.timeOfDay;
+
+  const setTod = (v: string) => {
+    const idx = TOD_VALUES.indexOf(v as TimeOfDayKey);
+    if (config.houseStatusId && idx >= 0) {
+      setD(config.houseStatusId, { value: idx + 1 });
+    }
+    setD('_global', { timeOfDay: v as TimeOfDayKey });
+  };
   const [activeScene, setActiveScene] = useState<string | null>(null);
 
   const lightsOn = config.lightRooms.reduce((n, r) =>
     n + r.lights.filter(l => (st[l.id] as LightState | undefined)?.on).length, 0);
   const doorsLocked = config.doorsExterior.filter(d => (st[d.id] as LockState | undefined)?.locked).length;
-  const peopleHome = config.people.filter(p => (st[`person:${p.id}`] as PersonState | undefined)?.home).length;
+  const peopleHome = config.people.filter(p => (st[p.id] as FlagState | undefined)?.on).length;
   const motionAlerts = config.motionSensors.filter(s => {
     const rec = st[s.id] as { motion?: boolean } | undefined;
     return rec?.motion;
@@ -264,11 +280,17 @@ export function HomeScreen() {
   const lightSceneIds = new Set(config.lightSceneRooms.map(r => r.id));
   const carDoorIds = new Set(config.garageCarDoors.map(d => d.id));
 
-  const greetings: Record<string, string> = { Morning: 'Good morning', Day: 'Good afternoon', Evening: 'Good evening', Night: 'Good night' };
+  const greeting = (() => {
+    const h = new Date().getHours();
+    if (h >= 5  && h < 12) return 'Good morning';
+    if (h >= 12 && h < 17) return 'Good afternoon';
+    if (h >= 17 && h < 21) return 'Good evening';
+    return 'Good night';
+  })();
 
   return (
     <div>
-      <LargeTitle title={greetings[tod] ?? 'Home'} sub="The House"
+      <LargeTitle title={greeting} sub="The House"
         right={
           <button onClick={() => go('settings')} style={iconBtn}>
             <Icon name="gear" size={22} />
@@ -416,8 +438,8 @@ export function HomeScreen() {
         <Card pad={false} style={{ padding: '16px 12px' }}>
           <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none' }}>
             {config.people.map(p => {
-              const home = (st[`person:${p.id}`] as PersonState | undefined)?.home ?? false;
-              const toggle = () => setD(`person:${p.id}`, { home: !home });
+              const home = (st[p.id] as FlagState | undefined)?.on ?? false;
+              const toggle = () => setD(p.id, { on: !home });
               return (
                 <button key={p.id} onClick={toggle}
                   style={{ flex: '0 0 auto', width: 64, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7,
