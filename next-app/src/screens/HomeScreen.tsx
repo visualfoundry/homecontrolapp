@@ -9,12 +9,12 @@ import { Card, SectionTitle } from '@/components/Card';
 import { Segmented } from '@/components/Segmented';
 import { Avatar } from '@/components/Avatar';
 import { LargeTitle } from '@/components/LargeTitle';
-import { iconBtn, pillBtn } from '@/lib/styles';
+import { iconBtn, pillBtn, stepBtn } from '@/lib/styles';
 import { Slider } from '@/components/Slider';
 import { SceneRoomCard } from '@/components/SceneRoomCard';
 import { speakerName } from '@/components/SpeakerRow';
 import { CarDoorTile } from '@/components/CarDoorTile';
-import type { LightState, LockState, ContactSensorState, SpeakerState, FanState, FlagState, GlobalState, FavsState, ScenesListState, PoolState, AutomationState, VariableState, TextVariableState, WeatherCondition } from '@/types/state';
+import type { LightState, LockState, ContactSensorState, SpeakerState, FanState, FlagState, GlobalState, FavsState, ScenesListState, PoolState, AutomationState, VariableState, TextVariableState, WeatherCondition, ThermostatState } from '@/types/state';
 
 // Map a raw weather-conditions string (any source wording) to a visual bucket.
 function mapCondition(text: string): WeatherCondition {
@@ -24,7 +24,7 @@ function mapCondition(text: string): WeatherCondition {
   if (/(cloud|overcast|fog|mist|haze)/.test(t)) return 'Cloudy';
   return 'Clear';
 }
-import type { SceneRoomTypeKey, TimeOfDayKey } from '@/types/config';
+import type { SceneRoomTypeKey, TimeOfDayKey, ClimateZone } from '@/types/config';
 
 // ── Scrollable stat pill ──────────────────────────────────────────────────────
 function StatTile({ icon, label, value, tint, onTap }: {
@@ -80,8 +80,8 @@ function FavTile({ id, icon, label }: { id: string; icon: React.ComponentProps<t
     isDoor ? ((s as LockState).locked ? 'lock' : 'unlock') : icon;
   return (
     <Tile icon={icn} name={label} status={status} active={on} activeColor={color}
-      glow={isLight} onTap={toggle}
-      control={<Toggle on={on} onChange={toggle} accent="rgba(255,255,255,0.4)" size={0.78} />} />
+      glow={isLight} onTap={toggle} compact
+      control={<Toggle on={on} onChange={toggle} accent="rgba(255,255,255,0.4)" size={0.72} />} />
   );
 }
 
@@ -99,8 +99,8 @@ function LightFavTile({ id, label }: { id: string; label: string }) {
   };
   const toggle = () => setD(id, { on: !s.on, level: !s.on ? 100 : 0 });
   return (
-    <div style={{ gridColumn: 'span 2', position: 'relative', height: 54, borderRadius: 'var(--radius)', overflow: 'hidden', background: 'var(--slider-track)', touchAction: 'none', userSelect: 'none' }}>
-      <Slider value={displayLevel} onChange={onDrag} onCommit={onCommit} height={54} track="transparent" fill="linear-gradient(90deg,#f5b942,#ffd86b)" />
+    <div style={{ gridColumn: 'span 2', position: 'relative', height: 96, borderRadius: 'var(--radius)', overflow: 'hidden', background: 'var(--slider-track)', touchAction: 'none', userSelect: 'none' }}>
+      <Slider value={displayLevel} onChange={onDrag} onCommit={onCommit} height={96} track="transparent" fill="linear-gradient(90deg,#f5b942,#ffd86b)" />
       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px', pointerEvents: 'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
           <span onClick={toggle} style={{ pointerEvents: 'auto', cursor: 'pointer', color: s.on ? '#8a5a00' : 'var(--text3)', display: 'flex' }}>
@@ -124,7 +124,7 @@ function FanFavTile({ id, label }: { id: string; label: string }) {
   const spinDuration = s.on ? `${1.4 - s.speed * 0.3}s` : undefined;
   return (
     <div style={{ gridColumn: 'span 2' }}>
-      <Card style={{ padding: '12px 14px 13px' }}>
+      <Card style={{ padding: '12px 14px 10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 34, height: 34, borderRadius: 10, background: s.on ? 'var(--accent)' : 'var(--icon-bg)', color: s.on ? '#fff' : 'var(--text2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -160,32 +160,27 @@ function SpeakerFavTile({ id, label }: { id: string; label: string }) {
   const pct = dragVol ?? (s.on ? s.vol : 0);
   const toggle = () => setD(id, { on: !s.on, vol: !s.on ? (s.vol || 30) : s.vol });
   const name = speakerName(label);
-
-  // Row content, rendered twice: a dark base (legible on the white tile) and a
-  // white copy clipped to the filled region (legible over the purple fill).
-  const row = (color: string, statusColor: string, clickable: boolean) => (
-    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px', pointerEvents: 'none' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-        <span onClick={clickable ? toggle : undefined} style={{ pointerEvents: clickable ? 'auto' : 'none', cursor: 'pointer', color, display: 'flex' }}>
-          <Icon name="speaker" size={21} strokeWidth={1.9} />
-        </span>
-        <span style={{ fontSize: 15, fontWeight: 600, color, letterSpacing: -0.2 }}>{name}</span>
-      </div>
-      <span style={{ fontSize: 13.5, fontWeight: 600, color: statusColor }}>
-        {s.on ? `${pct}%` : 'Off'}
-      </span>
-    </div>
-  );
-
   return (
-    <div style={{ gridColumn: 'span 2', position: 'relative', height: 54, borderRadius: 'var(--radius)', overflow: 'hidden', background: 'var(--card)', boxShadow: 'var(--shadow)', touchAction: 'none', userSelect: 'none' }}>
-      <Slider value={pct} onChange={setDragVol} onCommit={(v) => { setDragVol(null); setD(id, { vol: v, on: v > 0 }); }} height={54} track="transparent" fill="linear-gradient(90deg,#6a4a7a,#9b6ab0)" />
-      {/* dark base — visible over the white background */}
-      {row('var(--text)', 'var(--text2)', true)}
-      {/* white copy — clipped to the filled width, visible over the purple fill */}
-      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', clipPath: `inset(0 ${100 - pct}% 0 0)`, transition: 'clip-path 80ms linear' }}>
-        {row('#fff', 'rgba(255,255,255,0.85)', false)}
-      </div>
+    <div style={{ gridColumn: 'span 2' }}>
+      <Card style={{ padding: '12px 14px 10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: s.on ? '#6a4a7a' : 'var(--icon-bg)', color: s.on ? '#fff' : 'var(--text2)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background .18s, color .18s' }}>
+              <Icon name="speaker" size={19} strokeWidth={1.9} />
+            </div>
+            <span style={{ fontSize: 15, fontWeight: 620, color: 'var(--text)', letterSpacing: -0.2 }}>{name}</span>
+          </div>
+          <Toggle on={s.on} onChange={toggle} size={0.78} />
+        </div>
+        <Slider
+          value={pct}
+          onChange={setDragVol}
+          onCommit={(v) => { setDragVol(null); setD(id, { vol: v, on: v > 0 }); }}
+          height={32}
+          fill="linear-gradient(90deg,#6a4a7a,#9b6ab0)"
+          icon={<Icon name="speaker" size={15} strokeWidth={1.9} />}
+        />
+      </Card>
     </div>
   );
 }
@@ -200,6 +195,71 @@ function SceneFavTile({ id }: { id: string; label: string }) {
   return (
     <div style={{ gridColumn: 'span 2' }}>
       <SceneRoomCard room={room} a={a} scene={scene} compact />
+    </div>
+  );
+}
+
+function MiniClimateZoneTile({ zone }: { zone: ClimateZone }) {
+  const { st, setD, go } = useHC();
+  const s = (st[zone.id] as ThermostatState | undefined)
+    ?? { temp: 72, mode: 'auto' as const, lo: 68, hi: 76 };
+  const col = s.mode === 'cool' ? '#3d9be0'
+    : s.mode === 'heat' ? '#e0573d'
+    : s.mode === 'off'  ? 'var(--text3)'
+    : '#e0883d';
+  const setpoint = s.mode === 'heat' ? `${s.lo}°`
+    : s.mode === 'cool' ? `${s.hi}°`
+    : s.mode === 'auto' ? `${s.lo}°–${s.hi}°`
+    : '—';
+  const runLabel = s.running === 'cooling' ? 'Cooling'
+    : s.running === 'heating' ? 'Heating'
+    : null;
+  const modeLabel = s.mode === 'off' ? 'Off'
+    : s.mode.charAt(0).toUpperCase() + s.mode.slice(1);
+  const canNudge = s.mode !== 'off';
+  const nudge = (d: number) => {
+    const round = (v: number) => Math.round(v * 2) / 2;
+    if (s.mode === 'heat') setD(zone.id, { lo: round(s.lo + d) });
+    else if (s.mode === 'cool') setD(zone.id, { hi: round(s.hi + d) });
+    else if (s.mode === 'auto') setD(zone.id, { lo: round(s.lo + d), hi: round(s.hi + d) });
+  };
+  return (
+    <div onClick={() => go('climate')} style={{
+      display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+      padding: 12, borderRadius: 'var(--radius)', background: 'var(--card)',
+      boxShadow: 'var(--shadow)', minHeight: 110, cursor: 'pointer',
+      WebkitTapHighlightColor: 'transparent', overflow: 'hidden',
+    }}>
+      {/* Top: icon + name/status + current temp */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+        <div style={{
+          width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+          background: s.mode === 'off' ? 'var(--icon-bg)' : col + '22',
+          color: col, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Icon name="thermo" size={18} strokeWidth={1.9} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13.5, fontWeight: 640, color: 'var(--text)', letterSpacing: -0.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{zone.name}</div>
+          <div style={{ fontSize: 11.5, fontWeight: 500, marginTop: 2, color: runLabel ? col : 'var(--text2)' }}>
+            {runLabel ?? modeLabel}
+          </div>
+        </div>
+        <div style={{ fontSize: 22, fontWeight: 300, color: 'var(--text)', letterSpacing: -0.5, flexShrink: 0 }}>{s.temp}°</div>
+      </div>
+      {/* Bottom: − setpoint + */}
+      <div onClick={e => e.stopPropagation()}
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
+        <button onClick={(e) => { e.stopPropagation(); nudge(-0.5); }}
+          disabled={!canNudge} style={{ ...stepBtn, width: 30, height: 30, borderRadius: 15, opacity: canNudge ? 1 : 0.3 }}>
+          <Icon name="minus" size={15} strokeWidth={2.4} />
+        </button>
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text2)', letterSpacing: -0.2 }}>{setpoint}</span>
+        <button onClick={(e) => { e.stopPropagation(); nudge(0.5); }}
+          disabled={!canNudge} style={{ ...stepBtn, width: 30, height: 30, borderRadius: 15, opacity: canNudge ? 1 : 0.3 }}>
+          <Icon name="plus" size={15} strokeWidth={2.4} />
+        </button>
+      </div>
     </div>
   );
 }
@@ -419,7 +479,7 @@ export function HomeScreen() {
                 return <SceneFavTile key={id} id={id} label={it.label} />;
               }
               if (carDoorIds.has(id)) {
-                return <CarDoorTile key={id} door={{ id, name: it.label }} />;
+                return <CarDoorTile key={id} door={{ id, name: it.label }} compact />;
               }
               if (it.icon === 'bulb' && !lightSceneIds.has(id)) {
                 return <LightFavTile key={id} id={id} label={it.label} />;
@@ -435,6 +495,16 @@ export function HomeScreen() {
           </div>
         )}
       </div>
+
+      {/* Mini Climate */}
+      {config.climate.length > 0 && (
+        <div style={{ marginTop: 22 }}>
+          <SectionTitle action="Details" onAction={() => go('climate')}>Climate</SectionTitle>
+          <div className="hca-tile-grid">
+            {config.climate.map(zone => <MiniClimateZoneTile key={zone.id} zone={zone} />)}
+          </div>
+        </div>
+      )}
 
       {/* People */}
       <div style={{ marginTop: 22 }}>

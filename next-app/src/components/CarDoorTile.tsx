@@ -11,7 +11,7 @@ import { Tile } from '@/components/Tile';
 import type { ContactSensorState } from '@/types/state';
 import type { SettingItem } from '@/types/config';
 
-export function CarDoorTile({ door }: { door: SettingItem }) {
+export function CarDoorTile({ door, compact }: { door: SettingItem; compact?: boolean }) {
   const { st, setD } = useHC();
   const open = (st[door.id] as ContactSensorState | undefined)?.open ?? false;
   return (
@@ -22,6 +22,7 @@ export function CarDoorTile({ door }: { door: SettingItem }) {
       active={open}
       activeColor="var(--amber)"
       glow
+      compact={compact}
       onTap={() => setD(door.id, { open: !open })}
     />
   );

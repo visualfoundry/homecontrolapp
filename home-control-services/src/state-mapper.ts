@@ -61,7 +61,9 @@ function rawToFanSpeed(st: number): number {
 // Thermostat mode encoding
 // ---------------------------------------------------------------------------
 
-const THERMO_MODES = ['Off', 'Heat', 'Cool', 'Auto', 'Fan'] as const;
+const THERMO_MODES = ['off', 'heat', 'cool', 'auto', 'fan'] as const;
+// CLIHCS: 0=Idle, 1=Heating, 2=Cooling, 3=Fan only
+const THERMO_RUN   = ['idle', 'heating', 'cooling', 'fan'] as const;
 
 // ---------------------------------------------------------------------------
 // Node → typed state
@@ -106,11 +108,15 @@ export function nodeToState(
     case 'thermostat': {
       const raw = (prop: string) => props.get(prop) ?? 0;
       const modeIdx = raw('CLIMD');
+      const runIdx  = raw('CLIHCS');
+      // All temps use raw = °F × 2 (÷2 to read, ×2 to write).
+      // CLISPC = cooling setpoint (hi); CLISPH = heating setpoint (lo).
       return {
-        temp: raw('ST'),
-        hi:   raw('CLISPH'),
-        lo:   raw('CLISPC'),
-        mode: THERMO_MODES[modeIdx] ?? 'Off',
+        temp: raw('ST')     / 2,
+        hi:   raw('CLISPC') / 2,
+        lo:   raw('CLISPH') / 2,
+        mode:    THERMO_MODES[modeIdx] ?? 'off',
+        running: THERMO_RUN[runIdx]    ?? 'idle',
       };
     }
 
@@ -208,8 +214,9 @@ export function patchToNodeCommand(
         const modeIdx = THERMO_MODES.indexOf(patch.mode as typeof THERMO_MODES[number]);
         if (modeIdx >= 0) return { cmd: 'CLIMD', value: modeIdx };
       }
-      if ('hi' in patch) return { cmd: 'CLISPH', value: Math.round(patch.hi as number) };
-      if ('lo' in patch) return { cmd: 'CLISPC', value: Math.round(patch.lo as number) };
+      // UI sends °F; EISY expects raw = °F × 2 (inverse of nodeToState ÷ 2)
+      if ('hi' in patch) return { cmd: 'CLISPC', value: Math.round((patch.hi as number) * 2) };
+      if ('lo' in patch) return { cmd: 'CLISPH', value: Math.round((patch.lo as number) * 2) };
       return null;
     }
 

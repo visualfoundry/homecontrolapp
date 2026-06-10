@@ -253,14 +253,14 @@ export function SceneRoomCard({ room, a, scene, compact }: {
   if (compact) {
     return (
       <Card pad={false} style={{ overflow: 'hidden' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px 10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px 8px' }}>
           <span style={{ width: 9, height: 9, borderRadius: 5, background: status.dot, flex: '0 0 auto' }} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <RoomTitle name={room.name} place={room.place} size={16} go={go} />
           </div>
           {room.autoId !== undefined && <AutoPill on={ea.automated} onTap={() => setAuto(!ea.automated)} />}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 14px 13px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 14px 10px' }}>
           <div style={{ flex: 1, opacity: ea.automated ? 1 : 0.5 }}>
             <IntensityRow value={ea.intensity} onChange={setIntensity} compact steps={room.steps} />
           </div>

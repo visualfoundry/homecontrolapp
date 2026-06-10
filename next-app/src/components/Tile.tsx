@@ -30,6 +30,8 @@ interface TileProps {
   control?: React.ReactNode;
   glow?: boolean;
   className?: string;
+  /** Compact variant — reduces padding and sizes to hit ~96px height */
+  compact?: boolean;
 }
 
 export function Tile({
@@ -45,9 +47,13 @@ export function Tile({
   control,
   glow = false,
   className,
+  compact = false,
 }: TileProps) {
   const color = activeColor ?? tint ?? 'var(--accent)';
   const caption = status ?? label;
+  const chipSize = compact ? 32 : 40;
+  const chipRadius = compact ? 10 : 12;
+  const iconSize = compact ? 19 : 22;
 
   return (
     <div
@@ -61,7 +67,7 @@ export function Tile({
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        padding: 'var(--card-pad)',
+        padding: compact ? 12 : 'var(--card-pad)',
         borderRadius: 'var(--radius)',
         cursor: 'pointer',
         textAlign: 'left',
@@ -72,7 +78,7 @@ export function Tile({
         color: active ? '#fff' : 'var(--text)',
         transition: 'background 200ms ease, box-shadow 200ms ease, color 200ms ease',
         WebkitTapHighlightColor: 'transparent',
-        minHeight: 116,
+        minHeight: 96,
         overflow: 'hidden',
         outline: 'none',
       }}
@@ -90,37 +96,37 @@ export function Tile({
       {/* Top row: icon chip + control */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div style={{
-          width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+          width: chipSize, height: chipSize, borderRadius: chipRadius, flexShrink: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: active ? 'rgba(255,255,255,0.22)' : 'var(--icon-bg)',
           color: active ? '#fff' : 'var(--text2)',
           transition: 'background 200ms ease, color 200ms ease',
         }}>
-          <Icon name={icon} size={22} strokeWidth={1.9} />
+          <Icon name={icon} size={iconSize} strokeWidth={1.9} />
         </div>
         {control ?? (onToggle && (
           <Toggle
             on={active}
             onChange={onToggle}
             accent={active ? 'rgba(255,255,255,0.9)' : color}
-            size={0.82}
+            size={compact ? 0.72 : 0.82}
           />
         ))}
       </div>
 
       {/* Bottom: name + status */}
-      <div style={{ marginTop: 14 }}>
+      <div style={{ marginTop: compact ? 0 : 14 }}>
         <div style={{
-          fontSize: 15.5, fontWeight: 640, letterSpacing: -0.3,
+          fontSize: compact ? 13.5 : 15.5, fontWeight: 640, letterSpacing: -0.3,
           color: active ? '#fff' : 'var(--text)',
           overflow: 'hidden', display: '-webkit-box',
-          WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+          WebkitLineClamp: compact ? 1 : 2, WebkitBoxOrient: 'vertical',
         }}>
           {name}
         </div>
         {caption && (
           <div style={{
-            fontSize: 13, fontWeight: 500, marginTop: 2,
+            fontSize: compact ? 12 : 13, fontWeight: 500, marginTop: 2,
             color: active ? 'rgba(255,255,255,0.85)' : 'var(--text2)',
           }}>
             {caption}

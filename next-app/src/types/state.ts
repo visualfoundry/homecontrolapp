@@ -29,6 +29,7 @@ export interface ThermostatState {
   mode: 'heat' | 'cool' | 'auto' | 'off';
   lo: number;
   hi: number;
+  running?: 'idle' | 'heating' | 'cooling' | 'fan';
 }
 
 export interface SpeakerState {

@@ -168,6 +168,10 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
     }
     return seed;
   });
+  // Grace period map: device id → timestamp after which SSE patches are accepted again.
+  // Prevents stale poll values from overwriting optimistic updates mid-flight.
+  const pendingUntil = useRef<Map<string, number>>(new Map());
+
   const [stack, setStack] = useState<string[]>(['home']);
   // Initialize with DEFAULT_PREFS so server and client render identically.
   // Hydrate from localStorage after mount to avoid SSR/client mismatch.
@@ -255,8 +259,15 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
     reseed();
 
     const cleanup = connectSSE(
-      // onPatch — apply incoming deltas directly (authoritative)
+      // onPatch — apply incoming deltas, skipping devices with a pending command
+      // to avoid the optimistic-update flicker caused by a stale poll arriving
+      // before EISY has processed the command.
       (id, patch) => {
+        const expiry = pendingUntil.current.get(id);
+        if (expiry) {
+          if (Date.now() < expiry) return;
+          pendingUntil.current.delete(id);
+        }
         setSt((prev) => ({
           ...prev,
           [id]: { ...(prev[id] ?? {}), ...patch } as StateMap[string],
@@ -291,6 +302,9 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
       !id.startsWith('auto:');
     if (isDeviceControl) {
       postCommand(id, patch as Record<string, unknown>);
+      // Suppress stale SSE patches for this device for 3 s — long enough to
+      // cover 2–3 poll cycles while EISY processes the command.
+      pendingUntil.current.set(id, Date.now() + 3_000);
     }
   }, []);
 
