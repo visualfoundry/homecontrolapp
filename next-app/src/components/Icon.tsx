@@ -16,7 +16,7 @@ export type IconName =
   | 'play' | 'pause' | 'next' | 'prev' | 'waterfall' | 'plus' | 'minus'
   | 'chevron' | 'chevDown' | 'check' | 'bell' | 'bolt' | 'water' | 'refresh'
   | 'calendar' | 'pool' | 'cloud' | 'rain' | 'snow' | 'pergola' | 'layers'
-  | 'shades' | 'tv';
+  | 'shades' | 'tv' | 'camera';
 
 const ICON_PATHS: Record<IconName, React.ReactNode> = {
   home:      <><path d="M4 11.5 12 5l8 6.5" /><path d="M6 10.3V20h12v-9.7" /></>,
@@ -67,6 +67,7 @@ const ICON_PATHS: Record<IconName, React.ReactNode> = {
   snow:      <><path d="M7.5 14.5A4 4 0 0 1 7 6.4 5 5 0 0 1 16.8 5 3.5 3.5 0 0 1 16.5 14.5" /><path d="M9 18.5h.01M12 20h.01M15 18.5h.01M10.5 21h.01M13.5 21h.01" strokeWidth="2.4" /></>,
   pergola:   <><path d="M4 21V8l8-4 8 4v13" /><path d="M4 11h16M4 14.5h16M4 18h16" /></>,
   layers:    <><path d="M12 3 3 8l9 5 9-5-9-5Z" /><path d="m3 12.5 9 5 9-5" /><path d="m3 16.5 9 5 9-5" /></>,
+  camera:    <><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></>,
   shades:    <><rect x="3" y="3.5" width="18" height="17" rx="2" /><path d="M3 8h18M3 12.5h18M3 17h18" /></>,
   tv:        <><rect x="2" y="3" width="20" height="14" rx="2.5" /><path d="M8 21h8M12 17v4" /></>,
 };

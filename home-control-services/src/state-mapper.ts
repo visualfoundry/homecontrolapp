@@ -111,13 +111,26 @@ export function nodeToState(
       const runIdx  = raw('CLIHCS');
       // All temps use raw = °F × 2 (÷2 to read, ×2 to write).
       // CLISPC = cooling setpoint (hi); CLISPH = heating setpoint (lo).
-      return {
-        temp: raw('ST')     / 2,
-        hi:   raw('CLISPC') / 2,
-        lo:   raw('CLISPH') / 2,
-        mode:    THERMO_MODES[modeIdx] ?? 'off',
-        running: THERMO_RUN[runIdx]    ?? 'idle',
-      };
+      const temp = raw('ST')     / 2;
+      const hi   = raw('CLISPC') / 2;
+      const lo   = raw('CLISPH') / 2;
+      const mode = THERMO_MODES[modeIdx] ?? 'off';
+
+      // Prefer CLIHCS when the hardware reports it (runIdx > 0 = actively running).
+      // Many ISY thermostat nodes omit CLIHCS from /rest/status; in that case infer
+      // running state from whether current temp has reached the setpoint.
+      let running: typeof THERMO_RUN[number];
+      if (runIdx > 0) {
+        running = THERMO_RUN[runIdx] ?? 'idle';
+      } else if ((mode === 'heat' || mode === 'auto') && temp < lo) {
+        running = 'heating';
+      } else if ((mode === 'cool' || mode === 'auto') && temp > hi) {
+        running = 'cooling';
+      } else {
+        running = 'idle';
+      }
+
+      return { temp, hi, lo, mode, running };
     }
 
     default:

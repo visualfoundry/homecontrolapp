@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useHC } from '@/lib/store';
 import { Icon } from '@/components/Icon';
 import { Tile } from '@/components/Tile';
@@ -8,6 +8,7 @@ import { Toggle } from '@/components/Toggle';
 import { Card, SectionTitle } from '@/components/Card';
 import { Segmented } from '@/components/Segmented';
 import { Avatar } from '@/components/Avatar';
+import { getAvatarPhoto, setAvatarPhoto } from '@/lib/avatar-photos';
 import { LargeTitle } from '@/components/LargeTitle';
 import { iconBtn, pillBtn, stepBtn } from '@/lib/styles';
 import { Slider } from '@/components/Slider';
@@ -230,8 +231,8 @@ function MiniClimateZoneTile({ zone }: { zone: ClimateZone }) {
       boxShadow: 'var(--shadow)', minHeight: 110, cursor: 'pointer',
       WebkitTapHighlightColor: 'transparent', overflow: 'hidden',
     }}>
-      {/* Top: icon + name/status + current temp */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+      {/* Top: icon + name/status */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <div style={{
           width: 32, height: 32, borderRadius: 10, flexShrink: 0,
           background: s.mode === 'off' ? 'var(--icon-bg)' : col + '22',
@@ -245,21 +246,94 @@ function MiniClimateZoneTile({ zone }: { zone: ClimateZone }) {
             {runLabel ?? modeLabel}
           </div>
         </div>
-        <div style={{ fontSize: 22, fontWeight: 300, color: 'var(--text)', letterSpacing: -0.5, flexShrink: 0 }}>{s.temp}°</div>
       </div>
-      {/* Bottom: − setpoint + */}
+      {/* Bottom: [− setpoint +]   current temp */}
       <div onClick={e => e.stopPropagation()}
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
-        <button onClick={(e) => { e.stopPropagation(); nudge(-0.5); }}
-          disabled={!canNudge} style={{ ...stepBtn, width: 30, height: 30, borderRadius: 15, opacity: canNudge ? 1 : 0.3 }}>
-          <Icon name="minus" size={15} strokeWidth={2.4} />
-        </button>
-        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text2)', letterSpacing: -0.2 }}>{setpoint}</span>
-        <button onClick={(e) => { e.stopPropagation(); nudge(0.5); }}
-          disabled={!canNudge} style={{ ...stepBtn, width: 30, height: 30, borderRadius: 15, opacity: canNudge ? 1 : 0.3 }}>
-          <Icon name="plus" size={15} strokeWidth={2.4} />
-        </button>
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <button onClick={(e) => { e.stopPropagation(); nudge(-0.5); }}
+            disabled={!canNudge} style={{ ...stepBtn, width: 30, height: 30, borderRadius: 15, opacity: canNudge ? 1 : 0.3 }}>
+            <Icon name="minus" size={15} strokeWidth={2.4} />
+          </button>
+          <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text2)', letterSpacing: -0.2 }}>{setpoint}</span>
+          <button onClick={(e) => { e.stopPropagation(); nudge(0.5); }}
+            disabled={!canNudge} style={{ ...stepBtn, width: 30, height: 30, borderRadius: 15, opacity: canNudge ? 1 : 0.3 }}>
+            <Icon name="plus" size={15} strokeWidth={2.4} />
+          </button>
+        </div>
+        <div style={{ fontSize: 26, fontWeight: 300, color: 'var(--text)', letterSpacing: -1 }}>{s.temp}°</div>
       </div>
+    </div>
+  );
+}
+
+// ── PersonAvatar ─────────────────────────────────────────────────────────────
+// Avatar with localStorage photo support. Tap = toggle presence.
+// Long-press (600ms) = open photo picker to set/replace photo.
+
+function PersonAvatar({ id, name, present, onToggle }: {
+  id: string; name: string; present: boolean; onToggle: () => void;
+}) {
+  const [photoUrl, setPhotoUrl] = useState<string | null>(() => getAvatarPhoto(id));
+  const fileRef = useRef<HTMLInputElement>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const didLongPress = useRef(false);
+
+  // Sync photo when id changes (e.g. config reload)
+  useEffect(() => { setPhotoUrl(getAvatarPhoto(id)); }, [id]);
+
+  const startLongPress = () => {
+    didLongPress.current = false;
+    longPressTimer.current = setTimeout(() => {
+      didLongPress.current = true;
+      fileRef.current?.click();
+    }, 600);
+  };
+
+  const cancelLongPress = () => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+  };
+
+  const handleClick = () => {
+    if (!didLongPress.current) onToggle();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      setAvatarPhoto(id, dataUrl);
+      setPhotoUrl(dataUrl);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  return (
+    <div style={{ flex: '0 0 auto', width: 64, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7 }}>
+      <div style={{ position: 'relative' }}
+        onPointerDown={startLongPress}
+        onPointerUp={cancelLongPress}
+        onPointerLeave={cancelLongPress}
+        onClick={handleClick}>
+        <Avatar name={name} present={present} photoUrl={photoUrl} />
+        {/* Small camera badge hint */}
+        <div style={{
+          position: 'absolute', bottom: 0, right: 0,
+          width: 16, height: 16, borderRadius: '50%',
+          background: 'var(--card)', border: '1.5px solid var(--sep)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          pointerEvents: 'none',
+        }}>
+          <Icon name="camera" size={9} strokeWidth={2} />
+        </div>
+      </div>
+      <span style={{ fontSize: 12.5, fontWeight: 560, color: present ? 'var(--text)' : 'var(--text3)' }}>
+        {name.split(' ')[0]}
+      </span>
+      <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
     </div>
   );
 }
@@ -513,15 +587,9 @@ export function HomeScreen() {
           <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none' }}>
             {config.people.map(p => {
               const home = (st[p.id] as FlagState | undefined)?.on ?? false;
-              const toggle = () => setD(p.id, { on: !home });
               return (
-                <button key={p.id} onClick={toggle}
-                  style={{ flex: '0 0 auto', width: 64, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7,
-                    border: 'none', background: 'transparent', cursor: 'pointer', padding: '4px 0',
-                    WebkitTapHighlightColor: 'transparent' }}>
-                  <Avatar name={p.name} present={home} />
-                  <span style={{ fontSize: 12.5, fontWeight: 560, color: home ? 'var(--text)' : 'var(--text3)' }}>{p.name}</span>
-                </button>
+                <PersonAvatar key={p.id} id={p.id} name={p.name} present={home}
+                  onToggle={() => setD(p.id, { on: !home })} />
               );
             })}
           </div>

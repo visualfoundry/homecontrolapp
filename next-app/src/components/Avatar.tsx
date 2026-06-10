@@ -23,10 +23,11 @@ interface AvatarProps {
   name: string;
   present: boolean;
   size?: number;
+  photoUrl?: string | null;
   onClick?: () => void;
 }
 
-export function Avatar({ name, present, size = 46, onClick }: AvatarProps) {
+export function Avatar({ name, present, size = 46, photoUrl, onClick }: AvatarProps) {
   const initials = name
     .split(' ')
     .map((w) => w[0])
@@ -37,7 +38,18 @@ export function Avatar({ name, present, size = 46, onClick }: AvatarProps) {
 
   const inner = (
     <div style={{ position: 'relative', width: size, height: size }}>
-      {/* Circle */}
+      {/* Circle / photo */}
+      {photoUrl ? (
+        <img
+          src={photoUrl}
+          alt={name}
+          style={{
+            width: size, height: size, borderRadius: '50%', objectFit: 'cover',
+            opacity: present ? 1 : 0.45,
+            transition: 'opacity 200ms ease',
+          }}
+        />
+      ) : (
       <div
         style={{
           width: size,
@@ -56,6 +68,7 @@ export function Avatar({ name, present, size = 46, onClick }: AvatarProps) {
       >
         {initials}
       </div>
+      )}
       {/* Presence dot */}
       <span
         style={{
