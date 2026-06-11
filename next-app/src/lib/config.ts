@@ -152,37 +152,36 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     }));
 
   // --- Doors (exterior locks + per-door auto-lock + open/closed sensor) ---
-  // Build place → autoLockId from 'Door Lock' controls
+  // 'Door Exterior' is the parent record for each exterior door AND its open/closed variable.
+  // 'Door Lock Status' (child, same place) holds the locked/unlocked variable → door.id.
+  // 'Door Lock Auto Lock' (child, same place) holds the auto-lock toggle → door.autoLockId.
+  const doorLockStatusByPlace = new Map<string, string>();
+  for (const n of controls) {
+    if ((n.controlFields?.controlType?.nodes[0]?.title ?? '') === 'Door Lock Status') {
+      const place = getPlace(n);
+      if (place) doorLockStatusByPlace.set(place, toId(n));
+    }
+  }
   const autoLockByPlace = new Map<string, string>();
   for (const n of controls) {
-    if ((n.controlFields?.controlType?.nodes[0]?.title ?? '') === 'Door Lock') {
+    if ((n.controlFields?.controlType?.nodes[0]?.title ?? '') === 'Door Lock Auto Lock') {
       const place = getPlace(n);
       if (place) autoLockByPlace.set(place, toId(n));
     }
   }
-  // 'Door Exterior' controls with " Open" suffix are open/closed contact sensors.
-  // Pair them with the lock control for the same place via openId.
-  const doorOpenByPlace = new Map<string, string>();
-  for (const n of controls) {
-    if ((n.controlFields?.controlType?.nodes[0]?.title ?? '') === 'Door Exterior' && /\bOpen$/i.test(n.title)) {
-      const place = getPlace(n) ?? '';
-      if (place) doorOpenByPlace.set(place, toId(n));
-    }
-  }
   const doorsExterior = controls
     .filter(n =>
-      (n.controlFields?.controlType?.nodes[0]?.title ?? '') === 'Door Exterior' &&
-      !/\bOpen$/i.test(n.title),
+      (n.controlFields?.controlType?.nodes[0]?.title ?? '') === 'Door Exterior',
     )
-    .map(n => {
+    .flatMap(n => {
       const place = getPlace(n) ?? '';
+      const lockId = doorLockStatusByPlace.get(place);
+      if (!lockId) return [];
       const autoLockId = autoLockByPlace.get(place);
-      const openId = doorOpenByPlace.get(place);
-      return {
-        id: toId(n), name: n.title,
+      return [{
+        id: lockId, name: n.title, openId: toId(n),
         ...(autoLockId ? { autoLockId } : {}),
-        ...(openId ? { openId } : {}),
-      };
+      }];
     })
     .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -284,19 +283,20 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
   const settingsEnvironment = settingsByType('Environment');
 
   // --- Garage doors: exterior doors located in the 'Garage' place ---------
-  // These are 'Door Exterior' controls, rendered as lock rows like the Doors page.
+  // These are 'Door Exterior' controls in place 'Garage', same structure as doorsExterior.
   const garageDoors = controls
-    .filter(n => ctTitle(n) === 'Door Exterior' && getPlace(n) === 'Garage' && !/\bOpen$/i.test(n.title))
+    .filter(n => ctTitle(n) === 'Door Exterior' && getPlace(n) === 'Garage')
     .map(n => {
       const place = getPlace(n) ?? '';
+      const lockId = doorLockStatusByPlace.get(place);
+      if (!lockId) return [];
       const autoLockId = autoLockByPlace.get(place);
-      const openId = doorOpenByPlace.get(place);
-      return {
-        id: toId(n), name: n.title,
+      return [{
+        id: lockId, name: n.title, openId: toId(n),
         ...(autoLockId ? { autoLockId } : {}),
-        ...(openId ? { openId } : {}),
-      };
+      }];
     })
+    .flat()
     .sort(byName);
 
   // --- Cars: controls with 'Car At Home' in the title ---------------------
@@ -364,7 +364,7 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
 
   // --- Garage: all other controls whose place is 'Garage' -----------------
   // Exterior doors and car doors get their own sections, so exclude them here.
-  const GARAGE_OWN_TYPES = ['Door Exterior', 'Garage Car Door'];
+  const GARAGE_OWN_TYPES = ['Door Exterior', 'Door Lock Status', 'Door Lock Auto Lock', 'Garage Car Door'];
   const garage = controls
     .filter(n => getPlace(n) === 'Garage' && !GARAGE_OWN_TYPES.includes(ctTitle(n)))
     .map(n => ({ id: toId(n), name: n.title }))

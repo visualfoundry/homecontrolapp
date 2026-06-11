@@ -490,11 +490,12 @@ export function buildInitialState(): StateMap {
   }));
 
   // Exterior doors
-  const doorSeed: Record<string, boolean> = {
-    'd-backyard': true, 'd-driveway': true, 'd-front': true,
-    'd-garage': false,  'd-livingrm': true, 'd-porch': true,
+  // Door Exterior variables: value 1 = locked, value 0 = unlocked
+  const doorSeed: Record<string, number> = {
+    'd-backyard': 1, 'd-driveway': 1, 'd-front': 1,
+    'd-garage': 0,   'd-livingrm': 1, 'd-porch': 1,
   };
-  doorsExterior.forEach(d => { s[d.id] = { locked: doorSeed[d.id] ?? true }; });
+  doorsExterior.forEach(d => { s[d.id] = { value: doorSeed[d.id] ?? 1 }; });
 
   // Interior sensors
   const sensorSeed: Record<string, { open: boolean; lowBattery?: boolean }> = {

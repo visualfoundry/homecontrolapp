@@ -11,20 +11,21 @@ import { useHC } from '@/lib/store';
 import { Icon } from '@/components/Icon';
 import { Toggle } from '@/components/Toggle';
 import type { ExteriorDoor } from '@/types/config';
-import type { LockState, FlagState } from '@/types/state';
+import type { FlagState, VariableState } from '@/types/state';
 
 // WP post titles carry a trailing " Open" suffix we don't want to show.
 const doorName = (name: string) => name.replace(/\s+Open$/, '');
 
 export function ExteriorDoorRow({ door, last }: { door: ExteriorDoor; last?: boolean }) {
   const { st, setD } = useHC();
-  const locked = (st[door.id] as LockState | undefined)?.locked ?? true;
+  const locked = ((st[door.id] as VariableState | undefined)?.value ?? 1) === 1;
   const autoLock = door.autoLockId
     ? (st[door.autoLockId] as FlagState | undefined)?.on ?? false
     : undefined;
-  // Open/closed sensor: locked=true → DON fired → door is physically open
-  const openState = door.openId ? (st[door.openId] as LockState | undefined) : undefined;
-  const open = openState?.locked ?? false;
+  // Door Lock variable: value !== 0 means door is open
+  const open = door.openId
+    ? ((st[door.openId] as VariableState | undefined)?.value ?? 0) !== 0
+    : false;
 
   return (
     <div style={{
@@ -34,14 +35,14 @@ export function ExteriorDoorRow({ door, last }: { door: ExteriorDoor; last?: boo
       <div style={{
         width: 36, height: 36, borderRadius: 10, flexShrink: 0,
         background: door.openId
-          ? (open ? 'rgba(52,168,83,0.12)' : 'rgba(255,165,0,0.12)')
+          ? (open ? 'rgba(224,72,61,0.12)' : 'rgba(52,168,83,0.12)')
           : (locked ? 'rgba(52,168,83,0.12)' : 'rgba(224,72,61,0.12)'),
         color: door.openId
-          ? (open ? 'var(--green)' : 'var(--amber)')
+          ? (open ? 'var(--red)' : 'var(--green)')
           : (locked ? 'var(--green)' : 'var(--red)'),
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        <Icon name={door.openId ? 'door' : (locked ? 'lock' : 'unlock')} size={20} />
+        <Icon name={door.openId ? (open ? 'doorOpen' : 'door') : (locked ? 'lock' : 'unlock')} size={20} />
       </div>
       <span style={{ flex: 1, fontSize: 16, fontWeight: 560, color: 'var(--text)' }}>{doorName(door.name)}</span>
       {autoLock !== undefined && (
@@ -50,7 +51,7 @@ export function ExteriorDoorRow({ door, last }: { door: ExteriorDoor; last?: boo
           <Toggle on={autoLock} onChange={(v) => setD(door.autoLockId!, { on: v })} size={0.72} />
         </div>
       )}
-      <button onClick={() => setD(door.id, { locked: !locked })} style={{
+      <button onClick={() => setD(door.id, { value: locked ? 0 : 1 })} style={{
         border: 'none', cursor: 'pointer', borderRadius: 8, padding: '6px 12px',
         fontSize: 13.5, fontWeight: 640,
         background: locked ? 'rgba(52,168,83,0.12)' : 'rgba(224,72,61,0.12)',
