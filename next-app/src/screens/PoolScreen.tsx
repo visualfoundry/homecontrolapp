@@ -272,9 +272,11 @@ function ScheduleEditor({ editor, setEditor, onSave, onDelete, portalTarget }: {
 
 export function PoolScreen() {
   const { st, setD, overlayRef, config } = useHC();
-  const p = st['pool'] as PoolState;
+  const p = st['pool'] as PoolState | undefined;
   const setP = (patch: Partial<PoolState>) => setD('pool', patch);
   const [editor, setEditor] = useState<EditorState | null>(null);
+
+  if (!p) return null;
 
   const heaterRunning = p.heaterOn && p.poolTemp < p.heaterTarget;
   const phStatus = p.ph < 7.2 ? 'Low' : p.ph > 7.8 ? 'High' : 'Ideal';

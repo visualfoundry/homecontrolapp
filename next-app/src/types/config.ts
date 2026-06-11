@@ -7,6 +7,7 @@
 // =============================================================================
 
 import type { SceneView } from '@/types/state';
+import type { IconName } from '@/components/Icon';
 
 // ---------------------------------------------------------------------------
 // Device config
@@ -201,7 +202,7 @@ export interface FanDevice     { id: string; name: string }
 export interface IrrigationProgram { id: string; name: string }
 export interface IrrigationZone    { id: string; name: string }
 export interface SensorDevice  { id: string; name: string }
-export interface OutdoorDevice { id: string; name: string; kind: 'toggle' | 'dimmer' }
+export interface OutdoorDevice { id: string; name: string; kind: 'toggle' | 'dimmer'; icon?: IconName }
 export interface SettingItem   { id: string; name: string }
 
 export type SceneRoomTypeKey = 'bedroom' | 'bath' | 'living' | 'utility' | 'hall';

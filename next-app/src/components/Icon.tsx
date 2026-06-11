@@ -16,7 +16,7 @@ export type IconName =
   | 'play' | 'pause' | 'next' | 'prev' | 'waterfall' | 'plus' | 'minus'
   | 'chevron' | 'chevDown' | 'check' | 'bell' | 'bolt' | 'water' | 'refresh'
   | 'calendar' | 'pool' | 'cloud' | 'rain' | 'snow' | 'pergola' | 'layers'
-  | 'shades' | 'tv' | 'camera' | 'doorOpen';
+  | 'shades' | 'tv' | 'camera' | 'doorOpen' | 'waterSpout';
 
 const ICON_PATHS: Record<IconName, React.ReactNode> = {
   home:      <><path d="M4 11.5 12 5l8 6.5" /><path d="M6 10.3V20h12v-9.7" /></>,
@@ -62,7 +62,8 @@ const ICON_PATHS: Record<IconName, React.ReactNode> = {
   water:     <><path d="M4 16c2-1.5 3-1.5 5 0s3 1.5 5 0 3-1.5 5 0" /><path d="M4 11c2-1.5 3-1.5 5 0s3 1.5 5 0 3-1.5 5 0" /></>,
   refresh:   <><path d="M4 12a8 8 0 0 1 13.5-5.8L20 8" /><path d="M20 4v4h-4" /><path d="M20 12a8 8 0 0 1-13.5 5.8L4 16" /><path d="M4 20v-4h4" /></>,
   calendar:  <><rect x="4" y="5" width="16" height="16" rx="2.5" /><path d="M4 9.5h16M8 3v4M16 3v4" /></>,
-  pool:      <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /></>,
+  pool:       <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /></>,
+  waterSpout: <><path d="M8 21h8" /><path d="M12 21v-9" /><path d="M12 12C9 12 6 9 6 5" /><path d="M12 12C15 12 18 9 18 5" /><path d="M6 5l-1-2" /><path d="M18 5l1-2" /></>,
   cloud:     <path d="M7 18.5A4.2 4.2 0 0 1 6.6 10 5.3 5.3 0 0 1 17 8.6 3.7 3.7 0 0 1 16.6 18.5Z" />,
   rain:      <><path d="M7.5 15.5A4 4 0 0 1 7 7.4 5 5 0 0 1 16.8 6 3.5 3.5 0 0 1 16.5 15.5" /><path d="M8 18l-1 2.5M12.5 18l-1 2.5M17 18l-1 2.5" /></>,
   snow:      <><path d="M7.5 14.5A4 4 0 0 1 7 6.4 5 5 0 0 1 16.8 5 3.5 3.5 0 0 1 16.5 14.5" /><path d="M9 18.5h.01M12 20h.01M15 18.5h.01M10.5 21h.01M13.5 21h.01" strokeWidth="2.4" /></>,
