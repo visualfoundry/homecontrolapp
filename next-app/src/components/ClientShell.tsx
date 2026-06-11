@@ -7,6 +7,7 @@
 
 import dynamic from 'next/dynamic';
 import type { AppConfig } from '@/types/config';
+import { AuthGate } from '@/components/AuthGate';
 
 const AppShell = dynamic<{ config: AppConfig }>(
   () => import('@/components/AppShell').then((m) => ({ default: m.AppShell })),
@@ -14,5 +15,9 @@ const AppShell = dynamic<{ config: AppConfig }>(
 );
 
 export function ClientShell({ config }: { config: AppConfig }) {
-  return <AppShell config={config} />;
+  return (
+    <AuthGate>
+      <AppShell config={config} />
+    </AuthGate>
+  );
 }

@@ -446,6 +446,46 @@ function homecontrolapp_control_query( $query ) {
 }
 
 // -------------------------------------------------------------------------
+// HCA auth — custom REST endpoint for Next.js credential verification
+// -------------------------------------------------------------------------
+// POST /wp-json/hca/v1/login
+// Body: { username, password }
+// Header: X-HCA-Internal-Key: <HCA_INTERNAL_KEY from wp-config.php>
+//
+// Called server-side from Next.js /api/auth/login — never directly by the browser.
+// Returns { userId } on success, 401 on bad credentials, 403 if key is missing/wrong.
+
+add_action( 'rest_api_init', function () {
+	register_rest_route(
+		'hca/v1',
+		'/login',
+		array(
+			'methods'             => 'POST',
+			'callback'            => 'homecontrolapp_rest_login',
+			'permission_callback' => '__return_true',
+		)
+	);
+} );
+
+function homecontrolapp_rest_login( WP_REST_Request $req ) {
+	$key = defined( 'HCA_INTERNAL_KEY' ) ? HCA_INTERNAL_KEY : '';
+	if ( empty( $key ) || $req->get_header( 'X-HCA-Internal-Key' ) !== $key ) {
+		return new WP_REST_Response( array( 'error' => 'Forbidden' ), 403 );
+	}
+
+	$user = wp_authenticate(
+		sanitize_user( (string) $req->get_param( 'username' ) ),
+		(string) $req->get_param( 'password' )
+	);
+
+	if ( is_wp_error( $user ) ) {
+		return new WP_REST_Response( array( 'error' => 'Invalid credentials' ), 401 );
+	}
+
+	return new WP_REST_Response( array( 'userId' => $user->ID ), 200 );
+}
+
+// -------------------------------------------------------------------------
 // Page template support
 // -------------------------------------------------------------------------
 // The "App Shell" page template (page-app-shell.php) outputs the minimal HTML
