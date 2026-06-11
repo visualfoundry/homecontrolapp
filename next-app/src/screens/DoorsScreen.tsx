@@ -50,7 +50,7 @@ export function DoorsScreen() {
                   color: open ? 'var(--green)' : 'var(--amber)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 13,
                 }}>
-                  <Icon name="door" size={20} />
+                  <Icon name={open ? 'doorOpen' : 'door'} size={20} />
                 </div>
                 <span style={{ flex: 1, fontSize: 16, fontWeight: 560, color: 'var(--text)' }}>{doorName(d.name)}</span>
                 {s?.lowBattery && (
