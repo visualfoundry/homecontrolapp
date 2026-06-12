@@ -75,7 +75,7 @@ function LibraryCard({ uri, name, artUrl, sub, artCircle = false, onPlay }: {
 
 export function MusicScreen() {
   const { st, setD, config } = useHC();
-  const { sdkPlayer, spotify } = useSpotifyContext();
+  const { sdkPlayer, spotify, dismissMini } = useSpotifyContext();
   const library = useSpotifyLibrary();
 
   // Prefer real-time SDK state when the in-browser player is active,
@@ -205,6 +205,7 @@ export function MusicScreen() {
                 <Icon name={displayIsPlaying ? 'pause' : 'play'} size={20} />
               </button>
               <button style={miniBtn} onClick={() => spotify.command('next')}><Icon name="next" size={20} /></button>
+              <button style={miniBtn} onClick={() => { void spotify.command('pause'); dismissMini(); }}><Icon name="stop" size={18} /></button>
             </div>
           </div>
           {/* Progress bar */}

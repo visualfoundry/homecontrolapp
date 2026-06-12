@@ -17,7 +17,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { HCProvider, useHC } from '@/lib/store';
-import { SpotifyProvider, useSpotifyContext } from '@/lib/spotify-context';
+import { SpotifyProvider } from '@/lib/spotify-context';
 import { MiniPlayer } from '@/components/MiniPlayer';
 import { TabBar } from '@/components/TabBar';
 import { Sidebar } from '@/components/Sidebar';
@@ -123,10 +123,7 @@ function ScreenRenderer({ id }: { id: string }) {
 
 function Shell() {
   const { stack, prefs, go, overlayRef } = useHC();
-  const { sdkPlayer, spotify } = useSpotifyContext();
   const current = stack[stack.length - 1];
-  const sdkTrack = sdkPlayer.sdkState?.track_window.current_track;
-  const showMini = !!(sdkTrack ?? spotify.track) && current !== 'music';
   const showBack = !isTabSlot(current, prefs.tabs);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -165,8 +162,8 @@ function Shell() {
           <ScreenRenderer id={current} />
         </div>
 
-        {/* Mini player — shows when music is playing on any screen except Music */}
-        {showMini && <MiniPlayer />}
+        {/* Mini player — hidden on Music screen; MiniPlayer handles its own null state */}
+        {current !== 'music' && <MiniPlayer />}
 
         {/* Tab bar — hidden on tablet via CSS (.hca-tab-bar-phone) */}
         <div className="hca-tab-bar-phone">

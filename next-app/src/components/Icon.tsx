@@ -16,7 +16,7 @@ export type IconName =
   | 'play' | 'pause' | 'next' | 'prev' | 'waterfall' | 'plus' | 'minus'
   | 'chevron' | 'chevDown' | 'check' | 'bell' | 'bolt' | 'water' | 'refresh'
   | 'calendar' | 'pool' | 'cloud' | 'rain' | 'snow' | 'pergola' | 'layers'
-  | 'shades' | 'tv' | 'camera' | 'doorOpen' | 'waterSpout' | 'close';
+  | 'shades' | 'tv' | 'camera' | 'doorOpen' | 'waterSpout' | 'close' | 'stop';
 
 const ICON_PATHS: Record<IconName, React.ReactNode> = {
   home:      <><path d="M4 11.5 12 5l8 6.5" /><path d="M6 10.3V20h12v-9.7" /></>,
@@ -73,6 +73,7 @@ const ICON_PATHS: Record<IconName, React.ReactNode> = {
   shades:    <><rect x="3" y="3.5" width="18" height="17" rx="2" /><path d="M3 8h18M3 12.5h18M3 17h18" /></>,
   tv:        <><rect x="2" y="3" width="20" height="14" rx="2.5" /><path d="M8 21h8M12 17v4" /></>,
   close:     <path d="M18 6 6 18M6 6l12 12" />,
+  stop:      <rect x="5" y="5" width="14" height="14" rx="2" fill="currentColor" stroke="none" />,
 };
 
 interface IconProps {

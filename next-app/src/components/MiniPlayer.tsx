@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { useHC } from '@/lib/store';
 import { Icon } from '@/components/Icon';
 import { useSpotifyContext } from '@/lib/spotify-context';
@@ -10,7 +10,8 @@ export const MINI_HEIGHT = 56;
 
 export function MiniPlayer() {
   const { go } = useHC();
-  const { sdkPlayer, spotify } = useSpotifyContext();
+  const { sdkPlayer, spotify, miniDismissed, dismissMini } = useSpotifyContext();
+  const lastTrackRef = useRef<SpotifyTrack | null>(null);
 
   // Prefer SDK state (in-browser player), fall back to REST-polled state
   const sdkTrack = sdkPlayer.sdkState?.track_window.current_track;
@@ -25,11 +26,15 @@ export function MiniPlayer() {
       }
     : spotify.track;
 
+  // Persist the last known track so the bar can show play button when paused
+  if (track) lastTrackRef.current = track;
+  const displayTrack = miniDismissed ? null : (track ?? lastTrackRef.current);
+
   const isPlaying = sdkPlayer.sdkState ? !sdkPlayer.sdkState.paused : spotify.isPlaying;
   const progressMs = sdkPlayer.sdkState ? sdkPlayer.sdkState.position : spotify.progressMs;
-  const progress = track && track.durationMs > 0 ? progressMs / track.durationMs : 0;
+  const progress = displayTrack && displayTrack.durationMs > 0 ? progressMs / displayTrack.durationMs : 0;
 
-  if (!track) return null;
+  if (!displayTrack) return null;
 
   return (
     <div
@@ -60,10 +65,10 @@ export function MiniPlayer() {
       </div>
 
       {/* Album art */}
-      {track.artUrl ? (
+      {displayTrack.artUrl ? (
         <img
-          src={track.artUrl}
-          alt={track.album}
+          src={displayTrack.artUrl}
+          alt={displayTrack.album}
           style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }}
         />
       ) : (
@@ -83,17 +88,17 @@ export function MiniPlayer() {
           fontSize: 13.5, fontWeight: 620, color: 'var(--text)',
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
         }}>
-          {track.name}
+          {displayTrack.name}
         </div>
         <div style={{
           fontSize: 12, color: 'var(--text2)', marginTop: 1,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
         }}>
-          {track.artist}
+          {displayTrack.artist}
         </div>
       </div>
 
-      {/* Play/pause — the only interactive button; outer div handles navigation */}
+      {/* Play/pause */}
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -102,14 +107,30 @@ export function MiniPlayer() {
         style={{
           width: 36, height: 36, borderRadius: 18,
           border: 'none', cursor: 'pointer',
-          background: 'var(--icon-bg)',
-          color: 'var(--text)',
+          background: 'var(--icon-bg)', color: 'var(--text)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexShrink: 0,
-          WebkitTapHighlightColor: 'transparent',
+          flexShrink: 0, WebkitTapHighlightColor: 'transparent',
         }}
       >
         <Icon name={isPlaying ? 'pause' : 'play'} size={18} />
+      </button>
+
+      {/* Stop — pauses and dismisses the bar */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          void spotify.command('pause');
+          dismissMini();
+        }}
+        style={{
+          width: 36, height: 36, borderRadius: 18,
+          border: 'none', cursor: 'pointer',
+          background: 'var(--icon-bg)', color: 'var(--text)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0, WebkitTapHighlightColor: 'transparent',
+        }}
+      >
+        <Icon name="stop" size={16} />
       </button>
     </div>
   );
