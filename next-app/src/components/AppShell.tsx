@@ -45,6 +45,7 @@ import { CinemaScreen } from '@/screens/CinemaScreen';
 import { WhosHomeScreen } from '@/screens/WhosHomeScreen';
 import { TVScreen } from '@/screens/TVScreen';
 import { CamerasScreen } from '@/screens/CamerasScreen';
+import { NotificationsScreen } from '@/screens/NotificationsScreen';
 import { RoomScreen } from '@/screens/RoomScreen';
 
 // ---------------------------------------------------------------------------
@@ -98,8 +99,9 @@ const SCREEN_COMPONENTS: Record<string, React.FC> = {
   scenes:     ScenesScreen,
   editfav:    EditFavoritesScreen,
   editscenes: EditScenesScreen,
-  docs:       DocsScreen,
-  cameras:    CamerasScreen,
+  docs:          DocsScreen,
+  cameras:       CamerasScreen,
+  notifications: NotificationsScreen,
 };
 
 function ScreenRenderer({ id }: { id: string }) {

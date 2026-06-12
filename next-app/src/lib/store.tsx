@@ -33,7 +33,7 @@ import React, {
 import { SECTIONS, MAX_TABS, isTabSlot } from '@/lib/sections';
 import type { SectionDef } from '@/lib/sections';
 import type { StateMap, StatePatch } from '@/types/state';
-import { type UserPrefs, DEFAULT_PREFS, type AppConfig } from '@/types/config';
+import { type UserPrefs, DEFAULT_PREFS, type AppConfig, type NotificationPrefs, DEFAULT_NOTIF_PREFS } from '@/types/config';
 import { buildInitialState } from '@/lib/data';
 import { fetchState, postCommand, connectSSE } from '@/lib/state-client';
 
@@ -115,6 +115,27 @@ function loadFavs(): string[] | null {
     return raw ? (JSON.parse(raw) as string[]) : null;
   } catch {
     return null;
+  }
+}
+
+const NOTIF_KEY = 'hca:notifications';
+
+export function loadNotifPrefs(): NotificationPrefs {
+  if (typeof window === 'undefined') return DEFAULT_NOTIF_PREFS;
+  try {
+    const raw = localStorage.getItem(NOTIF_KEY);
+    if (!raw) return DEFAULT_NOTIF_PREFS;
+    return { ...DEFAULT_NOTIF_PREFS, ...JSON.parse(raw) };
+  } catch {
+    return DEFAULT_NOTIF_PREFS;
+  }
+}
+
+export function saveNotifPrefs(prefs: NotificationPrefs): void {
+  try {
+    localStorage.setItem(NOTIF_KEY, JSON.stringify(prefs));
+  } catch {
+    // storage quota exceeded — ignore
   }
 }
 

@@ -284,3 +284,25 @@ export const DEFAULT_PREFS: UserPrefs = {
   tabs: ['home', 'scenes', 'pool', 'music'],
   sceneView: 'Detailed',
 };
+
+// ---------------------------------------------------------------------------
+// Notification preferences (localStorage — which events the user wants alerts for)
+// ---------------------------------------------------------------------------
+
+export interface NotificationPrefs {
+  leak: boolean;
+  motion: boolean;
+  doors: boolean;
+  houseSecurity: boolean;
+  whoIsHome: boolean;
+  houseMode: boolean;
+}
+
+export const DEFAULT_NOTIF_PREFS: NotificationPrefs = {
+  leak: true,
+  motion: true,
+  doors: true,
+  houseSecurity: true,
+  whoIsHome: true,
+  houseMode: false,
+};
