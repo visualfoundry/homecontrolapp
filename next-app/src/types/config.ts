@@ -151,7 +151,6 @@ export interface HomeConfig {
 // ---------------------------------------------------------------------------
 
 export interface ControlTypeFieldsRaw {
-  controlTypeClass:  string | null;
   controlTypeType:   string | null;
   controlTypeMethod: string | null;
 }

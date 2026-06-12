@@ -53,10 +53,6 @@ function inferSceneRoom(id: string, name: string): SceneRoomConfig {
 
 function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
 
-  // Helper: get the control-type class for a control node
-  const getClass = (n: (typeof controls)[0]) =>
-    n.controlFields?.controlType?.nodes[0]?.controlTypeFields?.controlTypeClass ?? null;
-
   // Helper: get the place title for a control node
   const getPlace = (n: (typeof controls)[0]) =>
     n.controlFields?.controlPlace?.nodes[0]?.title ?? null;
@@ -237,7 +233,7 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
 
   // --- Motion sensors -----------------------------------------------------
   const motionSensors = controls
-    .filter(n => getClass(n) === 'motion')
+    .filter(n => (n.controlFields?.controlType?.nodes[0]?.title ?? '') === 'Motion Sensor')
     .map(n => ({ id: toId(n), name: n.title }))
     .sort((a, b) => a.name.localeCompare(b.name));
 

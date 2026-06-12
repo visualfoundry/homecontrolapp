@@ -35,7 +35,32 @@ export async function GET() {
     }
   }
 
+  // Probe the WPGraphQL endpoint to surface why fetchConfig fell back to mock
+  const wpGraphqlUrl = process.env.NEXT_PUBLIC_WP_GRAPHQL_URL ?? null;
+  let wpConfig: { url: string | null; source: string; error?: string } = {
+    url: wpGraphqlUrl,
+    source: wpGraphqlUrl ? 'wp' : 'mock (env var not set)',
+  };
+  if (wpGraphqlUrl && Object.keys(ids).length === 0) {
+    try {
+      const probe = await fetch(wpGraphqlUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: '{ __typename }' }),
+        signal: AbortSignal.timeout(5000),
+      });
+      if (probe.ok) {
+        wpConfig = { url: wpGraphqlUrl, source: 'mock (WP reachable but query returned 0 controls)' };
+      } else {
+        wpConfig = { url: wpGraphqlUrl, source: 'mock', error: `HTTP ${probe.status}` };
+      }
+    } catch (e) {
+      wpConfig = { url: wpGraphqlUrl, source: 'mock', error: e instanceof Error ? e.message : String(e) };
+    }
+  }
+
   return NextResponse.json({
+    wpConfig,
     totalMappings: Object.keys(ids).length,
     byPrefix,
     doorsExterior: cfg.doorsExterior,

@@ -30,6 +30,11 @@ export function idMaps(): Promise<IdMaps> {
   if (!mapsPromise) {
     mapsPromise = fetchConfig().then((cfg) => {
       const configToState = cfg.controlStateIds ?? {};
+      // Don't cache an empty map when real service is configured — WP may have been
+      // temporarily unreachable; the next call will retry rather than using mock IDs forever.
+      if (STATE_API_BASE_URL && Object.keys(configToState).length === 0) {
+        mapsPromise = null;
+      }
       const stateToConfig: Record<string, string> = {};
       for (const [cid, sid] of Object.entries(configToState)) stateToConfig[sid] = cid;
       return { configToState, stateToConfig };

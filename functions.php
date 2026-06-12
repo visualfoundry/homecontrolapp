@@ -135,7 +135,6 @@ add_filter( 'manage_control-type_posts_columns', 'homecontrolapp_control_type_co
 function homecontrolapp_control_type_columns( $columns ) {
 	unset( $columns['date'] );
 	$columns['control_type_type']    = 'Type';
-	$columns['control_type_class']   = 'Class';
 	$columns['control_type_count']   = 'Controls';
 	return $columns;
 }
@@ -144,7 +143,6 @@ function homecontrolapp_control_type_columns( $columns ) {
 add_filter( 'manage_edit-control-type_sortable_columns', 'homecontrolapp_control_type_sortable_columns' );
 function homecontrolapp_control_type_sortable_columns( $columns ) {
 	$columns['control_type_type']  = 'control_type_type';
-	$columns['control_type_class'] = 'control_type_class';
 	return $columns;
 }
 
@@ -152,8 +150,6 @@ add_action( 'manage_control-type_posts_custom_column', 'homecontrolapp_control_t
 function homecontrolapp_control_type_column_values( $column, $post_id ) {
 	if ( $column === 'control_type_type' ) {
 		echo esc_html( get_field( 'control_type_type', $post_id ) ?: '—' );
-	} elseif ( $column === 'control_type_class' ) {
-		echo esc_html( get_field( 'control_type_class', $post_id ) ?: '—' );
 	} elseif ( $column === 'control_type_count' ) {
 		$count = get_posts( array(
 			'post_type'      => 'control',

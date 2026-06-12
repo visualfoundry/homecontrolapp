@@ -110,7 +110,6 @@ export const HOME_CONFIG_QUERY = /* GraphQL */ `
                 databaseId
                 title
                 controlTypeFields {
-                  controlTypeClass
                   controlTypeType
                   controlTypeMethod
                 }

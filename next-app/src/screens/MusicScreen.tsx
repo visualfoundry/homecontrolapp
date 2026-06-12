@@ -8,8 +8,9 @@ import { Toggle } from '@/components/Toggle';
 import { Slider } from '@/components/Slider';
 import { SpeakerRow } from '@/components/SpeakerRow';
 import { LargeTitle } from '@/components/LargeTitle';
-import { useSpotify, useSpotifyPlayer, useSpotifyLibrary } from '@/hooks/useSpotify';
+import { useSpotifyLibrary } from '@/hooks/useSpotify';
 import type { SpotifyTrack } from '@/hooks/useSpotify';
+import { useSpotifyContext } from '@/lib/spotify-context';
 import type { SpeakerState } from '@/types/state';
 
 function fmtMs(ms: number) {
@@ -74,8 +75,7 @@ function LibraryCard({ uri, name, artUrl, sub, artCircle = false, onPlay }: {
 
 export function MusicScreen() {
   const { st, setD, config } = useHC();
-  const sdkPlayer = useSpotifyPlayer();
-  const spotify = useSpotify(sdkPlayer.deviceId);
+  const { sdkPlayer, spotify } = useSpotifyContext();
   const library = useSpotifyLibrary();
 
   // Prefer real-time SDK state when the in-browser player is active,

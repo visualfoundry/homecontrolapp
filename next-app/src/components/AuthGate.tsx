@@ -9,6 +9,24 @@ import {
 
 const PASSKEY_KEY = 'hca:passkey_enrolled';
 
+function getPasskeyLabel(): string {
+  if (typeof navigator === 'undefined') return 'Passkey';
+  const ua = navigator.userAgent;
+  if (/iPhone|iPad|iPod/.test(ua)) return 'Face ID';
+  if (/Macintosh/.test(ua)) return 'Touch ID';
+  if (/Windows/.test(ua)) return 'Windows Hello';
+  if (/Android/.test(ua)) return 'Fingerprint';
+  return 'Passkey';
+}
+
+async function hasPlatformBiometrics(): Promise<boolean> {
+  try {
+    return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+  } catch {
+    return false;
+  }
+}
+
 type AuthState =
   | 'pending'
   | 'form'
@@ -39,19 +57,21 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>('pending');
   const [error, setError] = useState('');
   const usernameRef = useRef<HTMLInputElement>(null);
+  // Lazy-init so it only runs in the browser (avoids SSR mismatch)
+  const [passkeyLabel] = useState(() => getPasskeyLabel());
 
   useEffect(() => {
-    fetch('/api/auth/check').then(r => {
+    fetch('/api/auth/check').then(async r => {
       if (r.ok) {
         setState('ok');
+        return;
+      }
+      // Show passkey screen only if enrolled here AND this device has biometric auth.
+      const enrolled = !!localStorage.getItem(PASSKEY_KEY);
+      if (enrolled && browserSupportsWebAuthn() && await hasPlatformBiometrics()) {
+        setState('passkey');
       } else {
-        // Show passkey screen if enrolled on this device and WebAuthn is supported.
-        const enrolled = !!localStorage.getItem(PASSKEY_KEY);
-        if (enrolled && browserSupportsWebAuthn()) {
-          setState('passkey');
-        } else {
-          setState('form');
-        }
+        setState('form');
       }
     }).catch(() => setState('form'));
   }, []);
@@ -79,9 +99,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         }),
       });
       if (res.ok) {
-        // Offer enrollment if WebAuthn is available and no passkey registered yet.
+        // Offer enrollment if this device has biometric auth and no passkey registered yet.
         const enrolled = !!localStorage.getItem(PASSKEY_KEY);
-        if (!enrolled && browserSupportsWebAuthn()) {
+        if (!enrolled && browserSupportsWebAuthn() && await hasPlatformBiometrics()) {
           setState('enroll-prompt');
         } else {
           setState('ok');
@@ -123,7 +143,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
       if (msg.includes('NotAllowedError') || msg.includes('cancelled')) {
-        setError('Face ID was cancelled. Try again or use your password.');
+        setError(`${passkeyLabel} was cancelled. Try again or use your password.`);
       } else {
         setError('Sign-in failed. Please use your password instead.');
       }
@@ -180,7 +200,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
               disabled={state === 'passkey-submitting'}
               style={{ ...btnStyle, marginBottom: 12 }}
             >
-              {state === 'passkey-submitting' ? 'Verifying…' : '🔒  Sign in with Face ID'}
+              {state === 'passkey-submitting' ? 'Verifying…' : `🔒  Sign in with ${passkeyLabel}`}
             </button>
             {error && <p style={errStyle}>{error}</p>}
             <button
@@ -231,13 +251,13 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         {/* ---- Enrollment prompt ---- */}
         {(state === 'enroll-prompt' || state === 'enrolling') && (
           <>
-            <p style={subStyle}>Enable Face ID for quick sign-in next time.</p>
+            <p style={subStyle}>Enable {passkeyLabel} for quick sign-in next time.</p>
             <button
               onClick={handleEnroll}
               disabled={state === 'enrolling'}
               style={{ ...btnStyle, marginBottom: 12 }}
             >
-              {state === 'enrolling' ? 'Setting up…' : 'Enable Face ID'}
+              {state === 'enrolling' ? 'Setting up…' : `Enable ${passkeyLabel}`}
             </button>
             <button
               onClick={() => setState('ok')}
