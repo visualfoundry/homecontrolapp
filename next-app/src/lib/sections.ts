@@ -31,6 +31,7 @@ export const SECTIONS: Record<string, SectionDef> = {
   whoshome:   { name: "Who's Home",  icon: 'person',   tint: '#34A853' },
   settings:   { name: 'Settings',   icon: 'gear',     tint: '#8A8A8A' },
   docs:       { name: 'Docs',       icon: 'calendar', tint: '#C0793F' },
+  cameras:    { name: 'Cameras',    icon: 'camera',   tint: '#4A5568' },
 } as const;
 
 /** Maximum number of user-chosen tab bar slots (excludes the pinned More tab). */
@@ -45,7 +46,7 @@ export const SCREEN_IDS = [
   'home', 'lights', 'doors', 'garage', 'climate', 'pool',
   'music', 'fans', 'tv', 'irrigation', 'leak', 'motion',
   'outdoors', 'cinema', 'whoshome', 'settings', 'docs', 'customize', 'more',
-  'scenes', 'editfav', 'editscenes',
+  'scenes', 'editfav', 'editscenes', 'cameras',
 ] as const;
 
 export type ScreenId = typeof SCREEN_IDS[number];

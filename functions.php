@@ -446,6 +446,74 @@ function homecontrolapp_control_query( $query ) {
 }
 
 // -------------------------------------------------------------------------
+// HCA Settings — ACF Options page + field group for connection credentials
+// -------------------------------------------------------------------------
+// Registers an "HCA Settings" admin page where connection credentials
+// (e.g. UniFi Protect host/user/pass) are stored as ACF Options fields.
+// Next.js reads these server-side via GET /wp-json/hca/v1/settings.
+
+if ( function_exists( 'acf_add_options_page' ) ) {
+	acf_add_options_page(
+		array(
+			'page_title' => 'HCA Settings',
+			'menu_title' => 'HCA Settings',
+			'menu_slug'  => 'hca-settings',
+			'capability' => 'manage_options',
+			'redirect'   => false,
+		)
+	);
+}
+
+add_action( 'acf/include_fields', function () {
+	if ( ! function_exists( 'acf_add_local_field_group' ) ) {
+		return;
+	}
+	acf_add_local_field_group(
+		array(
+			'key'      => 'group_hca_settings',
+			'title'    => 'HCA Settings',
+			'fields'   => array(
+				array(
+					'key'          => 'field_unifi_protect_host',
+					'label'        => 'UniFi Protect Host',
+					'name'         => 'unifi_protect_host',
+					'type'         => 'text',
+					'instructions' => 'Must start with https://, e.g. https://192.168.1.141 — no port needed',
+				),
+				array(
+					'key'   => 'field_unifi_protect_username',
+					'label' => 'UniFi Username',
+					'name'  => 'unifi_protect_username',
+					'type'  => 'text',
+				),
+				array(
+					'key'   => 'field_unifi_protect_password',
+					'label' => 'UniFi Password',
+					'name'  => 'unifi_protect_password',
+					'type'  => 'password',
+				),
+				array(
+					'key'          => 'field_unifi_api_key',
+					'label'        => 'UniFi API Key',
+					'name'         => 'unifi_api_key',
+					'type'         => 'password',
+					'instructions' => 'Optional — from UniFi Protect → System → API Tokens. If set, bypasses username/password (recommended).',
+				),
+			),
+			'location' => array(
+				array(
+					array(
+						'param'    => 'options_page',
+						'operator' => '==',
+						'value'    => 'hca-settings',
+					),
+				),
+			),
+		)
+	);
+} );
+
+// -------------------------------------------------------------------------
 // HCA auth — custom REST endpoint for Next.js credential verification
 // -------------------------------------------------------------------------
 // POST /wp-json/hca/v1/login
@@ -465,7 +533,34 @@ add_action( 'rest_api_init', function () {
 			'permission_callback' => '__return_true',
 		)
 	);
+
+	register_rest_route(
+		'hca/v1',
+		'/settings',
+		array(
+			'methods'             => 'GET',
+			'callback'            => 'homecontrolapp_rest_settings',
+			'permission_callback' => '__return_true',
+		)
+	);
 } );
+
+function homecontrolapp_rest_settings( WP_REST_Request $req ) {
+	$key = defined( 'HCA_INTERNAL_KEY' ) ? HCA_INTERNAL_KEY : '';
+	if ( empty( $key ) || $req->get_header( 'X-HCA-Internal-Key' ) !== $key ) {
+		return new WP_REST_Response( array( 'error' => 'Forbidden' ), 403 );
+	}
+
+	return new WP_REST_Response(
+		array(
+			'unifi_protect_host'     => (string) ( get_field( 'unifi_protect_host', 'option' ) ?? '' ),
+			'unifi_protect_username' => (string) ( get_field( 'unifi_protect_username', 'option' ) ?? '' ),
+			'unifi_protect_password' => (string) ( get_field( 'unifi_protect_password', 'option' ) ?? '' ),
+			'unifi_api_key'          => (string) ( get_field( 'unifi_api_key', 'option' ) ?? '' ),
+		),
+		200
+	);
+}
 
 function homecontrolapp_rest_login( WP_REST_Request $req ) {
 	$key = defined( 'HCA_INTERNAL_KEY' ) ? HCA_INTERNAL_KEY : '';
