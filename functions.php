@@ -543,6 +543,35 @@ add_action( 'rest_api_init', function () {
 			'permission_callback' => '__return_true',
 		)
 	);
+
+	// WebAuthn credential storage (called server-side from Next.js, never by browser)
+	register_rest_route(
+		'hca/v1',
+		'/webauthn/credentials',
+		array(
+			'methods'             => 'GET',
+			'callback'            => 'homecontrolapp_webauthn_list',
+			'permission_callback' => '__return_true',
+		)
+	);
+	register_rest_route(
+		'hca/v1',
+		'/webauthn/credentials',
+		array(
+			'methods'             => 'POST',
+			'callback'            => 'homecontrolapp_webauthn_store',
+			'permission_callback' => '__return_true',
+		)
+	);
+	register_rest_route(
+		'hca/v1',
+		'/webauthn/credentials/(?P<id>[^/]+)',
+		array(
+			'methods'             => array( 'PATCH', 'DELETE' ),
+			'callback'            => 'homecontrolapp_webauthn_update_or_delete',
+			'permission_callback' => '__return_true',
+		)
+	);
 } );
 
 function homecontrolapp_rest_settings( WP_REST_Request $req ) {
@@ -578,6 +607,110 @@ function homecontrolapp_rest_login( WP_REST_Request $req ) {
 	}
 
 	return new WP_REST_Response( array( 'userId' => $user->ID ), 200 );
+}
+
+// -------------------------------------------------------------------------
+// WebAuthn credential storage — server-side only (called by Next.js)
+// -------------------------------------------------------------------------
+// Credentials stored as WP user meta under 'hca_webauthn_credentials':
+//   array of { id, publicKey, signCount, transports, name, userId, createdAt }
+// All endpoints gated by X-HCA-Internal-Key.
+
+function homecontrolapp_webauthn_check_key( WP_REST_Request $req ): bool {
+	$key = defined( 'HCA_INTERNAL_KEY' ) ? HCA_INTERNAL_KEY : '';
+	return ! empty( $key ) && $req->get_header( 'X-HCA-Internal-Key' ) === $key;
+}
+
+/** GET /wp-json/hca/v1/webauthn/credentials[?userId=X] */
+function homecontrolapp_webauthn_list( WP_REST_Request $req ) {
+	if ( ! homecontrolapp_webauthn_check_key( $req ) ) {
+		return new WP_REST_Response( array( 'error' => 'Forbidden' ), 403 );
+	}
+
+	$user_id = (int) $req->get_param( 'userId' );
+
+	if ( $user_id > 0 ) {
+		$raw   = get_user_meta( $user_id, 'hca_webauthn_credentials', true );
+		$creds = is_array( $raw ) ? $raw : array();
+		return new WP_REST_Response( array_values( $creds ), 200 );
+	}
+
+	// No userId — return credentials for all users (used by login-options).
+	$all   = array();
+	$users = get_users( array( 'fields' => 'ID' ) );
+	foreach ( $users as $uid ) {
+		$raw   = get_user_meta( (int) $uid, 'hca_webauthn_credentials', true );
+		$creds = is_array( $raw ) ? $raw : array();
+		foreach ( $creds as $c ) {
+			$all[] = $c;
+		}
+	}
+	return new WP_REST_Response( array_values( $all ), 200 );
+}
+
+/** POST /wp-json/hca/v1/webauthn/credentials */
+function homecontrolapp_webauthn_store( WP_REST_Request $req ) {
+	if ( ! homecontrolapp_webauthn_check_key( $req ) ) {
+		return new WP_REST_Response( array( 'error' => 'Forbidden' ), 403 );
+	}
+
+	$body = $req->get_json_params();
+	if ( empty( $body['id'] ) || empty( $body['publicKey'] ) || empty( $body['userId'] ) ) {
+		return new WP_REST_Response( array( 'error' => 'Missing required fields' ), 400 );
+	}
+
+	$user_id = (int) $body['userId'];
+	$raw     = get_user_meta( $user_id, 'hca_webauthn_credentials', true );
+	$creds   = is_array( $raw ) ? $raw : array();
+
+	$creds[ $body['id'] ] = array(
+		'id'         => (string) $body['id'],
+		'publicKey'  => (string) $body['publicKey'],
+		'signCount'  => (int) ( $body['signCount'] ?? 0 ),
+		'transports' => (array) ( $body['transports'] ?? array() ),
+		'name'       => sanitize_text_field( (string) ( $body['name'] ?? 'Passkey' ) ),
+		'userId'     => $user_id,
+		'createdAt'  => (int) ( $body['createdAt'] ?? time() ),
+	);
+
+	update_user_meta( $user_id, 'hca_webauthn_credentials', $creds );
+	return new WP_REST_Response( array( 'ok' => true ), 201 );
+}
+
+/** PATCH|DELETE /wp-json/hca/v1/webauthn/credentials/{id} */
+function homecontrolapp_webauthn_update_or_delete( WP_REST_Request $req ) {
+	if ( ! homecontrolapp_webauthn_check_key( $req ) ) {
+		return new WP_REST_Response( array( 'error' => 'Forbidden' ), 403 );
+	}
+
+	$cred_id = urldecode( (string) $req->get_param( 'id' ) );
+	$method  = strtoupper( $req->get_method() );
+
+	// Find which user owns this credential.
+	$users = get_users( array( 'fields' => 'ID' ) );
+	foreach ( $users as $uid ) {
+		$raw   = get_user_meta( (int) $uid, 'hca_webauthn_credentials', true );
+		$creds = is_array( $raw ) ? $raw : array();
+		if ( ! isset( $creds[ $cred_id ] ) ) {
+			continue;
+		}
+
+		if ( 'DELETE' === $method ) {
+			unset( $creds[ $cred_id ] );
+			update_user_meta( (int) $uid, 'hca_webauthn_credentials', $creds );
+			return new WP_REST_Response( array( 'ok' => true ), 200 );
+		}
+
+		// PATCH — only signCount supported for now.
+		$body = $req->get_json_params();
+		if ( isset( $body['signCount'] ) ) {
+			$creds[ $cred_id ]['signCount'] = (int) $body['signCount'];
+			update_user_meta( (int) $uid, 'hca_webauthn_credentials', $creds );
+		}
+		return new WP_REST_Response( array( 'ok' => true ), 200 );
+	}
+
+	return new WP_REST_Response( array( 'error' => 'Credential not found' ), 404 );
 }
 
 // -------------------------------------------------------------------------

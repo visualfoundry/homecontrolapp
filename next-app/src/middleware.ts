@@ -4,8 +4,10 @@ import { verifySession } from '@/lib/auth';
 /**
  * Protect device-control API routes with session cookie validation.
  *
- * /api/auth/exchange — excluded (bootstrap endpoint that creates the session)
- * /api/revalidate   — excluded (uses REVALIDATE_SECRET, called by WP server-side)
+ * /api/auth/exchange              — excluded (bootstrap that creates the session)
+ * /api/auth/passkey/login-*       — excluded (pre-auth; create the session)
+ * /api/revalidate                 — excluded (uses REVALIDATE_SECRET, called by WP)
+ * /api/auth/passkey/register-*    — protected (must be logged in to enroll)
  */
 export async function middleware(req: NextRequest) {
   const session = req.cookies.get('hca_session')?.value;
@@ -28,5 +30,7 @@ export const config = {
     '/api/cameras/:path*',
     '/api/debug',
     '/api/auth/check',
+    '/api/auth/passkey/register-options',
+    '/api/auth/passkey/register-verify',
   ],
 };
