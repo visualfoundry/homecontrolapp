@@ -82,9 +82,17 @@ async function pollAll(): Promise<void> {
   );
 }
 
-// Initial poll then interval
-pollAll().catch(console.warn);
-setInterval(() => pollAll().catch(console.warn), POLL_MS);
+// Non-overlapping poll loop — waits for each poll to finish before
+// scheduling the next. Prevents connection exhaustion when polls are
+// slower than POLL_MS (e.g. under network hiccups or high EISY load).
+(async function pollLoop() {
+  while (true) {
+    const t0 = Date.now();
+    await pollAll();
+    const wait = Math.max(0, POLL_MS - (Date.now() - t0));
+    if (wait > 0) await new Promise<void>(r => setTimeout(r, wait));
+  }
+})().catch(console.error);
 
 // ---------------------------------------------------------------------------
 // Express app

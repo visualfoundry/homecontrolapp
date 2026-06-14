@@ -147,3 +147,14 @@ export function readInitToken(): string {
       ?.content ?? ''
   );
 }
+
+/**
+ * Dispatch a 'hca:session-expired' event on window.
+ * Called by the state client when any protected API responds with 401.
+ * AuthGate listens for this and shows the re-auth dialog without a page reload.
+ */
+export function dispatchSessionExpired(): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('hca:session-expired'));
+  }
+}

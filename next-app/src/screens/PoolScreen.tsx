@@ -278,7 +278,65 @@ export function PoolScreen() {
 
   if (!p) return null;
 
-  const heaterRunning = p.heaterOn && p.poolTemp < p.heaterTarget;
+  // Prefer the real sensor reading from the WP 'Pool Temperature' control when available.
+  const poolTempSensor = config.poolTempId
+    ? (st[config.poolTempId] as { value?: number } | undefined)?.value ?? null
+    : null;
+  const poolTemp = poolTempSensor ?? p.poolTemp;
+  const poolTempDisplay = poolTemp > 0 ? `${poolTemp}°` : 'N/A';
+
+  // Pump on/off: dedicated flag variable (value 0=off, 1=on).
+  const rawPumpOnOff = config.poolPumpOnOffId
+    ? ((st[config.poolPumpOnOffId] as { value?: number } | undefined)?.value ?? null)
+    : null;
+
+  // Pump speed: numeric variable (0=off, 35–100=speed%).
+  const rawPumpSpeed = config.poolPumpId
+    ? ((st[config.poolPumpId] as { value?: number } | undefined)?.value ?? null)
+    : null;
+  const pumpSpeed = rawPumpSpeed ?? p.pumpSpeed;
+
+  // Prefer dedicated on/off variable; fall back to speed > 0; then mock.
+  const pumpOn = rawPumpOnOff !== null ? rawPumpOnOff > 0
+               : rawPumpSpeed !== null ? rawPumpSpeed > 0
+               : p.pumpOn;
+
+  const setPumpSpeed = (v: number) =>
+    config.poolPumpId ? setD(config.poolPumpId, { value: v }) : setP({ pumpSpeed: v, pumpOn: v > 0 });
+
+  const setPump = (on: boolean) => {
+    if (config.poolPumpOnOffId) {
+      setD(config.poolPumpOnOffId, { value: on ? 1 : 0 });
+    } else {
+      setP({ pumpOn: on }); // mock only — never write 0 to the speed variable
+    }
+  };
+
+  // Heater on/off: numeric variable (0=off, 1=on).
+  const rawHeaterOnOff = config.poolHeaterId
+    ? ((st[config.poolHeaterId] as { value?: number } | undefined)?.value ?? null)
+    : null;
+  const heaterOn = rawHeaterOnOff !== null ? rawHeaterOnOff > 0 : p.heaterOn;
+
+  // Heater setpoint: numeric variable (60–95°F).
+  const rawHeaterSetpoint = config.poolHeaterSetpointId
+    ? ((st[config.poolHeaterSetpointId] as { value?: number } | undefined)?.value ?? null)
+    : null;
+  const heaterTarget = rawHeaterSetpoint ?? p.heaterTarget;
+
+  const setHeater = (on: boolean) =>
+    config.poolHeaterId ? setD(config.poolHeaterId, { value: on ? 1 : 0 }) : setP({ heaterOn: on });
+
+  const setHeaterTarget = (v: number) =>
+    config.poolHeaterSetpointId ? setD(config.poolHeaterSetpointId, { value: v }) : setP({ heaterTarget: v });
+
+  // Salinator remains a flag variable.
+  const flag = (id: string | null, fallback: boolean) =>
+    id ? ((st[id] as { on?: boolean } | undefined)?.on ?? fallback) : fallback;
+  const salinatorOn = flag(config.poolSalinatorId, p.chlorinatorOn);
+  const setSalinator = (v: boolean) => config.poolSalinatorId ? setD(config.poolSalinatorId, { on: v }) : setP({ chlorinatorOn: v });
+
+  const heaterRunning = heaterOn && poolTemp < heaterTarget;
   const phStatus = p.ph < 7.2 ? 'Low' : p.ph > 7.8 ? 'High' : 'Ideal';
   const phTint = phStatus === 'Ideal' ? 'var(--green)' : 'var(--red)';
 
@@ -324,15 +382,15 @@ export function PoolScreen() {
   return (
     <div>
       <LargeTitle title="Pool"
-        sub={`${p.poolTemp}° · ${heaterRunning ? 'Heating' : p.pumpOn ? 'Pump running' : 'Idle'}`} />
+        sub={`${poolTempDisplay} · ${heaterRunning ? 'Heating' : pumpOn ? 'Pump running' : 'Idle'}`} />
 
       {/* Readings strip */}
       <div style={{ display: 'flex', gap: 11, overflowX: 'auto', paddingBottom: 4,
         margin: '0 calc(-1 * var(--screen-px))', padding: '0 var(--screen-px) 4px',
         scrollbarWidth: 'none' }}>
-        <Reading icon="thermo" label="Pool temp" value={p.poolTemp + '°'} tint="#E07B53" />
-        <Reading icon="bolt"   label="Heater"    value={p.heaterOn ? p.heaterTarget + '°' : 'Off'} tint="#E0573D"
-          status={heaterRunning ? 'Running' : p.heaterOn ? 'Idle' : null} />
+        <Reading icon="thermo" label="Pool temp" value={poolTempDisplay} tint="#E07B53" />
+        <Reading icon="bolt"   label="Heater"    value={heaterOn ? heaterTarget + '°' : 'Off'} tint="#E0573D"
+          status={heaterRunning ? 'Running' : heaterOn ? 'Idle' : null} />
         <Reading icon="droplet" label="pH"       value={p.ph.toFixed(1)} tint={phTint} status={phStatus} />
         <Reading icon="water"   label="Salt"     value={(p.saltPPM / 1000).toFixed(1) + 'k'} tint="#5a9bd4" />
         <Reading icon="power"   label="ORP now"  value={p.orpNow + 'mV'} tint="#2bb3a3" />
@@ -366,24 +424,25 @@ export function PoolScreen() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div>
               <div style={{ fontSize: 17, fontWeight: 680, color: 'var(--text)' }}>Variable Speed</div>
-              <div style={{ fontSize: 13, color: p.pumpOn ? 'var(--accent)' : 'var(--text2)', fontWeight: 560, marginTop: 1 }}>
-                {p.pumpOn ? `Running · ${p.pumpSpeed}%` : 'Off'}
+              <div style={{ fontSize: 13, color: pumpOn ? 'var(--accent)' : 'var(--text2)', fontWeight: 560, marginTop: 1 }}>
+                {pumpOn ? `Running · ${pumpSpeed}%` : 'Off'}
               </div>
             </div>
-            <Toggle on={p.pumpOn} onChange={(v) => setP({ pumpOn: v })} size={0.92} />
+            <Toggle on={pumpOn} onChange={(v) => setPump(v)} size={0.92} />
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 8 }}>
-            <span style={{ fontSize: 40, fontWeight: 730, letterSpacing: -1.5, color: p.pumpOn ? 'var(--text)' : 'var(--text3)' }}>
-              {p.pumpOn ? p.pumpSpeed : 0}
+            <span style={{ fontSize: 40, fontWeight: 730, letterSpacing: -1.5, color: pumpOn ? 'var(--text)' : 'var(--text3)' }}>
+              {pumpOn ? pumpSpeed : 0}
             </span>
             <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--text2)' }}>%</span>
           </div>
-          <div style={{ marginBottom: 14, opacity: p.pumpOn ? 1 : 0.5 }}>
-            <Slider value={p.pumpSpeed} onChange={(v) => setP({ pumpSpeed: v, pumpOn: v > 0 })}
-              height={44} fill="linear-gradient(90deg,#2bb3a3,#48cbbb)" disabled={!p.pumpOn} />
+          <div style={{ marginBottom: 14, opacity: pumpOn ? 1 : 0.5 }}>
+            <Slider value={pumpSpeed} onChange={(v) => setPumpSpeed(v)}
+              min={35} max={100}
+              height={44} fill="linear-gradient(90deg,#2bb3a3,#48cbbb)" disabled={!pumpOn} />
           </div>
-          <Presets options={[{ label: 'Low', v: 30 }, { label: 'Medium', v: 65 }, { label: 'High', v: 100 }]}
-            value={p.pumpSpeed} onPick={(v) => setP({ pumpSpeed: v, pumpOn: true })} />
+          <Presets options={[{ label: 'Low', v: 35 }, { label: 'Medium', v: 65 }, { label: 'High', v: 100 }]}
+            value={pumpSpeed} onPick={(v) => { setPumpSpeed(v); if (!pumpOn) setPump(true); }} />
         </Card>
         <div style={{ height: 14 }} />
         <Schedules kind="pump" list={p.pumpSchedules}
@@ -399,26 +458,26 @@ export function PoolScreen() {
             <div>
               <div style={{ fontSize: 17, fontWeight: 680, color: 'var(--text)' }}>Pool Heater</div>
               <div style={{ fontSize: 13, color: heaterRunning ? 'var(--red)' : 'var(--text2)', fontWeight: 560, marginTop: 1 }}>
-                {heaterRunning ? 'Running' : p.heaterOn ? 'Idle · at temp' : 'Off'}
+                {heaterRunning ? 'Running' : heaterOn ? 'Idle · at temp' : 'Off'}
               </div>
             </div>
-            <Toggle on={p.heaterOn} onChange={(v) => setP({ heaterOn: v })} size={0.92} accent="#E0573D" />
+            <Toggle on={heaterOn} onChange={(v) => setHeater(v)} size={0.92} accent="#E0573D" />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--icon-bg)', borderRadius: 16, padding: '14px 18px' }}>
             <div>
               <div style={{ fontSize: 12.5, color: 'var(--text2)', fontWeight: 560 }}>Current</div>
-              <div style={{ fontSize: 26, fontWeight: 720, color: 'var(--text)', letterSpacing: -0.5 }}>{p.poolTemp}°</div>
+              <div style={{ fontSize: 26, fontWeight: 720, color: 'var(--text)', letterSpacing: -0.5 }}>{poolTempDisplay}</div>
             </div>
             <Icon name="chevron" size={18} style={{ color: 'var(--text3)' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <button onClick={() => setP({ heaterTarget: Math.max(60, p.heaterTarget - 1) })} style={poolStep}>
+              <button onClick={() => setHeaterTarget(Math.max(60, heaterTarget - 1))} style={poolStep}>
                 <Icon name="minus" size={18} strokeWidth={2.4} />
               </button>
               <div style={{ textAlign: 'center', minWidth: 54 }}>
                 <div style={{ fontSize: 12.5, color: 'var(--text2)', fontWeight: 560 }}>Target</div>
-                <div style={{ fontSize: 26, fontWeight: 720, color: '#E0573D', letterSpacing: -0.5 }}>{p.heaterTarget}°</div>
+                <div style={{ fontSize: 26, fontWeight: 720, color: '#E0573D', letterSpacing: -0.5 }}>{heaterTarget}°</div>
               </div>
-              <button onClick={() => setP({ heaterTarget: Math.min(95, p.heaterTarget + 1) })} style={poolStep}>
+              <button onClick={() => setHeaterTarget(Math.min(95, heaterTarget + 1))} style={poolStep}>
                 <Icon name="plus" size={18} strokeWidth={2.4} />
               </button>
             </div>
@@ -458,11 +517,11 @@ export function PoolScreen() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div>
               <div style={{ fontSize: 17, fontWeight: 680, color: 'var(--text)' }}>Chlorinator</div>
-              <div style={{ fontSize: 13, color: p.chlorinatorOn ? 'var(--green)' : 'var(--text2)', fontWeight: 560, marginTop: 1 }}>
-                {p.chlorinatorOn ? 'Chlorinating' : 'Off'}
+              <div style={{ fontSize: 13, color: salinatorOn ? 'var(--green)' : 'var(--text2)', fontWeight: 560, marginTop: 1 }}>
+                {salinatorOn ? 'Chlorinating' : 'Off'}
               </div>
             </div>
-            <Toggle on={p.chlorinatorOn} onChange={(v) => setP({ chlorinatorOn: v })} size={0.92} accent="var(--green)" />
+            <Toggle on={salinatorOn} onChange={(v) => setSalinator(v)} size={0.92} accent="var(--green)" />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <span style={{ fontSize: 14, fontWeight: 560, color: 'var(--text2)' }}>ORP set point</span>

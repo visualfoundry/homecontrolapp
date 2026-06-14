@@ -35,7 +35,8 @@ type AuthState =
   | 'passkey-submitting'
   | 'enroll-prompt'
   | 'enrolling'
-  | 'ok';
+  | 'ok'
+  | 'expired';
 
 /**
  * AuthGate — wraps the app behind session authentication.
@@ -56,6 +57,7 @@ type AuthState =
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>('pending');
   const [error, setError] = useState('');
+  const [sessionExpired, setSessionExpired] = useState(false);
   const usernameRef = useRef<HTMLInputElement>(null);
   // Lazy-init so it only runs in the browser (avoids SSR mismatch)
   const [passkeyLabel] = useState(() => getPasskeyLabel());
@@ -75,6 +77,23 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       }
     }).catch(() => setState('form'));
   }, []);
+
+  // Listen for session-expired events while the app is running.
+  useEffect(() => {
+    if (state !== 'ok') return;
+    async function handleExpired() {
+      setSessionExpired(true);
+      setError('');
+      const enrolled = !!localStorage.getItem(PASSKEY_KEY);
+      if (enrolled && browserSupportsWebAuthn() && await hasPlatformBiometrics()) {
+        setState('passkey');
+      } else {
+        setState('form');
+      }
+    }
+    window.addEventListener('hca:session-expired', handleExpired);
+    return () => window.removeEventListener('hca:session-expired', handleExpired);
+  }, [state]);
 
   useEffect(() => {
     if (state === 'form') usernameRef.current?.focus();
@@ -99,6 +118,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         }),
       });
       if (res.ok) {
+        setSessionExpired(false);
         // Offer enrollment if this device has biometric auth and no passkey registered yet.
         const enrolled = !!localStorage.getItem(PASSKEY_KEY);
         if (!enrolled && browserSupportsWebAuthn() && await hasPlatformBiometrics()) {
@@ -136,6 +156,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         body: JSON.stringify(assertion),
       });
       if (verRes.ok) {
+        setSessionExpired(false);
         setState('ok');
       } else {
         throw new Error('Verification failed');
@@ -186,10 +207,14 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   if (state === 'ok') return <>{children}</>;
   if (state === 'pending') return null;
 
-  return (
-    <div style={wrapStyle}>
-      <div style={{ width: '100%', maxWidth: 320 }}>
-        <h1 style={titleStyle}>Home Control</h1>
+  const loginContent = (
+    <div style={{ width: '100%', maxWidth: 320 }}>
+      <h1 style={titleStyle}>Home Control</h1>
+      {sessionExpired && (
+        <p style={{ ...subStyle, color: 'var(--color-red, #e53e3e)', marginBottom: 16 }}>
+          Your session has expired. Please sign in again.
+        </p>
+      )}
 
         {/* ---- Passkey sign-in ---- */}
         {(state === 'passkey' || state === 'passkey-submitting') && (
@@ -268,9 +293,21 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
             </button>
           </>
         )}
-      </div>
     </div>
   );
+
+  if (sessionExpired) {
+    return (
+      <>
+        {children}
+        <div style={expiredOverlayStyle}>
+          {loginContent}
+        </div>
+      </>
+    );
+  }
+
+  return <div style={wrapStyle}>{loginContent}</div>;
 }
 
 // ---------------------------------------------------------------------------
@@ -350,4 +387,20 @@ const inputStyle: React.CSSProperties = {
   outline: 'none',
   width: '100%',
   boxSizing: 'border-box',
+};
+
+const expiredOverlayStyle: React.CSSProperties = {
+  position: 'fixed',
+  inset: 0,
+  zIndex: 9999,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '2rem',
+  boxSizing: 'border-box',
+  background: 'rgba(0,0,0,0.55)',
+  backdropFilter: 'blur(8px)',
+  WebkitBackdropFilter: 'blur(8px)',
+  fontFamily: 'var(--font, -apple-system, system-ui, sans-serif)',
 };

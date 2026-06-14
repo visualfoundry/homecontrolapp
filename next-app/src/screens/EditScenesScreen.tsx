@@ -10,12 +10,25 @@ import { pillBtn, reorderBtn } from '@/lib/styles';
 import type { ScenesListState } from '@/types/state';
 import type { SceneConfig } from '@/types/config';
 
+function envIcon(name: string): { icon: IconName; tint: string } {
+  const n = name.toLowerCase();
+  if (n.includes('temp'))     return { icon: 'thermo',   tint: '#E07B53' };
+  if (n.includes('humid'))    return { icon: 'droplet',  tint: '#5B7FE0' };
+  if (n.includes('holiday'))  return { icon: 'calendar', tint: '#9B6AB0' };
+  if (n.includes('security')) return { icon: 'shield',   tint: '#E0483D' };
+  if (n.includes('away'))     return { icon: 'away',     tint: '#F0A500' };
+  return { icon: 'bolt', tint: '#2bb3a3' };
+}
+
 export function EditScenesScreen() {
   const { st, setD, back, config } = useHC();
   const ids = (st['_scenes'] as ScenesListState).ids;
 
-  const byId: Record<string, SceneConfig> = {};
-  config.scenes.forEach(s => { byId[s.id] = s; });
+  const sceneById: Record<string, SceneConfig> = {};
+  config.scenes.forEach(s => { sceneById[s.id] = s; });
+
+  const envById: Record<string, { id: string; name: string }> = {};
+  config.environmentalControls.forEach(e => { envById[e.id] = e; });
 
   const setIds = (next: string[]) => setD('_scenes', { ids: next });
   const remove = (id: string) => setIds(ids.filter(x => x !== id));
@@ -45,57 +58,86 @@ export function EditScenesScreen() {
     </div>
   );
 
-  const avail = config.scenes.filter(sc => !ids.includes(sc.id));
+  const envChip = (name: string) => {
+    const { icon, tint } = envIcon(name);
+    return (
+      <div style={{ width: 30, height: 30, borderRadius: 9, background: tint + '1f', color: tint,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>
+        <Icon name={icon} size={18} />
+      </div>
+    );
+  };
+
+  const availScenes = config.scenes.filter(sc => !ids.includes(sc.id));
+  const availEnv    = config.environmentalControls.filter(e => !ids.includes(e.id));
+
+  const activeItems = ids.map(id => ({
+    id,
+    label: sceneById[id]?.name ?? envById[id]?.name ?? id,
+    chip: sceneById[id] ? sceneChip(sceneById[id]) : envChip(envById[id]?.name ?? id),
+  })).filter(it => sceneById[it.id] || envById[it.id]);
 
   return (
     <div>
-      <LargeTitle title="Scenes" sub="Pinned to your Home dashboard"
+      <LargeTitle title="Environments" sub="Pinned to your Home dashboard"
         right={<button onClick={back} style={pillBtn}>Done</button>} />
 
-      <SectionTitle>On Home · {ids.length}</SectionTitle>
-      {ids.length === 0 ? (
+      <SectionTitle>On Home · {activeItems.length}</SectionTitle>
+      {activeItems.length === 0 ? (
         <Card>
           <div style={{ padding: '14px 4px', fontSize: 14.5, color: 'var(--text2)', textAlign: 'center' }}>
-            No scenes yet — add some below.
+            Nothing pinned yet — add some below.
           </div>
         </Card>
       ) : (
         <Card pad={false}>
-          {ids.map((id, i) => {
-            const sc = byId[id];
-            if (!sc) return null;
-            return (
-              <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px',
-                borderBottom: i < ids.length - 1 ? '0.5px solid var(--sep)' : 'none' }}>
-                {circleBtn('var(--red)', 'minus', () => remove(id))}
-                {sceneChip(sc)}
-                <span style={{ flex: 1, fontSize: 16, fontWeight: 540, color: 'var(--text)' }}>{sc.name}</span>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button onClick={() => move(i, -1)} disabled={i === 0}
-                    style={{ ...reorderBtn, opacity: i === 0 ? 0.3 : 1, cursor: i === 0 ? 'default' : 'pointer' }}>
-                    <Icon name="chevDown" size={18} style={{ transform: 'rotate(180deg)' }} />
-                  </button>
-                  <button onClick={() => move(i, 1)} disabled={i === ids.length - 1}
-                    style={{ ...reorderBtn, opacity: i === ids.length - 1 ? 0.3 : 1, cursor: i === ids.length - 1 ? 'default' : 'pointer' }}>
-                    <Icon name="chevDown" size={18} />
-                  </button>
-                </div>
+          {activeItems.map((it, i) => (
+            <div key={it.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px',
+              borderBottom: i < activeItems.length - 1 ? '0.5px solid var(--sep)' : 'none' }}>
+              {circleBtn('var(--red)', 'minus', () => remove(it.id))}
+              {it.chip}
+              <span style={{ flex: 1, fontSize: 16, fontWeight: 540, color: 'var(--text)' }}>{it.label}</span>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button onClick={() => move(i, -1)} disabled={i === 0}
+                  style={{ ...reorderBtn, opacity: i === 0 ? 0.3 : 1, cursor: i === 0 ? 'default' : 'pointer' }}>
+                  <Icon name="chevDown" size={18} style={{ transform: 'rotate(180deg)' }} />
+                </button>
+                <button onClick={() => move(i, 1)} disabled={i === activeItems.length - 1}
+                  style={{ ...reorderBtn, opacity: i === activeItems.length - 1 ? 0.3 : 1, cursor: i === activeItems.length - 1 ? 'default' : 'pointer' }}>
+                  <Icon name="chevDown" size={18} />
+                </button>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </Card>
       )}
 
-      {avail.length > 0 && (
+      {availScenes.length > 0 && (
         <div style={{ marginTop: 22 }}>
           <SectionTitle>Add a Scene</SectionTitle>
           <Card pad={false}>
-            {avail.map((sc, i) => (
+            {availScenes.map((sc, i) => (
               <div key={sc.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px',
-                borderBottom: i < avail.length - 1 ? '0.5px solid var(--sep)' : 'none' }}>
+                borderBottom: i < availScenes.length - 1 ? '0.5px solid var(--sep)' : 'none' }}>
                 {circleBtn('var(--green)', 'plus', () => add(sc.id))}
                 {sceneChip(sc)}
                 <span style={{ flex: 1, fontSize: 16, fontWeight: 540, color: 'var(--text)' }}>{sc.name}</span>
+              </div>
+            ))}
+          </Card>
+        </div>
+      )}
+
+      {availEnv.length > 0 && (
+        <div style={{ marginTop: 22 }}>
+          <SectionTitle>Add an Environmental Control</SectionTitle>
+          <Card pad={false}>
+            {availEnv.map((e, i) => (
+              <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px',
+                borderBottom: i < availEnv.length - 1 ? '0.5px solid var(--sep)' : 'none' }}>
+                {circleBtn('var(--green)', 'plus', () => add(e.id))}
+                {envChip(e.name)}
+                <span style={{ flex: 1, fontSize: 16, fontWeight: 540, color: 'var(--text)' }}>{e.name}</span>
               </div>
             ))}
           </Card>

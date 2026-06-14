@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useHC } from '@/lib/store';
 import { Icon } from '@/components/Icon';
+import type { IconName } from '@/components/Icon';
 import { Tile } from '@/components/Tile';
 import { Toggle } from '@/components/Toggle';
 import { Card, SectionTitle } from '@/components/Card';
@@ -28,25 +29,41 @@ function mapCondition(text: string): WeatherCondition {
 import type { SceneRoomTypeKey, TimeOfDayKey, ClimateZone } from '@/types/config';
 
 // ── Scrollable stat pill ──────────────────────────────────────────────────────
-function StatTile({ icon, label, value, tint, onTap }: {
+function StatTile({ icon, label, value, tint, onTap, compact, active }: {
   icon: React.ComponentProps<typeof Icon>['name'];
   label: string;
   value: string | number;
   tint: string;
   onTap?: () => void;
+  compact?: boolean;
+  active?: boolean;
 }) {
   return (
     <div onClick={onTap} style={{
-      background: 'var(--card)', borderRadius: 20, boxShadow: 'var(--shadow)',
-      padding: '13px 15px', minWidth: 128, flex: '0 0 auto',
+      background: compact ? (active ? tint : 'var(--card)') : 'var(--card)',
+      borderRadius: 18, boxShadow: active ? 'none' : 'var(--shadow)',
+      padding: '14px 16px 12px', flex: '0 0 auto',
+      width: compact ? 104 : undefined, minWidth: compact ? undefined : 128,
       cursor: onTap ? 'pointer' : 'default', WebkitTapHighlightColor: 'transparent',
+      display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+      gap: compact ? 16 : 0, transition: 'background .2s',
     }}>
-      <div style={{ width: 30, height: 30, borderRadius: 9, background: tint + '22', color: tint,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 9 }}>
-        <Icon name={icon} size={18} strokeWidth={2} />
+      <div style={{
+        width: compact ? 38 : 30, height: compact ? 38 : 30,
+        borderRadius: compact ? 11 : 9,
+        background: compact ? (active ? 'rgba(255,255,255,0.25)' : tint + '1f') : tint + '22',
+        color: compact ? (active ? '#fff' : tint) : tint,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        marginBottom: compact ? 0 : 9,
+      }}>
+        <Icon name={icon} size={compact ? 21 : 18} strokeWidth={2} />
       </div>
-      <div style={{ fontSize: 21, fontWeight: 720, color: 'var(--text)', letterSpacing: -0.5 }}>{value}</div>
-      <div style={{ fontSize: 12.5, color: 'var(--text2)', fontWeight: 500, marginTop: 1 }}>{label}</div>
+      {!compact && <div style={{ fontSize: 21, fontWeight: 720, color: 'var(--text)', letterSpacing: -0.5 }}>{value}</div>}
+      <div style={{
+        fontSize: compact ? 13.5 : 12.5,
+        color: compact ? (active ? '#fff' : 'var(--text)') : 'var(--text2)',
+        fontWeight: compact ? 600 : 500, marginTop: compact ? 0 : 1, letterSpacing: -0.2,
+      }}>{label}</div>
     </div>
   );
 }
@@ -372,8 +389,9 @@ export function HomeScreen() {
   const avgTemp = config.climate.length
     ? (config.climate.reduce((sum, c) => sum + ((st[c.id] as { temp?: number } | undefined)?.temp ?? 72), 0) / config.climate.length).toFixed(1)
     : '–';
-  const poolTemp = (st['pool'] as PoolState | undefined)?.poolTemp ?? 81;
   const numVar = (id: string | null) => (id ? (st[id] as VariableState | undefined)?.value : undefined);
+  const poolTempSensor = numVar(config.poolTempId);
+  const poolTemp = poolTempSensor ?? (st['pool'] as PoolState | undefined)?.poolTemp ?? 81;
   const weatherTemp = numVar(config.weatherTempId);
   const weatherHigh = numVar(config.weatherHighId);
   const weatherLow  = numVar(config.weatherLowId);
@@ -413,7 +431,15 @@ export function HomeScreen() {
 
   const sceneIds = (st['_scenes'] as ScenesListState).ids;
   const favIds   = (st['_favs']   as FavsState).ids;
+
+  // Auto-seed: any env control not yet in sceneIds gets appended once.
+  React.useEffect(() => {
+    const missing = config.environmentalControls.filter(e => !sceneIds.includes(e.id));
+    if (missing.length > 0) setD('_scenes', { ids: [...sceneIds, ...missing.map(e => e.id)] });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.environmentalControls.map(e => e.id).join(',')]);
   const sceneById = Object.fromEntries(config.scenes.map(s => [s.id, s]));
+  const envById   = Object.fromEntries(config.environmentalControls.map(e => [e.id, e]));
   const favLookup = Object.fromEntries(config.favCatalog.flatMap(g => g.items.map(it => [it.id, it])));
   const lightSceneIds = new Set(config.lightSceneRooms.map(r => r.id));
   const carDoorIds = new Set(config.garageCarDoors.map(d => d.id));
@@ -480,7 +506,7 @@ export function HomeScreen() {
         <SectionTitle>Status</SectionTitle>
         <div style={{ display: 'flex', gap: 11, overflowX: 'auto', padding: '0 0 4px', scrollbarWidth: 'none' }}>
           <StatTile icon="thermo" label="Avg. indoor" value={avgTemp + '°'} tint="#E07B53" onTap={() => go('climate')} />
-          <StatTile icon="pool"   label="Pool temp"   value={poolTemp + '°'} tint="#2bb3a3" onTap={() => go('pool')} />
+          <StatTile icon="pool"   label="Pool temp"   value={poolTemp > 0 ? poolTemp + '°' : 'N/A'} tint="#2bb3a3" onTap={() => go('pool')} />
           <StatTile icon="bulb"   label="Lights on"   value={lightsOn} tint="#F0A500" onTap={() => go('lights')} />
           <StatTile icon="lock"   label="Doors locked" value={`${doorsLocked}/${config.doorsExterior.length}`} tint="#34A853" onTap={() => go('doors')} />
           <StatTile icon="motion" label="Motion alerts" value={motionAlerts} tint="#E0483D" onTap={() => go('motion')} />
@@ -503,28 +529,50 @@ export function HomeScreen() {
             </button>
           </Card>
         ) : (
-          <div style={{ display: 'flex', gap: 11, overflowX: 'auto', padding: '0 0 4px', scrollbarWidth: 'none' }}>
+          <div style={{ display: 'flex', gap: 11, overflowX: 'auto', scrollbarWidth: 'none',
+            margin: '0 calc(-1 * var(--screen-px))', padding: '0 var(--screen-px) 4px' }}>
             {sceneIds.map(id => {
               const sc = sceneById[id];
-              if (!sc) return null;
-              const on = activeScene === sc.id;
-              return (
-                <button key={sc.id} onClick={() => setActiveScene(on ? null : sc.id)} style={{
-                  flex: '0 0 auto', border: 'none', cursor: 'pointer', borderRadius: 18,
-                  padding: '14px 16px 12px', background: on ? sc.tint : 'var(--card)',
-                  boxShadow: on ? 'none' : 'var(--shadow)',
-                  display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 16, width: 104,
-                  WebkitTapHighlightColor: 'transparent', transition: 'background .2s',
-                }}>
-                  <div style={{
-                    width: 38, height: 38, borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: on ? 'rgba(255,255,255,0.25)' : sc.tint + '1f', color: on ? '#fff' : sc.tint,
+              if (sc) {
+                const on = activeScene === sc.id;
+                return (
+                  <button key={sc.id} onClick={() => setActiveScene(on ? null : sc.id)} style={{
+                    flex: '0 0 auto', border: 'none', cursor: 'pointer', borderRadius: 18,
+                    padding: '14px 16px 12px', background: on ? sc.tint : 'var(--card)',
+                    boxShadow: on ? 'none' : 'var(--shadow)',
+                    display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 16, width: 104,
+                    WebkitTapHighlightColor: 'transparent', transition: 'background .2s',
                   }}>
-                    <Icon name={sc.icon as React.ComponentProps<typeof Icon>['name']} size={21} />
-                  </div>
-                  <span style={{ fontSize: 13.5, fontWeight: 600, color: on ? '#fff' : 'var(--text)', textAlign: 'left', letterSpacing: -0.2 }}>{sc.name}</span>
-                </button>
-              );
+                    <div style={{
+                      width: 38, height: 38, borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: on ? 'rgba(255,255,255,0.25)' : sc.tint + '1f', color: on ? '#fff' : sc.tint,
+                    }}>
+                      <Icon name={sc.icon as React.ComponentProps<typeof Icon>['name']} size={21} />
+                    </div>
+                    <span style={{ fontSize: 13.5, fontWeight: 600, color: on ? '#fff' : 'var(--text)', textAlign: 'left', letterSpacing: -0.2 }}>{sc.name}</span>
+                  </button>
+                );
+              }
+              const ctrl = envById[id];
+              if (ctrl) {
+                const n = ctrl.name.toLowerCase();
+                const { icon, tint } = ((): { icon: IconName; tint: string } => {
+                  if (n.includes('temp'))     return { icon: 'thermo',   tint: '#E07B53' };
+                  if (n.includes('humid'))    return { icon: 'droplet',  tint: '#5B7FE0' };
+                  if (n.includes('holiday'))  return { icon: 'calendar', tint: '#9B6AB0' };
+                  if (n.includes('security')) return { icon: 'shield',   tint: '#E0483D' };
+                  if (n.includes('away'))     return { icon: 'away',     tint: '#F0A500' };
+                  return { icon: 'bolt', tint: '#2bb3a3' };
+                })();
+                const val = numVar(ctrl.id);
+                const on = val != null ? val > 0 : false;
+                return (
+                  <StatTile key={ctrl.id} icon={icon} label={ctrl.name} value="" tint={tint}
+                    compact active={on}
+                    onTap={() => setD(ctrl.id, { value: on ? 0 : 1 })} />
+                );
+              }
+              return null;
             })}
           </div>
         )}

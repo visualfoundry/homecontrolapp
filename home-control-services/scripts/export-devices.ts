@@ -45,7 +45,6 @@ const CONTROLS_QUERY = /* GraphQL */ `
             nodes {
               ... on ControlType {
                 title
-                controlTypeFields { controlTypeClass }
               }
             }
           }
@@ -64,10 +63,7 @@ interface ControlNode {
     controlAddress: string | null;
     controlVariableId: number | null;
     controlType: {
-      nodes: Array<{
-        title: string;
-        controlTypeFields: { controlTypeClass: string | null } | null;
-      }>;
+      nodes: Array<{ title: string }>;
     } | null;
   } | null;
 }
@@ -141,6 +137,10 @@ function titleToClass(ctTitle: string): DeviceClass {
   if (t.startsWith('weather variable'))           return 'numeric-var';
   if (t.startsWith('current-'))                   return 'numeric-var';
   if (t === 'pool')                               return 'toggle';
+  if (t === 'pool device')                        return 'numeric-var'; // temperature sensor
+  if (t === 'pool pump')                          return 'numeric-var'; // 0=off, 35-100=speed%
+  if (t === 'pool heater')                          return 'numeric-var'; // 0=off, 1=on; setpoint 60-95
+  if (t === 'pool salinator')                       return 'flag';
   if (t === 'theatre-screen')                     return 'toggle';
 
   // Fallback: try to infer from ACF class field

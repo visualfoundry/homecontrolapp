@@ -380,10 +380,31 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     const n = controls.find(c => ctTitle(c) === title);
     return n ? toId(n) : null;
   };
+  // Look up by the control's own post title (for controls that share a control type).
+  const ctrlIdByTitle = (title: string) => {
+    const n = controls.find(c => c.title === title);
+    return n ? toId(n) : null;
+  };
   const weatherTempId = ctrlIdByType('Weather Variable Current Temperature');
   const weatherHighId = ctrlIdByType('Weather Variable Current High Temperature');
   const weatherLowId  = ctrlIdByType('Weather Variable Current Low Temperature');
   const weatherCondId = ctrlIdByType('Weather Variable Weather Conditions');
+
+  // --- Pool hardware controls -----------------------------------------------
+  // 'Pool Pump Speed' and 'Pool Pump' share control type 'Pool Pump'.
+  // Prefer title lookup (exact post title) so we get each one reliably;
+  // fall back to type lookup so speed still works if title doesn't match.
+  const poolTempId             = ctrlIdByType('Pool Device');
+  const poolPumpId             = ctrlIdByTitle('Pool Pump Speed') ?? ctrlIdByType('Pool Pump'); // numeric: 35-100=speed%
+  const poolPumpOnOffId        = ctrlIdByTitle('Pool Pump');          // numeric: 0=off, 1=on
+  const poolHeaterId           = ctrlIdByTitle('Pool Heater') ?? ctrlIdByType('Pool Heater');   // numeric: 0=off, 1=on
+  const poolHeaterSetpointId   = ctrlIdByTitle('Pool Heater Setpoint'); // numeric: 60-95°F
+  const poolSalinatorId        = ctrlIdByType('Pool Salinator');
+
+  // --- Environmental controls (control_variable_environmental = true) -------
+  const environmentalControls = controls
+    .filter(n => n.controlFields?.controlVariableValueCopy === true)
+    .map(n => ({ id: toId(n), name: n.title }));
 
   // --- Garage light scene: the 'Light Scene N Step' control in place 'Garage'
   const garageSceneId = sceneByPlace.get('Garage')?.id ?? null;
@@ -495,6 +516,13 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     weatherLowId:        weatherLowId  ?? MOCK_CONFIG.weatherLowId,
     weatherCondId:       weatherCondId ?? MOCK_CONFIG.weatherCondId,
     houseStatusId:       houseStatusId ?? MOCK_CONFIG.houseStatusId,
+    environmentalControls: environmentalControls.length > 0 ? environmentalControls : MOCK_CONFIG.environmentalControls,
+    poolTempId:          poolTempId        ?? MOCK_CONFIG.poolTempId,
+    poolPumpId:          poolPumpId        ?? MOCK_CONFIG.poolPumpId,
+    poolPumpOnOffId:        poolPumpOnOffId        ?? MOCK_CONFIG.poolPumpOnOffId,
+    poolHeaterId:           poolHeaterId           ?? MOCK_CONFIG.poolHeaterId,
+    poolHeaterSetpointId:   poolHeaterSetpointId   ?? MOCK_CONFIG.poolHeaterSetpointId,
+    poolSalinatorId:        poolSalinatorId        ?? MOCK_CONFIG.poolSalinatorId,
     sceneRooms:          sceneRoomsRaw.length       > 0 ? sceneRoomsRaw       : MOCK_CONFIG.sceneRooms,
     lightSceneRooms:     lightSceneRoomsRaw.length  > 0 ? lightSceneRoomsRaw  : MOCK_CONFIG.lightSceneRooms,
   };

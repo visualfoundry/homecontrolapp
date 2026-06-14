@@ -467,6 +467,13 @@ export const MOCK_CONFIG: AppConfig = {
   weatherLowId: 'wx-low',
   weatherCondId: 'wx-cond',
   houseStatusId: 'hs-status',
+  environmentalControls: [],
+  poolTempId:      'pool-temp',
+  poolPumpId:      'pool-pump',
+  poolPumpOnOffId:      'pool-pump-onoff',
+  poolHeaterId:         'pool-heater',
+  poolHeaterSetpointId: 'pool-heater-setpoint',
+  poolSalinatorId:      'pool-salinator',
 };
 
 // ---------------------------------------------------------------------------
@@ -590,7 +597,15 @@ export function buildInitialState(): StateMap {
   };
   garageCarDoors.forEach(d => { s[d.id] = { open: garageCarSeed[d.id] ?? false }; });
 
-  // Pool
+  // Pool real hardware controls (backed by WP controls / poolPumpId, poolHeaterId, poolSalinatorId)
+  s['pool-temp']       = { value: 81 };
+  s['pool-pump']       = { value: 65 }; // 0=off, 35-100=speed%
+  s['pool-pump-onoff']        = { value: 1 };  // 0=off, 1=on
+  s['pool-heater']            = { value: 0 };  // 0=off, 1=on
+  s['pool-heater-setpoint']   = { value: 86 }; // °F, 60-95
+  s['pool-salinator']  = { on: true };
+
+  // Pool composite (OmniLogic mock — will be replaced by real adapter)
   s['pool'] = {
     pumpOn: true, pumpSpeed: 65,
     heaterOn: false, heaterRunning: false, poolTemp: 81, heaterTarget: 84,

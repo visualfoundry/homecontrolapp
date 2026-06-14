@@ -171,6 +171,7 @@ export interface ControlFieldsRaw {
   controlIsyControlType: string | null;
   controlAddress: string | null;
   controlVariableId: number | null;
+  controlVariableValueCopy: boolean | null;
   controlType:  { nodes: ControlTypeNodeRaw[] } | null;
   controlPlace: { nodes: PlaceNodeRaw[] } | null;
 }
@@ -258,6 +259,19 @@ export interface AppConfig {
   weatherCondId: string | null;
   /** Device id of the House Status variable (value 1=Morning, 2=Day, 3=Evening, 4=Night). */
   houseStatusId: string | null;
+  /** Controls marked control_variable_environmental=true — shown in the Environments section on HomeScreen. */
+  environmentalControls: Array<{ id: string; name: string }>;
+  /** Device id of the Pool Temperature sensor (state shape: { value: number }). Null when not in WP. */
+  poolTempId: string | null;
+  /** Pump speed variable (state shape: { value: number }, 0=off, 35–100=speed%). Null when not in WP. */
+  poolPumpId: string | null;
+  /** Pump on/off variable (state shape: { value: number }, 0=off, 1=on). Null when not in WP. */
+  poolPumpOnOffId: string | null;
+  /** Heater on/off variable (state shape: { value: number }, 0=off, 1=on). Null when not in WP. */
+  poolHeaterId: string | null;
+  /** Heater setpoint variable (state shape: { value: number }, 60–95°F). Null when not in WP. */
+  poolHeaterSetpointId: string | null;
+  poolSalinatorId: string | null;
 }
 
 // ---------------------------------------------------------------------------

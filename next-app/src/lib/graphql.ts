@@ -104,6 +104,7 @@ export const HOME_CONFIG_QUERY = /* GraphQL */ `
           controlIsyControlType
           controlAddress
           controlVariableId
+          controlVariableValueCopy
           controlType {
             nodes {
               ... on ControlType {

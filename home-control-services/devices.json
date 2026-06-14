@@ -1,9 +1,23 @@
 {
-  "eisy0/var/222": {
+  "eisy0/var/126": {
     "type": "variable",
     "eisyIdx": 0,
     "class": "numeric-var",
-    "varId": 222,
+    "varId": 126,
+    "varType": 2
+  },
+  "eisy0/var/123": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "numeric-var",
+    "varId": 123,
+    "varType": 2
+  },
+  "eisy0/var/128": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "numeric-var",
+    "varId": 128,
     "varType": 2
   },
   "eisy2/var/281": {
@@ -140,7 +154,7 @@
   "eisy3/var/210": {
     "type": "variable",
     "eisyIdx": 3,
-    "class": "numeric-var",
+    "class": "flag",
     "varId": 210,
     "varType": 2
   },
@@ -443,11 +457,11 @@
     "class": "motion-sensor",
     "address": "37 B8 EB 1"
   },
-  "eisy0/var/166": {
+  "eisy0/var/125": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "flag",
-    "varId": 166,
+    "class": "numeric-var",
+    "varId": 125,
     "varType": 2
   },
   "eisy0/var/5": {
@@ -703,11 +717,11 @@
     "varId": 3,
     "varType": 2
   },
-  "eisy0/var/111": {
+  "eisy0/var/124": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "flag",
-    "varId": 111,
+    "class": "numeric-var",
+    "varId": 124,
     "varType": 2
   },
   "eisy0/var/1": {
@@ -811,7 +825,7 @@
   "eisy1/var/210": {
     "type": "variable",
     "eisyIdx": 1,
-    "class": "numeric-var",
+    "class": "flag",
     "varId": 210,
     "varType": 2
   },
@@ -832,7 +846,7 @@
   "eisy2/var/210": {
     "type": "variable",
     "eisyIdx": 2,
-    "class": "numeric-var",
+    "class": "flag",
     "varId": 210,
     "varType": 2
   },
@@ -2021,7 +2035,7 @@
   "eisy0/var/211": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "flag",
+    "class": "lock",
     "varId": 211,
     "varType": 2
   },
@@ -2042,7 +2056,7 @@
   "eisy0/var/210": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "numeric-var",
+    "class": "flag",
     "varId": 210,
     "varType": 2
   },
@@ -2144,41 +2158,40 @@
     "varId": 53,
     "varType": 2
   },
-  "eisy0/3B 1D B 1": {
-    "type": "device",
+  "eisy0/var/220": {
+    "type": "variable",
     "eisyIdx": 0,
     "class": "lock",
-    "address": "3B 1D B 1"
+    "varId": 220,
+    "varType": 2
   },
-  "eisy0/45 F6 49 1": {
-    "type": "device",
+  "eisy0/var/224": {
+    "type": "variable",
     "eisyIdx": 0,
     "class": "lock",
-    "address": "45 F6 49 1"
+    "varId": 224,
+    "varType": 2
   },
-  "eisy0/3B 22 8F 1": {
-    "type": "device",
+  "eisy0/var/223": {
+    "type": "variable",
     "eisyIdx": 0,
     "class": "lock",
-    "address": "3B 22 8F 1"
+    "varId": 223,
+    "varType": 2
   },
-  "eisy0/3B 1A A9 1": {
-    "type": "device",
+  "eisy0/var/222": {
+    "type": "variable",
     "eisyIdx": 0,
     "class": "lock",
-    "address": "3B 1A A9 1"
+    "varId": 222,
+    "varType": 2
   },
-  "eisy0/3B 1C F4 1": {
-    "type": "device",
+  "eisy0/var/219": {
+    "type": "variable",
     "eisyIdx": 0,
     "class": "lock",
-    "address": "3B 1C F4 1"
-  },
-  "eisy0/32 A0 FF 1": {
-    "type": "device",
-    "eisyIdx": 0,
-    "class": "lock",
-    "address": "32 A0 FF 1"
+    "varId": 219,
+    "varType": 2
   },
   "eisy4/38 7B FE 1": {
     "type": "device",

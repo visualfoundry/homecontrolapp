@@ -82,8 +82,9 @@ export function useHC(): HCContextValue {
 // Prefs — localStorage persistence
 // ---------------------------------------------------------------------------
 
-const PREFS_KEY = 'hca:prefs';
-const FAVS_KEY  = 'hca:favs';
+const PREFS_KEY   = 'hca:prefs';
+const FAVS_KEY    = 'hca:favs';
+const SCENES_KEY  = 'hca:scenes';
 
 function loadPrefs(): UserPrefs {
   if (typeof window === 'undefined') return DEFAULT_PREFS;
@@ -147,6 +148,24 @@ function saveFavs(ids: string[]): void {
   }
 }
 
+function loadScenes(): string[] | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(SCENES_KEY);
+    return raw ? (JSON.parse(raw) as string[]) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveScenes(ids: string[]): void {
+  try {
+    localStorage.setItem(SCENES_KEY, JSON.stringify(ids));
+  } catch {
+    // storage quota exceeded — ignore
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Provider
 // ---------------------------------------------------------------------------
@@ -157,7 +176,8 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
     const seed = buildInitialState();
     const savedFavs = loadFavs(); // null on server (window undefined), real value on client
     seed['_favs']   = { ids: savedFavs ?? [...config.favorites] };
-    seed['_scenes'] = { ids: [...config.sceneDefault] };
+    const savedScenes = loadScenes();
+    seed['_scenes'] = { ids: savedScenes ?? [...config.sceneDefault] };
     // Seed automation state for every scene room from the real config.
     // buildInitialState() uses mock IDs; config.sceneRooms may have WP IDs.
     for (const r of config.sceneRooms) {
@@ -320,6 +340,9 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
     }));
     if (id === '_favs' && 'ids' in patch) {
       saveFavs(patch.ids as string[]);
+    }
+    if (id === '_scenes' && 'ids' in patch) {
+      saveScenes(patch.ids as string[]);
     }
     const isDeviceControl =
       !id.startsWith('_') &&

@@ -6,6 +6,7 @@
 // =============================================================================
 
 import type { StateMap } from '@/types/state';
+import { dispatchSessionExpired } from '@/lib/auth';
 
 // Same-origin Next proxy (/api/{state,stream,command}) by default — the proxy
 // forwards to the real service (STATE_API_BASE_URL) or serves the mock. Override
@@ -19,6 +20,7 @@ const BASE = process.env.NEXT_PUBLIC_STATE_API_BASE_URL ?? '/api';
 /** Fetch the full device state map from /state. Strips the `ts` timestamp key. */
 export async function fetchState(): Promise<StateMap> {
   const res = await fetch(`${BASE}/state`, { cache: 'no-store' });
+  if (res.status === 401) { dispatchSessionExpired(); throw new Error('GET /state 401'); }
   if (!res.ok) throw new Error(`GET /state ${res.status}`);
   const { ts: _ts, ...state } = (await res.json()) as Record<string, unknown>;
   return state as StateMap;
@@ -41,6 +43,8 @@ export function postCommand(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ target, patch, action }),
+  }).then(res => {
+    if (res.status === 401) dispatchSessionExpired();
   }).catch(() => {
     // Swallow network errors — stream reconcile is the source of truth.
   });
@@ -87,12 +91,25 @@ export function connectSSE(
     es.onerror = () => {
       es?.close();
       es = null;
-      if (!closed) {
+      if (closed) return;
+      // Probe auth before reconnecting — 401 means session expired, not a transient error.
+      fetch('/api/auth/check').then(r => {
+        if (r.status === 401) {
+          dispatchSessionExpired();
+          // Don't reconnect — AuthGate will re-auth and the app will remount.
+        } else {
+          reconnectTimer = setTimeout(() => {
+            onReseed();
+            connect();
+          }, 3_000);
+        }
+      }).catch(() => {
+        // Network unreachable — retry normally.
         reconnectTimer = setTimeout(() => {
-          onReseed();   // re-seed state before reconnecting
+          onReseed();
           connect();
         }, 3_000);
-      }
+      });
     };
   }
 
