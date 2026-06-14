@@ -165,6 +165,9 @@ export function varToState(
       // Variable-backed speakers store volume (0–100)
       return { on: val > 0, vol: val };
 
+    case 'lock':
+      return { value: val };
+
     case 'flag':
     default:
       return { on: val !== 0 };
