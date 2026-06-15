@@ -10,7 +10,7 @@ import { CarDoorTile } from '@/components/CarDoorTile';
 import { SceneRoomCard } from '@/components/SceneRoomCard';
 import { LargeTitle } from '@/components/LargeTitle';
 import { deviceTag } from '@/lib/debug';
-import type { FlagState, LockState, ContactSensorState, AutomationState, GlobalState } from '@/types/state';
+import type { FlagState, ContactSensorState, AutomationState, GlobalState } from '@/types/state';
 import type { SceneRoomTypeKey, TimeOfDayKey } from '@/types/config';
 
 export function GarageScreen() {
@@ -18,7 +18,10 @@ export function GarageScreen() {
   const cars = config.garageCars;
   const doors = config.garageDoors;
   const carDoors = config.garageCarDoors;
-  const lockedCount = doors.filter(d => (st[d.id] as LockState | undefined)?.locked ?? true).length;
+  const lockedCount = doors.filter(d => {
+    const raw = st[d.id] as { locked?: boolean; value?: number } | undefined;
+    return raw?.locked ?? (raw?.value !== undefined ? raw.value > 0 : false);
+  }).length;
 
   const allCarsOpen = carDoors.length > 0
     && carDoors.every(d => (st[d.id] as ContactSensorState | undefined)?.open ?? false);
