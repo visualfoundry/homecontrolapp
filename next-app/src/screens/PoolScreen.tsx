@@ -11,7 +11,7 @@ import { Slider } from '@/components/Slider';
 import { Tile } from '@/components/Tile';
 import { LargeTitle } from '@/components/LargeTitle';
 import { poolStep } from '@/lib/styles';
-import type { PoolState, PumpScheduleItem, HeaterScheduleItem, OutdoorState } from '@/types/state';
+import type { PoolState, PoolNodeState, PumpScheduleItem, HeaterScheduleItem, OutdoorState } from '@/types/state';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -278,12 +278,24 @@ export function PoolScreen() {
 
   if (!p) return null;
 
-  // Prefer the real sensor reading from the WP 'Pool Temperature' control when available.
+  // Live pool controller node (PG3 Balboa, n003_bow1).
+  const poolNode = config.poolNodeId
+    ? (st[config.poolNodeId] as PoolNodeState | undefined)
+    : undefined;
+
+  // Pool temperature: prefer live node, then legacy temp sensor, then mock.
   const poolTempSensor = config.poolTempId
     ? (st[config.poolTempId] as { value?: number } | undefined)?.value ?? null
     : null;
-  const poolTemp = poolTempSensor ?? p.poolTemp;
+  const poolTemp = poolNode?.waterTemp ?? poolTempSensor ?? p.poolTemp;
   const poolTempDisplay = poolTemp > 0 ? `${poolTemp}°` : 'N/A';
+
+  // Live chemistry readings — fall back to mock PoolState values.
+  const ph          = poolNode?.ph          ?? p.ph;
+  const orp         = poolNode?.orp         ?? p.orpNow;
+  const saltLevel   = poolNode?.saltLevel   ?? p.saltPPM;
+  const saltLevelAvg = poolNode?.saltLevelAvg ?? p.saltPPM;
+  const nodePumpOn  = poolNode?.pumpOn;
 
   // Pump on/off: dedicated flag variable (value 0=off, 1=on).
   const rawPumpOnOff = config.poolPumpOnOffId
@@ -296,8 +308,9 @@ export function PoolScreen() {
     : null;
   const pumpSpeed = rawPumpSpeed ?? p.pumpSpeed;
 
-  // Prefer dedicated on/off variable; fall back to speed > 0; then mock.
-  const pumpOn = rawPumpOnOff !== null ? rawPumpOnOff > 0
+  // Prefer live node pump power, then dedicated on/off variable, then speed, then mock.
+  const pumpOn = nodePumpOn !== undefined ? nodePumpOn
+               : rawPumpOnOff !== null ? rawPumpOnOff > 0
                : rawPumpSpeed !== null ? rawPumpSpeed > 0
                : p.pumpOn;
 
@@ -330,14 +343,16 @@ export function PoolScreen() {
   const setHeaterTarget = (v: number) =>
     config.poolHeaterSetpointId ? setD(config.poolHeaterSetpointId, { value: v }) : setP({ heaterTarget: v });
 
-  // Salinator remains a flag variable.
+  // Chlorinator: prefer poolChlorinatorId (WP 627), fall back to poolSalinatorId, then mock.
   const flag = (id: string | null, fallback: boolean) =>
     id ? ((st[id] as { on?: boolean } | undefined)?.on ?? fallback) : fallback;
-  const salinatorOn = flag(config.poolSalinatorId, p.chlorinatorOn);
-  const setSalinator = (v: boolean) => config.poolSalinatorId ? setD(config.poolSalinatorId, { on: v }) : setP({ chlorinatorOn: v });
+  const chlorinatorId = config.poolChlorinatorId ?? config.poolSalinatorId;
+  const salinatorOn = flag(chlorinatorId, p.chlorinatorOn);
+  const setSalinator = (v: boolean) => chlorinatorId ? setD(chlorinatorId, { on: v }) : setP({ chlorinatorOn: v });
 
-  const heaterRunning = heaterOn && poolTemp < heaterTarget;
-  const phStatus = p.ph < 7.2 ? 'Low' : p.ph > 7.8 ? 'High' : 'Ideal';
+  // Heater running: use live heaterFiring signal when available; fall back to inference.
+  const heaterRunning = poolNode?.heaterFiring ?? (heaterOn && poolTemp < heaterTarget);
+  const phStatus = ph < 7.2 ? 'Low' : ph > 7.8 ? 'High' : 'Ideal';
   const phTint = phStatus === 'Ideal' ? 'var(--green)' : 'var(--red)';
 
   const schedKey = (k: ScheduleKind) =>
@@ -388,12 +403,15 @@ export function PoolScreen() {
       <div style={{ display: 'flex', gap: 11, overflowX: 'auto', paddingBottom: 4,
         margin: '0 calc(-1 * var(--screen-px))', padding: '0 var(--screen-px) 4px',
         scrollbarWidth: 'none' }}>
-        <Reading icon="thermo" label="Pool temp" value={poolTempDisplay} tint="#E07B53" />
-        <Reading icon="bolt"   label="Heater"    value={heaterOn ? heaterTarget + '°' : 'Off'} tint="#E0573D"
-          status={heaterRunning ? 'Running' : heaterOn ? 'Idle' : null} />
-        <Reading icon="droplet" label="pH"       value={p.ph.toFixed(1)} tint={phTint} status={phStatus} />
-        <Reading icon="water"   label="Salt"     value={(p.saltPPM / 1000).toFixed(1) + 'k'} tint="#5a9bd4" />
-        <Reading icon="power"   label="ORP now"  value={p.orpNow + 'mV'} tint="#2bb3a3" />
+        <Reading icon="thermo"  label="Pool temp"   value={poolTempDisplay}                    tint="#E07B53" />
+        <Reading icon="bolt"    label="Heater"      value={heaterOn ? heaterTarget + '°' : 'Off'} tint="#E0573D"
+          status={heaterRunning ? 'Firing' : heaterOn ? 'Idle' : null} />
+        <Reading icon="power"   label="Pump"        value={pumpOn ? 'On' : 'Off'}              tint="#2bb3a3"
+          status={pumpOn ? 'Running' : null} />
+        <Reading icon="droplet" label="pH"          value={ph.toFixed(1)}                      tint={phTint} status={phStatus} />
+        <Reading icon="power"   label="ORP"         value={orp + ' mV'}                        tint="#2bb3a3" />
+        <Reading icon="water"   label="Salt"        value={saltLevel.toLocaleString()}          tint="#5a9bd4" />
+        <Reading icon="water"   label="Salt avg"    value={saltLevelAvg.toLocaleString()}       tint="#5a9bd4" />
       </div>
 
       {/* Lighting & Features */}
@@ -458,7 +476,7 @@ export function PoolScreen() {
             <div>
               <div style={{ fontSize: 17, fontWeight: 680, color: 'var(--text)' }}>Pool Heater</div>
               <div style={{ fontSize: 13, color: heaterRunning ? 'var(--red)' : 'var(--text2)', fontWeight: 560, marginTop: 1 }}>
-                {heaterRunning ? 'Running' : heaterOn ? 'Idle · at temp' : 'Off'}
+                {heaterRunning ? 'Firing' : heaterOn ? 'Idle · at temp' : 'Off'}
               </div>
             </div>
             <Toggle on={heaterOn} onChange={(v) => setHeater(v)} size={0.92} accent="#E0573D" />
@@ -499,7 +517,7 @@ export function PoolScreen() {
               <div style={{ fontSize: 13, color: 'var(--text2)', fontWeight: 500, marginTop: 1 }}>Current reading</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-              <span style={{ fontSize: 30, fontWeight: 730, color: 'var(--text)', letterSpacing: -0.5 }}>{p.ph.toFixed(1)}</span>
+              <span style={{ fontSize: 30, fontWeight: 730, color: 'var(--text)', letterSpacing: -0.5 }}>{ph.toFixed(1)}</span>
               <span style={{ fontSize: 12.5, fontWeight: 680, color: '#fff', background: phTint, borderRadius: 8, padding: '4px 9px' }}>{phStatus}</span>
             </div>
           </div>
@@ -530,11 +548,11 @@ export function PoolScreen() {
           <Slider value={p.orpSet} onChange={(v) => setP({ orpSet: v })}
             min={600} max={800} step={5} height={40} fill="linear-gradient(90deg,#2bb3a3,#48cbbb)" />
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 7, fontSize: 12, color: 'var(--text3)', fontWeight: 560 }}>
-            <span>600 mV</span><span>Now {p.orpNow} mV</span><span>800 mV</span>
+            <span>600 mV</span><span>Now {orp} mV</span><span>800 mV</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, paddingTop: 14, borderTop: '0.5px solid var(--sep)' }}>
             <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>Average salt</span>
-            <span style={{ fontSize: 15, fontWeight: 680, color: 'var(--text)' }}>{p.saltPPM.toLocaleString()} ppm</span>
+            <span style={{ fontSize: 15, fontWeight: 680, color: 'var(--text)' }}>{saltLevelAvg.toLocaleString()} ppm</span>
           </div>
         </Card>
         <div style={{ height: 8 }} />

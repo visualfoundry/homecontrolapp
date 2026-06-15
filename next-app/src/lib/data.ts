@@ -468,12 +468,14 @@ export const MOCK_CONFIG: AppConfig = {
   weatherCondId: 'wx-cond',
   houseStatusId: 'hs-status',
   environmentalControls: [],
+  poolNodeId:      null,
   poolTempId:      'pool-temp',
   poolPumpId:      'pool-pump',
   poolPumpOnOffId:      'pool-pump-onoff',
   poolHeaterId:         'pool-heater',
   poolHeaterSetpointId: 'pool-heater-setpoint',
   poolSalinatorId:      'pool-salinator',
+  poolChlorinatorId:    null,
 };
 
 // ---------------------------------------------------------------------------

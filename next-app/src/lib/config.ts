@@ -356,8 +356,10 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     const ns = `eisy${eisyIdx}`;
     if (cf.controlIsyControlType === 'Device') {
       if (!cf.controlAddress) return null;
-      // WP stores the 3-byte base address; all primary Insteon nodes are sub-node 1
-      return `${ns}/${cf.controlAddress} 1`;
+      // Insteon addresses are 3 hex bytes ("3D 13 C6") — primary nodes are sub-node 1.
+      // PG3/plugin nodes use a different format (e.g. "n003_bow1") — no sub-node suffix.
+      const isInsteon = /^[0-9A-F]{2}( [0-9A-F]{2}){2}$/i.test(cf.controlAddress.trim());
+      return `${ns}/${cf.controlAddress}${isInsteon ? ' 1' : ''}`;
     }
     if (cf.controlIsyControlType === 'Variable') {
       return cf.controlVariableId != null ? `${ns}/var/${cf.controlVariableId}` : null;
@@ -391,10 +393,16 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
   const weatherCondId = ctrlIdByType('Weather Variable Weather Conditions');
 
   // --- Pool hardware controls -----------------------------------------------
+  // WP ID 626 ('Pool', control type 'Pool Device') = PG3 Balboa node n003_bow1.
+  // Provides PoolNodeState: pumpOn, ph, orp, waterTemp, saltLevel, saltLevelAvg, heaterFiring.
   // 'Pool Pump Speed' and 'Pool Pump' share control type 'Pool Pump'.
   // Prefer title lookup (exact post title) so we get each one reliably;
   // fall back to type lookup so speed still works if title doesn't match.
-  const poolTempId             = ctrlIdByType('Pool Device');
+  // Use title-based lookup so WP ID 626 ("Pool") and WP ID 627 ("Pool Chlorinator")
+  // don't collide — both share control type 'Pool Device'.
+  const poolNodeId             = ctrlIdByTitle('Pool') ?? ctrlIdByType('Pool Device');  // WP ID 626 → eisy0/n003_bow1
+  const poolChlorinatorId      = ctrlIdByTitle('Pool Chlorinator');  // WP ID 627
+  const poolTempId             = null; // temperature now read from poolNodeId.waterTemp
   const poolPumpId             = ctrlIdByTitle('Pool Pump Speed') ?? ctrlIdByType('Pool Pump'); // numeric: 35-100=speed%
   const poolPumpOnOffId        = ctrlIdByTitle('Pool Pump');          // numeric: 0=off, 1=on
   const poolHeaterId           = ctrlIdByTitle('Pool Heater') ?? ctrlIdByType('Pool Heater');   // numeric: 0=off, 1=on
@@ -517,12 +525,14 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     weatherCondId:       weatherCondId ?? MOCK_CONFIG.weatherCondId,
     houseStatusId:       houseStatusId ?? MOCK_CONFIG.houseStatusId,
     environmentalControls: environmentalControls.length > 0 ? environmentalControls : MOCK_CONFIG.environmentalControls,
+    poolNodeId:          poolNodeId        ?? MOCK_CONFIG.poolNodeId,
     poolTempId:          poolTempId        ?? MOCK_CONFIG.poolTempId,
     poolPumpId:          poolPumpId        ?? MOCK_CONFIG.poolPumpId,
     poolPumpOnOffId:        poolPumpOnOffId        ?? MOCK_CONFIG.poolPumpOnOffId,
     poolHeaterId:           poolHeaterId           ?? MOCK_CONFIG.poolHeaterId,
     poolHeaterSetpointId:   poolHeaterSetpointId   ?? MOCK_CONFIG.poolHeaterSetpointId,
     poolSalinatorId:        poolSalinatorId        ?? MOCK_CONFIG.poolSalinatorId,
+    poolChlorinatorId:      poolChlorinatorId      ?? MOCK_CONFIG.poolChlorinatorId,
     sceneRooms:          sceneRoomsRaw.length       > 0 ? sceneRoomsRaw       : MOCK_CONFIG.sceneRooms,
     lightSceneRooms:     lightSceneRoomsRaw.length  > 0 ? lightSceneRoomsRaw  : MOCK_CONFIG.lightSceneRooms,
   };
