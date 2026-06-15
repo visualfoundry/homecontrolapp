@@ -16,7 +16,7 @@ import { Slider } from '@/components/Slider';
 import { SceneRoomCard } from '@/components/SceneRoomCard';
 import { speakerName } from '@/components/SpeakerRow';
 import { CarDoorTile } from '@/components/CarDoorTile';
-import type { LightState, LockState, ContactSensorState, SpeakerState, FanState, FlagState, GlobalState, FavsState, ScenesListState, PoolState, AutomationState, VariableState, TextVariableState, WeatherCondition, ThermostatState } from '@/types/state';
+import type { LightState, LockState, ContactSensorState, SpeakerState, FanState, FlagState, GlobalState, FavsState, ScenesListState, PoolState, PoolNodeState, AutomationState, VariableState, TextVariableState, WeatherCondition, ThermostatState } from '@/types/state';
 
 // Map a raw weather-conditions string (any source wording) to a visual bucket.
 function mapCondition(text: string): WeatherCondition {
@@ -27,9 +27,10 @@ function mapCondition(text: string): WeatherCondition {
   return 'Clear';
 }
 import type { SceneRoomTypeKey, TimeOfDayKey, ClimateZone } from '@/types/config';
+import { deviceTag } from '@/lib/debug';
 
 // ── Scrollable stat pill ──────────────────────────────────────────────────────
-function StatTile({ icon, label, value, tint, onTap, compact, active }: {
+function StatTile({ icon, label, value, tint, onTap, compact, active, 'data-control': dataControl }: {
   icon: React.ComponentProps<typeof Icon>['name'];
   label: string;
   value: string | number;
@@ -37,9 +38,10 @@ function StatTile({ icon, label, value, tint, onTap, compact, active }: {
   onTap?: () => void;
   compact?: boolean;
   active?: boolean;
+  'data-control'?: string;
 }) {
   return (
-    <div onClick={onTap} style={{
+    <div onClick={onTap} data-control={dataControl} style={{
       background: compact ? (active ? tint : 'var(--card)') : 'var(--card)',
       borderRadius: 18, boxShadow: active ? 'none' : 'var(--shadow)',
       padding: '14px 16px 12px', flex: '0 0 auto',
@@ -71,7 +73,7 @@ function StatTile({ icon, label, value, tint, onTap, compact, active }: {
 // ── Fav tiles (defined outside HomeScreen to preserve component identity across renders) ──
 
 function FavTile({ id, icon, label }: { id: string; icon: React.ComponentProps<typeof Icon>['name']; label: string }) {
-  const { st, setD } = useHC();
+  const { st, setD, config } = useHC();
   const s = st[id] ?? { on: false, level: 0 };
   const isDoor = 'locked' in s;
   const isContact = 'open' in s;
@@ -99,6 +101,7 @@ function FavTile({ id, icon, label }: { id: string; icon: React.ComponentProps<t
   return (
     <Tile icon={icn} name={label} status={status} active={on} activeColor={color}
       glow={isLight} onTap={toggle} compact
+      data-control={deviceTag(label, id, config.controlStateIds)}
       control={<Toggle on={on} onChange={toggle} accent="rgba(255,255,255,0.4)" size={0.72} />} />
   );
 }
@@ -117,7 +120,7 @@ function LightFavTile({ id, label }: { id: string; label: string }) {
   };
   const toggle = () => setD(id, { on: !s.on, level: !s.on ? 100 : 0 });
   return (
-    <div style={{ gridColumn: 'span 2', position: 'relative', height: 96, borderRadius: 'var(--radius)', overflow: 'hidden', background: 'var(--slider-track)', touchAction: 'none', userSelect: 'none' }}>
+    <div data-control={deviceTag(label, id, config.controlStateIds)} style={{ gridColumn: 'span 2', position: 'relative', height: 96, borderRadius: 'var(--radius)', overflow: 'hidden', background: 'var(--slider-track)', touchAction: 'none', userSelect: 'none' }}>
       <Slider value={displayLevel} onChange={onDrag} onCommit={onCommit} height={96} track="transparent" fill="linear-gradient(90deg,#f5b942,#ffd86b)" />
       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px', pointerEvents: 'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
@@ -135,13 +138,13 @@ function LightFavTile({ id, label }: { id: string; label: string }) {
 }
 
 function FanFavTile({ id, label }: { id: string; label: string }) {
-  const { st, setD } = useHC();
+  const { st, setD, config } = useHC();
   const s = (st[id] as FanState | undefined) ?? { on: false, speed: 0 as FanState['speed'] };
   const SPEEDS = ['Off', 'Low', 'Med', 'High'] as const;
   const setSpeed = (sp: number) => setD(id, { speed: sp as FanState['speed'], on: sp > 0 });
   const spinDuration = s.on ? `${1.4 - s.speed * 0.3}s` : undefined;
   return (
-    <div style={{ gridColumn: 'span 2' }}>
+    <div data-control={deviceTag(label, id, config.controlStateIds)} style={{ gridColumn: 'span 2' }}>
       <Card style={{ padding: '12px 14px 10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -172,14 +175,14 @@ function FanFavTile({ id, label }: { id: string; label: string }) {
 }
 
 function SpeakerFavTile({ id, label }: { id: string; label: string }) {
-  const { st, setD } = useHC();
+  const { st, setD, config } = useHC();
   const s = (st[id] as SpeakerState | undefined) ?? { on: false, vol: 0 };
   const [dragVol, setDragVol] = React.useState<number | null>(null);
   const pct = dragVol ?? (s.on ? s.vol : 0);
   const toggle = () => setD(id, { on: !s.on, vol: !s.on ? (s.vol || 30) : s.vol });
   const name = speakerName(label);
   return (
-    <div style={{ gridColumn: 'span 2' }}>
+    <div data-control={deviceTag(label, id, config.controlStateIds)} style={{ gridColumn: 'span 2' }}>
       <Card style={{ padding: '12px 14px 10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -211,14 +214,14 @@ function SceneFavTile({ id }: { id: string; label: string }) {
   const tod = (st['_global'] as GlobalState).timeOfDay as TimeOfDayKey;
   const scene = config.sceneSchedules[room.type as SceneRoomTypeKey]?.[tod] ?? '—';
   return (
-    <div style={{ gridColumn: 'span 2' }}>
+    <div data-control={deviceTag(room.name, id, config.controlStateIds)} style={{ gridColumn: 'span 2' }}>
       <SceneRoomCard room={room} a={a} scene={scene} compact />
     </div>
   );
 }
 
 function MiniClimateZoneTile({ zone }: { zone: ClimateZone }) {
-  const { st, setD, go } = useHC();
+  const { st, setD, go, config } = useHC();
   const s = (st[zone.id] as ThermostatState | undefined)
     ?? { temp: 72, mode: 'auto' as const, lo: 68, hi: 76 };
   const col = s.mode === 'cool' ? '#3d9be0'
@@ -242,7 +245,7 @@ function MiniClimateZoneTile({ zone }: { zone: ClimateZone }) {
     else if (s.mode === 'auto') setD(zone.id, { lo: round(s.lo + d), hi: round(s.hi + d) });
   };
   return (
-    <div onClick={() => go('climate')} style={{
+    <div data-control={deviceTag(zone.name, zone.id, config.controlStateIds)} onClick={() => go('climate')} style={{
       display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
       padding: 12, borderRadius: 'var(--radius)', background: 'var(--card)',
       boxShadow: 'var(--shadow)', minHeight: 110, cursor: 'pointer',
@@ -390,7 +393,8 @@ export function HomeScreen() {
     ? (config.climate.reduce((sum, c) => sum + ((st[c.id] as { temp?: number } | undefined)?.temp ?? 72), 0) / config.climate.length).toFixed(1)
     : '–';
   const numVar = (id: string | null) => (id ? (st[id] as VariableState | undefined)?.value : undefined);
-  const poolTempSensor = numVar(config.poolTempId);
+  const poolNode = config.poolNodeId ? (st[config.poolNodeId] as PoolNodeState | undefined) : undefined;
+  const poolTempSensor = poolNode?.waterTemp ?? numVar(config.poolTempId);
   const poolTemp = poolTempSensor ?? (st['pool'] as PoolState | undefined)?.poolTemp ?? 81;
   const weatherTemp = numVar(config.weatherTempId);
   const weatherHigh = numVar(config.weatherHighId);
@@ -536,7 +540,7 @@ export function HomeScreen() {
               if (sc) {
                 const on = activeScene === sc.id;
                 return (
-                  <button key={sc.id} onClick={() => setActiveScene(on ? null : sc.id)} style={{
+                  <button key={sc.id} data-control={deviceTag(sc.name, sc.id, config.controlStateIds)} onClick={() => setActiveScene(on ? null : sc.id)} style={{
                     flex: '0 0 auto', border: 'none', cursor: 'pointer', borderRadius: 18,
                     padding: '14px 16px 12px', background: on ? sc.tint : 'var(--card)',
                     boxShadow: on ? 'none' : 'var(--shadow)',
@@ -564,12 +568,13 @@ export function HomeScreen() {
                   if (n.includes('away'))     return { icon: 'away',     tint: '#F0A500' };
                   return { icon: 'bolt', tint: '#2bb3a3' };
                 })();
-                const val = numVar(ctrl.id);
-                const on = val != null ? val > 0 : false;
+                const s = st[ctrl.id] as FlagState | undefined;
+                const on = s?.on ?? false;
                 return (
                   <StatTile key={ctrl.id} icon={icon} label={ctrl.name} value="" tint={tint}
                     compact active={on}
-                    onTap={() => setD(ctrl.id, { value: on ? 0 : 1 })} />
+                    data-control={deviceTag(ctrl.name, ctrl.id, config.controlStateIds)}
+                    onTap={() => setD(ctrl.id, { on: !on })} />
                 );
               }
               return null;
