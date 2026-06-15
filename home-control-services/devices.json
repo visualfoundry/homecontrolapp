@@ -1,4 +1,28 @@
 {
+  "eisy0/n003_pump2 1": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "numeric-var",
+    "address": "n003_pump2 1"
+  },
+  "eisy0/n003_heater3 1": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "numeric-var",
+    "address": "n003_heater3 1"
+  },
+  "eisy0/n003_chlor6 1": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "numeric-var",
+    "address": "n003_chlor6 1"
+  },
+  "eisy0/n003_bow1 1": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "numeric-var",
+    "address": "n003_bow1 1"
+  },
   "eisy0/var/126": {
     "type": "variable",
     "eisyIdx": 0,
@@ -2035,14 +2059,14 @@
   "eisy0/var/211": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "lock",
+    "class": "flag",
     "varId": 211,
     "varType": 2
   },
   "eisy0/var/212": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "flag",
+    "class": "lock",
     "varId": 212,
     "varType": 2
   },
@@ -2056,7 +2080,7 @@
   "eisy0/var/210": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "flag",
+    "class": "lock",
     "varId": 210,
     "varType": 2
   },
@@ -2084,7 +2108,7 @@
   "eisy0/var/204": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "flag",
+    "class": "lock",
     "varId": 204,
     "varType": 2
   },
@@ -2098,7 +2122,7 @@
   "eisy0/var/206": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "flag",
+    "class": "lock",
     "varId": 206,
     "varType": 2
   },

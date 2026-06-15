@@ -7,15 +7,19 @@ import { Card, SectionTitle } from '@/components/Card';
 import { LargeTitle } from '@/components/LargeTitle';
 import { ExteriorDoorRow } from '@/components/ExteriorDoorRow';
 import { pillBtn } from '@/lib/styles';
-import type { LockState, ContactSensorState } from '@/types/state';
+import { deviceTag } from '@/lib/debug';
+import type { ContactSensorState } from '@/types/state';
 
 // WP post titles carry a trailing " Open" suffix we don't want to show.
 const doorName = (name: string) => name.replace(/\s+Open$/, '');
 
 export function DoorsScreen() {
   const { st, setD, config } = useHC();
-  const lockedCount = config.doorsExterior.filter(d => (st[d.id] as LockState | undefined)?.locked).length;
-  const lockAll = () => config.doorsExterior.forEach(d => setD(d.id, { locked: true }));
+  const lockedCount = config.doorsExterior.filter(d => {
+    const raw = st[d.id] as { locked?: boolean; value?: number } | undefined;
+    return raw?.locked ?? (raw?.value !== undefined ? raw.value > 0 : false);
+  }).length;
+  const lockAll = () => config.doorsExterior.forEach(d => setD(d.id, { value: 1 }));
 
   return (
     <div>
@@ -41,7 +45,7 @@ export function DoorsScreen() {
             const s = st[d.id] as ContactSensorState | undefined;
             const open = s?.open ?? false;
             return (
-              <div key={d.id} style={{
+              <div key={d.id} data-control={deviceTag(d.name, d.id, config.controlStateIds)} style={{
                 display: 'flex', alignItems: 'center', padding: '14px 16px',
                 borderBottom: i < config.doorsInterior.length - 1 ? '0.5px solid var(--sep)' : 'none',
               }}>
