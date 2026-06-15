@@ -9,6 +9,7 @@ import React from 'react';
 import { useHC } from '@/lib/store';
 import { Icon } from '@/components/Icon';
 import { Card } from '@/components/Card';
+import { deviceTag } from '@/lib/debug';
 import { stepBtn } from '@/lib/styles';
 import type { ThermostatState } from '@/types/state';
 import type { ClimateZone } from '@/types/config';
@@ -38,7 +39,7 @@ function Dial({ temp, mode, running }: { temp: number; mode: ThermostatState['mo
 }
 
 export function ClimateZoneCard({ zone }: { zone: ClimateZone }) {
-  const { st, setD } = useHC();
+  const { st, setD, config } = useHC();
   // Default when the state service has no value yet for this zone id,
   // so live (WP-id) zones still render instead of being dropped.
   const s = (st[zone.id] as ThermostatState | undefined)
@@ -54,7 +55,7 @@ export function ClimateZoneCard({ zone }: { zone: ClimateZone }) {
     }
   };
   return (
-    <Card style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '16px 12px 14px' }}>
+    <Card style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '16px 12px 14px' }} data-control={deviceTag(zone.name, zone.id, config.controlStateIds)}>
       <div style={{ fontSize: 14.5, fontWeight: 640, color: 'var(--text)', alignSelf: 'flex-start', marginLeft: 4 }}>{zone.name}</div>
       <Dial temp={s.temp} mode={s.mode} running={s.running} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 2 }}>

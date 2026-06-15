@@ -9,6 +9,7 @@ import { ExteriorDoorRow } from '@/components/ExteriorDoorRow';
 import { CarDoorTile } from '@/components/CarDoorTile';
 import { SceneRoomCard } from '@/components/SceneRoomCard';
 import { LargeTitle } from '@/components/LargeTitle';
+import { deviceTag } from '@/lib/debug';
 import type { FlagState, LockState, ContactSensorState, AutomationState, GlobalState } from '@/types/state';
 import type { SceneRoomTypeKey, TimeOfDayKey } from '@/types/config';
 
@@ -84,7 +85,7 @@ export function GarageScreen() {
             {cars.map((it, i) => {
               const s = st[it.id] as FlagState | undefined;
               return (
-                <div key={it.id} style={{ display: 'flex', alignItems: 'center', padding: '13px 16px',
+                <div key={it.id} data-control={deviceTag(it.name, it.id, config.controlStateIds)} style={{ display: 'flex', alignItems: 'center', padding: '13px 16px',
                   borderBottom: i < cars.length - 1 ? '0.5px solid var(--sep)' : 'none' }}>
                   <span style={{ flex: 1, fontSize: 16, fontWeight: 520, color: 'var(--text)' }}>{it.name}</span>
                   <Toggle on={s?.on ?? false} onChange={(v) => setD(it.id, { on: v })} size={0.85} />

@@ -10,6 +10,7 @@ import React from 'react';
 import { useHC } from '@/lib/store';
 import { Icon } from '@/components/Icon';
 import { Toggle } from '@/components/Toggle';
+import { deviceTag } from '@/lib/debug';
 import type { ExteriorDoor } from '@/types/config';
 import type { FlagState, VariableState } from '@/types/state';
 
@@ -17,7 +18,7 @@ import type { FlagState, VariableState } from '@/types/state';
 const doorName = (name: string) => name.replace(/\s+Open$/, '');
 
 export function ExteriorDoorRow({ door, last }: { door: ExteriorDoor; last?: boolean }) {
-  const { st, setD } = useHC();
+  const { st, setD, config } = useHC();
   const locked = ((st[door.id] as VariableState | undefined)?.value ?? 1) === 1;
   const autoLock = door.autoLockId
     ? (st[door.autoLockId] as FlagState | undefined)?.on ?? false
@@ -28,10 +29,12 @@ export function ExteriorDoorRow({ door, last }: { door: ExteriorDoor; last?: boo
     : false;
 
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 13, padding: '13px 16px',
-      borderBottom: last ? 'none' : '0.5px solid var(--sep)',
-    }}>
+    <div
+      data-control={deviceTag(door.name, door.id, config.controlStateIds)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 13, padding: '13px 16px',
+        borderBottom: last ? 'none' : '0.5px solid var(--sep)',
+      }}>
       <div style={{
         width: 36, height: 36, borderRadius: 10, flexShrink: 0,
         background: door.openId

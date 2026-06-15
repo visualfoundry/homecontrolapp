@@ -8,6 +8,7 @@
 import { useHC } from '@/lib/store';
 import { Icon } from '@/components/Icon';
 import { Card } from '@/components/Card';
+import { deviceTag } from '@/lib/debug';
 import { Toggle } from '@/components/Toggle';
 import type { FanState } from '@/types/state';
 import type { FanDevice } from '@/types/config';
@@ -15,13 +16,13 @@ import type { FanDevice } from '@/types/config';
 const SPEEDS = ['Off', 'Low', 'Med', 'High'] as const;
 
 export function FanCard({ fan }: { fan: FanDevice }) {
-  const { st, setD } = useHC();
+  const { st, setD, config } = useHC();
   const s = (st[fan.id] as FanState | undefined) ?? { on: false, speed: 0 as FanState['speed'] };
   const setSpeed = (sp: number) => setD(fan.id, { speed: sp as FanState['speed'], on: sp > 0 });
   const spinDuration = s.on ? `${1.4 - s.speed * 0.3}s` : undefined;
 
   return (
-    <Card style={{ padding: 15 }}>
+    <Card style={{ padding: 15 }} data-control={deviceTag(fan.name, fan.id, config.controlStateIds)}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{
           width: 40, height: 40, borderRadius: 12,

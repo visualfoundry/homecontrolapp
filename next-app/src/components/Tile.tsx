@@ -32,6 +32,7 @@ interface TileProps {
   className?: string;
   /** Compact variant — reduces padding and sizes to hit ~96px height */
   compact?: boolean;
+  'data-control'?: string;
 }
 
 export function Tile({
@@ -48,6 +49,7 @@ export function Tile({
   glow = false,
   className,
   compact = false,
+  'data-control': dataControl,
 }: TileProps) {
   const color = activeColor ?? tint ?? 'var(--accent)';
   const caption = status ?? label;
@@ -62,6 +64,7 @@ export function Tile({
       onClick={onTap ?? (() => onToggle?.(!active))}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (onTap ?? (() => onToggle?.(!active)))(); } }}
       className={className}
+      data-control={dataControl}
       style={{
         position: 'relative',
         display: 'flex',

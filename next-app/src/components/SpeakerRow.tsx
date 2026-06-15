@@ -10,6 +10,7 @@
 import React, { useRef } from 'react';
 import { useHC } from '@/lib/store';
 import { Icon } from '@/components/Icon';
+import { deviceTag } from '@/lib/debug';
 import { Toggle } from '@/components/Toggle';
 import { Slider } from '@/components/Slider';
 import type { SpeakerState } from '@/types/state';
@@ -31,7 +32,7 @@ const iconBtn: React.CSSProperties = {
 };
 
 export function SpeakerRow({ zone, last }: { zone: MusicZone; last?: boolean }) {
-  const { st, setD } = useHC();
+  const { st, setD, config } = useHC();
   const s = (st[zone.id] as SpeakerState | undefined) ?? { on: false, vol: 0 };
   const [dragVol, setDragVol] = React.useState<number | null>(null);
   const displayVol = dragVol ?? s.vol;
@@ -49,7 +50,7 @@ export function SpeakerRow({ zone, last }: { zone: MusicZone; last?: boolean }) 
   };
 
   return (
-    <div style={{ padding: '13px 2px', borderBottom: last ? 'none' : '0.5px solid var(--sep)' }}>
+    <div data-control={deviceTag(zone.name, zone.id, config.controlStateIds)} style={{ padding: '13px 2px', borderBottom: last ? 'none' : '0.5px solid var(--sep)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 }}>
         <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>{speakerName(zone.name)}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

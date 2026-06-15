@@ -10,6 +10,7 @@ import React from 'react';
 import { useHC } from '@/lib/store';
 import { Icon } from '@/components/Icon';
 import { Card } from '@/components/Card';
+import { deviceTag } from '@/lib/debug';
 import { Slider } from '@/components/Slider';
 import type { AutomationState } from '@/types/state';
 import type { SceneRoomConfig } from '@/types/config';
@@ -181,7 +182,7 @@ export function SceneRoomCard({ room, a, scene, compact }: {
   scene: string;
   compact?: boolean;
 }) {
-  const { st, setD, go } = useHC();
+  const { st, setD, go, config } = useHC();
 
   // Read live values from real device state (EISY) when the corresponding id is wired.
   const automated = room.autoId
@@ -252,7 +253,7 @@ export function SceneRoomCard({ room, a, scene, compact }: {
 
   if (compact) {
     return (
-      <Card pad={false} style={{ overflow: 'hidden' }}>
+      <Card pad={false} style={{ overflow: 'hidden' }} data-control={deviceTag(room.name, room.id, config.controlStateIds)}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px 8px' }}>
           <span style={{ width: 9, height: 9, borderRadius: 5, background: status.dot, flex: '0 0 auto' }} />
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -277,7 +278,7 @@ export function SceneRoomCard({ room, a, scene, compact }: {
   }
 
   return (
-    <Card pad={false} style={{ overflow: 'hidden' }}>
+    <Card pad={false} style={{ overflow: 'hidden' }} data-control={deviceTag(room.name, room.id, config.controlStateIds)}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '14px 15px 12px' }}>
         <span style={{ width: 10, height: 10, borderRadius: 5, background: status.dot, flex: '0 0 auto',
           boxShadow: status.tone === 'active' ? '0 0 0 4px rgba(52,168,83,0.16)' : 'none' }} />

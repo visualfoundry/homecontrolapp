@@ -69,6 +69,20 @@ export interface FlagState {
 }
 
 // ---------------------------------------------------------------------------
+// Pool controller node (PG3 Balboa plugin — EISY 0, n003_bow1)
+// ---------------------------------------------------------------------------
+
+export interface PoolNodeState {
+  pumpOn: boolean;       // GV0: pump circuit power
+  ph: number;            // GV1÷10: water pH
+  orp: number;           // GV2: ORP in mV
+  waterTemp: number;     // ST: pool water temperature °F
+  saltLevel: number;     // GV5: current salt level ppm
+  saltLevelAvg: number;  // GV6: averaged salt level ppm
+  heaterFiring: boolean; // GV7: heater is actively firing
+}
+
+// ---------------------------------------------------------------------------
 // Pool composite (OmniLogic adapter — built against mock for now)
 // ---------------------------------------------------------------------------
 
@@ -168,6 +182,7 @@ export type DeviceRecord =
   | OutdoorState
   | FlagState
   | PoolState
+  | PoolNodeState
   | GlobalState
   | FavsState
   | ScenesListState

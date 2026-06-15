@@ -27,7 +27,8 @@ export type DeviceClass =
   | 'speaker'
   | 'thermostat'
   | 'flag'
-  | 'numeric-var';
+  | 'numeric-var'
+  | 'pool-controller';
 
 export interface DeviceEntry {
   /** 'device' = Insteon node; 'variable' = ISY integer/state variable */
@@ -131,6 +132,21 @@ export function nodeToState(
       }
 
       return { temp, hi, lo, mode, running };
+    }
+
+    case 'pool-controller': {
+      // PG3 Balboa node (n003_bow1) on EISY 0.
+      // GV1 stores pH × 10 (e.g. 72 → 7.2); all others are raw values.
+      const gv = (prop: string) => props.get(prop) ?? 0;
+      return {
+        pumpOn:       gv('GV0') > 0,
+        ph:           gv('GV1') / 10,
+        orp:          gv('GV2'),
+        waterTemp:    gv('ST'),
+        saltLevel:    gv('GV5'),
+        saltLevelAvg: gv('GV6'),
+        heaterFiring: gv('GV7') > 0,
+      };
     }
 
     default:

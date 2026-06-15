@@ -8,16 +8,18 @@ import { Toggle } from '@/components/Toggle';
 import { Tile } from '@/components/Tile';
 import { LargeTitle } from '@/components/LargeTitle';
 import { SceneRoomCard } from '@/components/SceneRoomCard';
+import { deviceTag } from '@/lib/debug';
 import type { OutdoorState, AutomationState, GlobalState } from '@/types/state';
 import type { OutdoorDevice, SceneRoomConfig, SceneRoomTypeKey, TimeOfDayKey } from '@/types/config';
 
 function OutdoorTile({ o }: { o: OutdoorDevice }) {
-  const { st, setD } = useHC();
+  const { st, setD, config } = useHC();
   const s = st[o.id] as OutdoorState | undefined;
   if (!s) return null;
   const icon: IconName = o.icon ?? 'bulb';
   return (
     <Tile icon={icon} name={o.name} status={s.on ? 'On' : 'Off'} active={s.on}
+      data-control={deviceTag(o.name, o.id, config.controlStateIds)}
       onTap={() => setD(o.id, { on: !s.on })}
       control={<Toggle on={s.on} onChange={(v) => setD(o.id, { on: v })} accent="rgba(255,255,255,0.45)" size={0.78} />}
     />

@@ -8,16 +8,18 @@
 import React from 'react';
 import { useHC } from '@/lib/store';
 import { Tile } from '@/components/Tile';
+import { deviceTag } from '@/lib/debug';
 import type { ContactSensorState } from '@/types/state';
 import type { SettingItem } from '@/types/config';
 
 export function CarDoorTile({ door, compact }: { door: SettingItem; compact?: boolean }) {
-  const { st, setD } = useHC();
+  const { st, setD, config } = useHC();
   const open = (st[door.id] as ContactSensorState | undefined)?.open ?? false;
   return (
     <Tile
       icon="garage"
       name={door.name}
+      data-control={deviceTag(door.name, door.id, config.controlStateIds)}
       status={open ? 'Open' : 'Closed'}
       active={open}
       activeColor="var(--amber)"

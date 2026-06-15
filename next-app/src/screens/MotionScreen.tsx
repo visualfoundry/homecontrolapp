@@ -5,6 +5,7 @@ import { useHC } from '@/lib/store';
 import { Icon } from '@/components/Icon';
 import { Card } from '@/components/Card';
 import { LargeTitle } from '@/components/LargeTitle';
+import { deviceTag } from '@/lib/debug';
 import type { MotionSensorState } from '@/types/state';
 
 export function MotionScreen() {
@@ -31,7 +32,7 @@ export function MotionScreen() {
           const state = st[s.id] as MotionSensorState | undefined;
           const m = state?.motion ?? false;
           return (
-            <div key={s.id} style={{ display: 'flex', alignItems: 'center', padding: '13px 16px',
+            <div key={s.id} data-control={deviceTag(s.name, s.id, config.controlStateIds)} style={{ display: 'flex', alignItems: 'center', padding: '13px 16px',
               borderBottom: i < config.motionSensors.length - 1 ? '0.5px solid var(--sep)' : 'none' }}>
               <span style={{ flex: 1, fontSize: 16, fontWeight: 520, color: 'var(--text)' }}>{s.name}</span>
               {state?.lowBattery && (

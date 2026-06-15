@@ -5,6 +5,7 @@ import { useHC } from '@/lib/store';
 import { Tile } from '@/components/Tile';
 import { LargeTitle } from '@/components/LargeTitle';
 import { pillBtn } from '@/lib/styles';
+import { deviceTag } from '@/lib/debug';
 import type { FlagState } from '@/types/state';
 
 export function TVScreen() {
@@ -29,6 +30,7 @@ export function TVScreen() {
               name={t.name}
               status={on ? 'On' : 'Off'}
               active={on}
+              data-control={deviceTag(t.name, t.id, config.controlStateIds)}
               onToggle={(v) => setD(t.id, { on: v })}
             />
           );

@@ -18,9 +18,10 @@ interface CardProps {
   style?: React.CSSProperties;
   onClick?: () => void;
   pad?: boolean; // default true — pass false for custom inner padding
+  'data-control'?: string;
 }
 
-export function Card({ children, className, style, onClick, pad = true }: CardProps) {
+export function Card({ children, className, style, onClick, pad = true, 'data-control': dataControl }: CardProps) {
   const base: React.CSSProperties = {
     background: 'var(--card)',
     borderRadius: 'var(--radius)',
@@ -35,6 +36,7 @@ export function Card({ children, className, style, onClick, pad = true }: CardPr
         type="button"
         onClick={onClick}
         className={className}
+        data-control={dataControl}
         style={{ ...base, border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }}
       >
         {children}
@@ -43,7 +45,7 @@ export function Card({ children, className, style, onClick, pad = true }: CardPr
   }
 
   return (
-    <div className={className} style={base}>
+    <div className={className} style={base} data-control={dataControl}>
       {children}
     </div>
   );

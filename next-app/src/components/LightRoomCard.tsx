@@ -9,6 +9,7 @@
 
 import React from 'react';
 import { useHC } from '@/lib/store';
+import { deviceTag } from '@/lib/debug';
 import { Icon } from '@/components/Icon';
 import { Toggle } from '@/components/Toggle';
 import { Slider } from '@/components/Slider';
@@ -17,7 +18,7 @@ import type { LightState } from '@/types/state';
 import type { LightRoom } from '@/types/config';
 
 export function LightBar({ id, name, snap }: { id: string; name: string; snap?: boolean }) {
-  const { st, setD } = useHC();
+  const { st, setD, config } = useHC();
   const s = (st[id] as LightState | undefined) ?? { on: false, level: 0 };
   const [dragLevel, setDragLevel] = React.useState<number | null>(null);
   const displayLevel = dragLevel ?? (s.on ? s.level : 0);
@@ -35,7 +36,7 @@ export function LightBar({ id, name, snap }: { id: string; name: string; snap?: 
     setD(id, { on: !s.on, level: !s.on ? 100 : 0 });
   };
   return (
-    <div style={{ position: 'relative', height: 54, borderRadius: 15, overflow: 'hidden', background: 'var(--slider-track)', touchAction: 'none', userSelect: 'none' }}>
+    <div data-control={deviceTag(name, id, config.controlStateIds)} style={{ position: 'relative', height: 54, borderRadius: 15, overflow: 'hidden', background: 'var(--slider-track)', touchAction: 'none', userSelect: 'none' }}>
       <Slider value={displayLevel} onChange={onDrag} onCommit={onCommit} height={54} track="transparent" fill="linear-gradient(90deg,#f5b942,#ffd86b)" />
       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px', pointerEvents: 'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>

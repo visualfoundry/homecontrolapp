@@ -7,6 +7,7 @@ import { Card, SectionTitle } from '@/components/Card';
 import { Toggle } from '@/components/Toggle';
 import { LargeTitle } from '@/components/LargeTitle';
 import { pillBtn } from '@/lib/styles';
+import { deviceTag } from '@/lib/debug';
 import type { IrrigationProgramState, IrrigationZoneState, FlagState } from '@/types/state';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -39,7 +40,7 @@ export function IrrigationScreen() {
         {config.irrigationPrograms.map((p, i) => {
           const s = st[p.id] as IrrigationProgramState | undefined;
           return (
-            <div key={p.id} style={{ display: 'flex', alignItems: 'center', padding: '13px 16px',
+            <div key={p.id} data-control={deviceTag(p.name, p.id, config.controlStateIds)} style={{ display: 'flex', alignItems: 'center', padding: '13px 16px',
               borderBottom: i < config.irrigationPrograms.length - 1 ? '0.5px solid var(--sep)' : 'none' }}>
               <span style={{ flex: 1, fontSize: 16, fontWeight: 520, color: 'var(--text)' }}>{p.name}</span>
               <Toggle on={s?.on ?? false} onChange={(v) => setD(p.id, { on: v })} size={0.85} />
@@ -94,7 +95,7 @@ export function IrrigationScreen() {
           {config.irrigationZones.map((z, i) => {
             const s = st[z.id] as IrrigationZoneState | undefined;
             return (
-              <div key={z.id} style={{ display: 'flex', alignItems: 'center', padding: '13px 16px',
+              <div key={z.id} data-control={deviceTag(z.name, z.id, config.controlStateIds)} style={{ display: 'flex', alignItems: 'center', padding: '13px 16px',
                 borderBottom: i < config.irrigationZones.length - 1 ? '0.5px solid var(--sep)' : 'none' }}>
                 <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--icon-bg)', color: '#3fa535',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 13 }}>
