@@ -13,11 +13,19 @@ export interface SpotifyTrack {
   artUrl: string | null;
 }
 
+export interface SpotifyDevice {
+  id: string;
+  name: string;
+  type: string;
+  isActive: boolean;
+  volumePct: number;
+}
+
 export interface SpotifyState {
   isPlaying: boolean;
   progressMs: number;
   track: SpotifyTrack | null;
-  device: { name: string; volumePct: number } | null;
+  device: { id: string; name: string; type: string; volumePct: number } | null;
   loading: boolean;
   error: string | null;
 }
@@ -195,7 +203,36 @@ export function useSpotify(deviceId?: string | null) {
     setTimeout(poll, 600);
   }, [poll, deviceId]);
 
-  return { ...state, command };
+  const fetchDevices = useCallback(async (): Promise<SpotifyDevice[]> => {
+    try {
+      const res = await fetch('/api/spotify/devices', { cache: 'no-store' });
+      if (!res.ok) return [];
+      const { devices } = await res.json() as { devices: SpotifyDevice[] };
+      return devices ?? [];
+    } catch {
+      return [];
+    }
+  }, []);
+
+  /** Transfer playback to a Spotify Connect device. Always sets Spotify volume to
+   *  100% after transfer so the physical amp controls are the only volume knob. */
+  const transferTo = useCallback(async (targetDeviceId: string) => {
+    await fetch('/api/spotify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'transfer', device_id: targetDeviceId }),
+    });
+    // Give Spotify a moment to complete the transfer before setting volume
+    await new Promise<void>(r => setTimeout(r, 800));
+    await fetch('/api/spotify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'volume', value: 100, device_id: targetDeviceId }),
+    });
+    setTimeout(poll, 1200);
+  }, [poll]);
+
+  return { ...state, command, fetchDevices, transferTo };
 }
 
 // ── useSpotifyLibrary ────────────────────────────────────────────────────────

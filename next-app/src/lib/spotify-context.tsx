@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { useSpotifyPlayer, useSpotify } from '@/hooks/useSpotify';
-import type { SpotifySDKState, SpotifyState, SpotifyTrack } from '@/hooks/useSpotify';
+import type { SpotifySDKState, SpotifyState, SpotifyTrack, SpotifyDevice } from '@/hooks/useSpotify';
 
 interface SpotifyPlayerCtx {
   deviceId: string | null;
@@ -13,6 +13,8 @@ interface SpotifyPlayerCtx {
 
 type SpotifyWithCommand = SpotifyState & {
   command: (action: string, value?: number, context_uri?: string) => Promise<void>;
+  fetchDevices: () => Promise<SpotifyDevice[]>;
+  transferTo: (deviceId: string) => Promise<void>;
 };
 
 interface SpotifyCtxValue {
@@ -56,4 +58,4 @@ export function useSpotifyContext(): SpotifyCtxValue {
 }
 
 // Re-export for convenience
-export type { SpotifyTrack, SpotifySDKState, SpotifyState };
+export type { SpotifyTrack, SpotifySDKState, SpotifyState, SpotifyDevice };

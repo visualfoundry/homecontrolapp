@@ -46,7 +46,9 @@ export async function GET() {
         artUrl: (item.album.images as { url: string }[])[0]?.url ?? null,
       } : null,
       device: data.device ? {
+        id: data.device.id as string,
         name: data.device.name as string,
+        type: data.device.type as string,
         volumePct: data.device.volume_percent as number,
       } : null,
     });
@@ -87,6 +89,10 @@ export async function POST(req: NextRequest) {
         break;
       case 'play_context':
         res = await spotifyFetch(`/play${dq}`, 'PUT', context_uri ? { context_uri } : undefined);
+        break;
+      case 'transfer':
+        // Transfer playback to device_id. play:true keeps playback running after transfer.
+        res = await spotifyFetch('', 'PUT', { device_ids: [device_id], play: true });
         break;
       default:
         return NextResponse.json({ error: `unknown action: ${action}` }, { status: 400 });

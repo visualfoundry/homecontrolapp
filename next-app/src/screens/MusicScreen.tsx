@@ -11,6 +11,7 @@ import { LargeTitle } from '@/components/LargeTitle';
 import { useSpotifyLibrary } from '@/hooks/useSpotify';
 import type { SpotifyTrack } from '@/hooks/useSpotify';
 import { useSpotifyContext } from '@/lib/spotify-context';
+import type { SpotifyDevice } from '@/lib/spotify-context';
 import type { SpeakerState } from '@/types/state';
 
 function fmtMs(ms: number) {
@@ -73,10 +74,42 @@ function LibraryCard({ uri, name, artUrl, sub, artCircle = false, onPlay }: {
   );
 }
 
+// The preferred Spotify Connect device. Playback is auto-routed here on mount.
+const DEFAULT_SPOTIFY_DEVICE = 'House Music';
+
 export function MusicScreen() {
   const { st, setD, config } = useHC();
   const { sdkPlayer, spotify, dismissMini } = useSpotifyContext();
   const library = useSpotifyLibrary();
+  const [devicePickerOpen, setDevicePickerOpen] = React.useState(false);
+  const [availableDevices, setAvailableDevices] = React.useState<SpotifyDevice[]>([]);
+  const [devicesLoading, setDevicesLoading] = React.useState(false);
+
+  // Auto-route to the default device when the Music screen opens.
+  // Skips if already on the correct device or if it isn't available (powered off).
+  React.useEffect(() => {
+    if (spotify.loading) return;
+    if (spotify.device?.name === DEFAULT_SPOTIFY_DEVICE) return;
+    spotify.fetchDevices().then(devices => {
+      const target = devices.find(d => d.name === DEFAULT_SPOTIFY_DEVICE);
+      if (target && !target.isActive) void spotify.transferTo(target.id);
+    });
+  // Run once when loading resolves — intentionally not re-running on device changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spotify.loading]);
+
+  const openDevicePicker = async () => {
+    setDevicePickerOpen(true);
+    setDevicesLoading(true);
+    const devices = await spotify.fetchDevices();
+    setAvailableDevices(devices);
+    setDevicesLoading(false);
+  };
+
+  const selectDevice = async (device: SpotifyDevice) => {
+    setDevicePickerOpen(false);
+    await spotify.transferTo(device.id);
+  };
 
   // Prefer real-time SDK state when the in-browser player is active,
   // fall back to the REST-polled state when another device is active.
@@ -210,7 +243,7 @@ export function MusicScreen() {
           </div>
           {/* Progress bar */}
           {displayTrack && (
-            <div style={{ padding: '0 16px 14px' }}>
+            <div style={{ padding: '0 16px 0' }}>
               <div style={{ position: 'relative', height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.2)', overflow: 'hidden' }}>
                 <div style={{
                   position: 'absolute', left: 0, top: 0, bottom: 0,
@@ -222,6 +255,49 @@ export function MusicScreen() {
                 <span>{fmtMs(displayProgressMs)}</span>
                 <span>{fmtMs(displayTrack.durationMs)}</span>
               </div>
+            </div>
+          )}
+          {/* Device selector chip */}
+          <div style={{ padding: '10px 16px 14px' }}>
+            <button onClick={devicePickerOpen ? () => setDevicePickerOpen(false) : openDevicePicker}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                background: 'rgba(255,255,255,0.12)', border: 'none', borderRadius: 20,
+                padding: '5px 10px 5px 8px', cursor: 'pointer', color: 'rgba(255,255,255,0.85)',
+                fontSize: 12, fontWeight: 560, WebkitTapHighlightColor: 'transparent',
+              }}>
+              <Icon name="speaker" size={13} strokeWidth={2} />
+              {spotify.device?.name ?? 'No device'}
+              <span style={{ transform: devicePickerOpen ? 'rotate(180deg)' : 'none', display: 'inline-flex', transition: 'transform 0.2s' }}>
+                <Icon name="chevDown" size={11} strokeWidth={2.5} />
+              </span>
+            </button>
+          </div>
+          {/* Device picker dropdown */}
+          {devicePickerOpen && (
+            <div style={{ margin: '0 12px 14px', borderRadius: 12, background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(8px)', overflow: 'hidden' }}>
+              {devicesLoading ? (
+                <div style={{ padding: '12px 14px', fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>
+                  Loading devices…
+                </div>
+              ) : availableDevices.length === 0 ? (
+                <div style={{ padding: '12px 14px', fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>
+                  No devices found
+                </div>
+              ) : availableDevices.map((d, i) => (
+                <button key={d.id} onClick={() => selectDevice(d)} style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '11px 14px', background: 'transparent', border: 'none',
+                  borderTop: i > 0 ? '0.5px solid rgba(255,255,255,0.1)' : 'none',
+                  cursor: 'pointer', color: d.isActive ? '#1DB954' : 'rgba(255,255,255,0.9)',
+                  fontSize: 13, fontWeight: d.isActive ? 640 : 520, textAlign: 'left',
+                  WebkitTapHighlightColor: 'transparent',
+                }}>
+                  <Icon name="speaker" size={15} strokeWidth={d.isActive ? 2.2 : 1.8} />
+                  <span style={{ flex: 1 }}>{d.name}</span>
+                  {d.isActive && <Icon name="check" size={14} strokeWidth={2.5} />}
+                </button>
+              ))}
             </div>
           )}
         </div>
