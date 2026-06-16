@@ -176,6 +176,7 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
     seed['_favs']   = { ids: savedFavs ?? [...config.favorites] };
     const savedScenes = loadScenes();
     seed['_scenes'] = { ids: savedScenes ?? [...config.sceneDefault] };
+    seed['_global'] = { timeOfDay: 'Morning', weather: 'Clear' };
     for (const r of config.sceneRooms) {
       seed[`auto:${r.id}`] = {
         automated: true, motion: false, doorOpen: false,
