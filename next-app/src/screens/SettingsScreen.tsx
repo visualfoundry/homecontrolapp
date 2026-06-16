@@ -137,14 +137,12 @@ function CertInstallCard() {
         <div style={{ padding: 12, background: '#fff', borderRadius: 10 }}>
           <QRCodeSVG value={certUrl} size={160} />
         </div>
-        <p style={{ margin: 0, fontSize: 12, color: 'var(--text2)', textAlign: 'center', lineHeight: 1.5 }}>
-          Scan with your iPhone or iPad camera, then open in Safari.
-          Follow the prompts to download and install the profile, then
-          enable full trust in{' '}
-          <strong style={{ color: 'var(--text)', fontWeight: 600 }}>
-            Settings → General → About → Certificate Trust Settings
-          </strong>.
-        </p>
+        <ol style={{ margin: 0, padding: '0 0 0 18px', fontSize: 13, color: 'var(--text2)', lineHeight: 1.7, alignSelf: 'stretch' }}>
+          <li>Scan the QR code with your camera, then tap the link to open it in <strong style={{ color: 'var(--text)' }}>Safari</strong>.</li>
+          <li>Tap <strong style={{ color: 'var(--text)' }}>Allow</strong> when prompted to download the profile.</li>
+          <li>Go to <strong style={{ color: 'var(--text)' }}>Settings → General → VPN &amp; Device Management</strong>, tap the profile, then tap <strong style={{ color: 'var(--text)' }}>Install</strong>.</li>
+          <li>Go to <strong style={{ color: 'var(--text)' }}>Settings → General → About → Certificate Trust Settings</strong> and enable full trust for the mkcert certificate.</li>
+        </ol>
         <a
           href={certUrl}
           style={{ fontSize: 12, color: 'var(--accent)', fontFamily: 'monospace', wordBreak: 'break-all', textAlign: 'center' }}
