@@ -94,6 +94,9 @@
 html,
 body {
   height: 100%;
+  /* iOS Safari (browser + standalone): -webkit-fill-available reports the
+     true visible viewport, excluding any collapsing browser chrome. */
+  height: -webkit-fill-available;
   background: var(--bg);
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
@@ -166,7 +169,8 @@ button {
 /* Shell: column on phone, row on tablet */
 .hca-shell {
   position: relative;
-  height: 100%;
+  flex: 1;       /* fill the column-flex #hca-root; more reliable than height:100% on iOS */
+  min-height: 0; /* prevent flex overflow */
   display: flex;
   flex-direction: column;
   background: var(--bg);
