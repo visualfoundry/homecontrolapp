@@ -404,9 +404,10 @@ ip addr show eno1
 
 ```bash
 sudo ufw allow OpenSSH      # SSH — keep this or you'll lock yourself out
-sudo ufw allow 80/tcp       # WordPress (Apache)
-sudo ufw allow 3000/tcp     # Next.js PWA
-# Port 8081 (state service) is internal only — do NOT open it
+sudo ufw allow 80/tcp       # WordPress HTTP (redirects to HTTPS)
+sudo ufw allow 443/tcp      # WordPress HTTPS
+sudo ufw allow 3443/tcp     # Next.js PWA HTTPS (Apache proxy)
+# Port 3000 (Next.js direct) and 8081 (state service) are internal only — do NOT open them
 sudo ufw enable
 sudo ufw status
 ```
@@ -481,14 +482,134 @@ pm2 restart all
 
 ---
 
-## URL summary
+## URL summary (LAN)
 
 | Service | URL |
 |---|---|
-| WordPress admin | `http://192.168.1.91/wp-admin` |
-| WPGraphQL endpoint | `http://192.168.1.91/graphql` |
-| Next.js PWA | `http://192.168.1.91:3000` |
+| WordPress admin | `https://192.168.1.91/wp-admin` |
+| WPGraphQL endpoint | `https://192.168.1.91/graphql` |
+| Next.js PWA | `https://192.168.1.91:3443` |
 | State service (internal only) | `http://127.0.0.1:8081` |
 
-> The PWA home screen shortcut points to `http://192.168.1.91:3000`.  
-> Port 8081 is never exposed outside the server — Next.js proxies it.
+> Port 8081 is never exposed outside the server — Next.js proxies it internally.
+
+---
+
+## Part 7 — SSL certificates
+
+### Current setup (LAN only)
+
+SSL is provided by **mkcert** — a local CA that issues trusted certificates for LAN use.
+
+Two certificates to understand:
+| Certificate | Location | Valid for | Action on expiry |
+|---|---|---|---|
+| Root CA | Installed on each device once | **10 years** | Reinstall on all devices |
+| Server cert | `/etc/ssl/hca/cert.pem` | **2 years (~June 2028)** | Renew on server only |
+
+The Root CA is installed once per device. When the server cert renews, devices automatically trust the new cert — no action needed on devices.
+
+### Adding a new device (iOS)
+
+The mkcert Root CA is served from the server for easy installation:
+
+1. Open **Safari** on the iOS device and go to `https://192.168.1.91/mkcert-ca.pem`
+2. Tap **Allow** when prompted to download the profile
+3. Go to **Settings → General → VPN & Device Management** → tap the profile → **Install**
+4. Enter your passcode → **Install** on the warning screen
+5. Go to **Settings → General → About → Certificate Trust Settings** → enable full trust for the mkcert CA
+
+> The CA file is permanently available at `https://192.168.1.91/mkcert-ca.pem` — this is safe for a home LAN.
+
+### Renewing the server certificate (June 2028)
+
+Run on your Mac:
+```bash
+mkcert 192.168.1.91
+scp 192.168.1.91.pem administrator@192.168.1.91:~
+scp 192.168.1.91-key.pem administrator@192.168.1.91:~
+```
+
+Then on the server:
+```bash
+sudo cp ~/192.168.1.91.pem /etc/ssl/hca/cert.pem
+sudo cp ~/192.168.1.91-key.pem /etc/ssl/hca/key.pem
+sudo chmod 600 /etc/ssl/hca/key.pem
+sudo systemctl reload apache2
+```
+
+No device changes needed — the Root CA is still valid.
+
+---
+
+## Part 8 — Future: public access via app.dixons.net
+
+> **Not yet implemented.** This section documents what needs to change when port-forwarding
+> `app.dixons.net:443` → `192.168.1.91:443`.
+
+### Architecture change required
+
+Currently the PWA runs on port 3443 (Apache proxy → Next.js :3000). When going public, everything must be on port 443 via path-based routing in Apache:
+
+| Path | Routes to |
+|---|---|
+| `/wp-admin`, `/wp-json`, `/wp-content`, `/wp-includes`, `/graphql` | WordPress (local files) |
+| Everything else | Next.js proxy (`:3000`) |
+
+### Certificate change required
+
+mkcert certificates are not trusted by public browsers. Replace with **Let's Encrypt** (free, auto-renewing):
+
+```bash
+sudo apt install -y certbot python3-certbot-apache
+sudo certbot --apache -d app.dixons.net
+```
+
+Certbot auto-renews via a systemd timer — no manual renewal needed.
+
+### Security hardening required before going public
+
+> These steps are **mandatory** before exposing the server to the internet.
+
+**1. Restrict WordPress admin to LAN only** — add to the port 443 VirtualHost:
+```apache
+<Location /wp-admin>
+    Require ip 192.168.1.0/24
+    Require ip 127.0.0.1
+</Location>
+<Location /wp-login.php>
+    Require ip 192.168.1.0/24
+    Require ip 127.0.0.1
+</Location>
+```
+
+**2. Install fail2ban** to block brute-force login attempts:
+```bash
+sudo apt install -y fail2ban
+```
+
+**3. Restrict SSH to key-only** (already enforced if keys were imported during install — verify):
+```bash
+sudo grep PasswordAuthentication /etc/ssh/sshd_config
+# Should show: PasswordAuthentication no
+```
+
+**4. Close port 3443 from the internet** — only forward 443 at the router; keep 3443 LAN-only in UFW.
+
+**5. Update environment variables** on the server after going live:
+```bash
+# next-app/.env.local
+NEXTAUTH_URL=https://app.dixons.net
+NEXT_PUBLIC_WP_GRAPHQL_URL=https://app.dixons.net/graphql
+# WP_GRAPHQL_URL stays as http://127.0.0.1/graphql (internal)
+```
+
+**6. Update WordPress URLs** in the database:
+```bash
+mysql -u wpuser -p wordpress -e "UPDATE wp_options SET option_value = 'https://app.dixons.net' WHERE option_name IN ('siteurl', 'home');"
+```
+
+**7. Rebuild Next.js** after env changes:
+```bash
+cd ~/homecontrolapp/next-app && npm run build && pm2 restart hca-next
+```
