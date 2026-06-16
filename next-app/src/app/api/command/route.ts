@@ -4,11 +4,9 @@
 //   { "target": "lr-main",  "patch":  { "level": 40 } }
 //   { "target": "movie",    "action": "activate" }
 //
-// Proxy boundary: forward to the real service's POST /command when
-// STATE_API_BASE_URL is set (translating target id), else apply to the mock.
+// Proxies to the real home-control service at STATE_API_BASE_URL.
 // Returns 202 immediately; the confirmed patch arrives on /stream.
 
-import { applyCommand } from '@/lib/mock-state';
 import { STATE_API_BASE_URL, commandTargetToStateId } from '@/lib/state-service';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -33,8 +31,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (!STATE_API_BASE_URL) {
-    applyCommand(body.target, body.patch, body.action);
-    return new Response(null, { status: 202 });
+    return NextResponse.json({ error: 'STATE_API_BASE_URL not configured' }, { status: 503 });
   }
 
   try {

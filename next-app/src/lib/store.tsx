@@ -10,9 +10,9 @@
 //
 // Device state (st / setD):
 //   Flat map keyed by device id, mutated by shallow-merged patches.
-//   Seeded from buildInitialState() for instant render, then replaced by
-//   GET /state on mount. SSE /stream patches keep it live. setD is
-//   optimistic (also POSTs to /command); /stream is authoritative.
+//   Seeded from real config (scene rooms, light scenes, fans) for instant render,
+//   then replaced by GET /state on mount. SSE /stream patches keep it live.
+//   setD is optimistic (also POSTs to /command); /stream is authoritative.
 //
 // User prefs (prefs / setPrefs):
 //   theme, accent, radius, density, font, tabs → persisted to localStorage.
@@ -34,7 +34,6 @@ import { SECTIONS, MAX_TABS, isTabSlot } from '@/lib/sections';
 import type { SectionDef } from '@/lib/sections';
 import type { StateMap, StatePatch } from '@/types/state';
 import { type UserPrefs, DEFAULT_PREFS, type AppConfig, type NotificationPrefs, DEFAULT_NOTIF_PREFS } from '@/types/config';
-import { buildInitialState } from '@/lib/data';
 import { fetchState, postCommand, connectSSE } from '@/lib/state-client';
 
 // ---------------------------------------------------------------------------
@@ -172,41 +171,20 @@ function saveScenes(ids: string[]): void {
 
 export function HCProvider({ children, config }: { children: React.ReactNode; config: AppConfig }) {
   const [st, setSt] = useState<StateMap>(() => {
-    // Seed from full catalog; override prefs-like keys from live config.
-    const seed = buildInitialState();
-    const savedFavs = loadFavs(); // null on server (window undefined), real value on client
+    const seed: StateMap = {};
+    const savedFavs = loadFavs();
     seed['_favs']   = { ids: savedFavs ?? [...config.favorites] };
     const savedScenes = loadScenes();
     seed['_scenes'] = { ids: savedScenes ?? [...config.sceneDefault] };
-    // Seed automation state for every scene room from the real config.
-    // buildInitialState() uses mock IDs; config.sceneRooms may have WP IDs.
     for (const r of config.sceneRooms) {
-      if (!(`auto:${r.id}` in seed)) {
-        seed[`auto:${r.id}`] = {
-          automated: true, motion: false, doorOpen: false,
-          manual: false, nightDim: false, intensity: 50,
-        };
-      }
+      seed[`auto:${r.id}`] = {
+        automated: true, motion: false, doorOpen: false,
+        manual: false, nightDim: false, intensity: 50,
+      };
+      if (r.steps) seed[r.id] = { value: 0 };
     }
-    // Seed device state for light scene rooms so FavTile can render them.
-    // Real state comes from the service once connected; this is the pre-connect default.
-    for (const r of config.lightSceneRooms) {
-      if (!(r.id in seed)) {
-        seed[r.id] = { on: false };
-      }
-    }
-    // Seed fan state so FanCard has a defined starting value before /state arrives.
-    for (const f of config.fans) {
-      if (!(f.id in seed)) {
-        seed[f.id] = { on: false, speed: 0 };
-      }
-    }
-    // Seed scene room step variables (room.id = Light Scene N Step control).
-    for (const r of config.sceneRooms) {
-      if (r.steps && !(r.id in seed)) {
-        seed[r.id] = { value: 0 };
-      }
-    }
+    for (const r of config.lightSceneRooms) seed[r.id] = { on: false };
+    for (const f of config.fans) seed[f.id] = { on: false, speed: 0 };
     return seed;
   });
   // Grace period map: device id → timestamp after which SSE patches are accepted again.
@@ -257,7 +235,7 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
   useEffect(() => {
     let alive = true;
 
-    // Seed from /state on mount (replaces buildInitialState seed after first render).
+    // Seed from /state on mount (replaces config-seeded defaults after first render).
     function reseed() {
       fetchState().then((live) => {
         if (!alive) return;

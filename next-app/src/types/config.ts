@@ -207,7 +207,7 @@ export interface SettingItem   { id: string; name: string }
 
 export type SceneRoomTypeKey = 'bedroom' | 'bath' | 'living' | 'utility' | 'hall';
 export type TimeOfDayKey = 'Morning' | 'Day' | 'Evening' | 'Night';
-export type SceneSchedules = Record<SceneRoomTypeKey, Record<TimeOfDayKey, string>>;
+export type SceneSchedules = Partial<Record<SceneRoomTypeKey, Partial<Record<TimeOfDayKey, string>>>>;
 
 // ---------------------------------------------------------------------------
 // AppConfig — full catalog used by the app at runtime.

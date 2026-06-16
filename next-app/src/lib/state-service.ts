@@ -5,8 +5,7 @@
 // between the config-plane id space (WP databaseId, used everywhere in the UI)
 // and the state-plane id space (the home-control service's device ids).
 //
-// STATE_API_BASE_URL unset  → mock mode (routes serve src/lib/mock-state).
-// STATE_API_BASE_URL set    → proxy to the real service.
+// STATE_API_BASE_URL must be set — points to the real home-control service.
 //
 // ID TRANSLATION: the service keys state by the ISY id (device address or
 // variable id), not the WP databaseId the UI uses. config.controlStateIds maps

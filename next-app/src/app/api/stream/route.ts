@@ -9,7 +9,6 @@
 // (Per-event id translation will be added with the id map — see state-service.)
 
 import { type NextRequest } from 'next/server';
-import { subscribe } from '@/lib/mock-state';
 import { STATE_API_BASE_URL, idMaps } from '@/lib/state-service';
 
 export const dynamic = 'force-dynamic';
@@ -61,42 +60,22 @@ function idRemapStream(stateToConfig: Record<string, string[]>): TransformStream
 }
 
 export async function GET(req: NextRequest) {
-  if (STATE_API_BASE_URL) {
-    try {
-      const upstream = await fetch(`${STATE_API_BASE_URL}/stream`, {
-        headers: { Accept: 'text/event-stream' },
-        cache: 'no-store',
-        signal: req.signal,
-      });
-      if (!upstream.ok || !upstream.body) {
-        return new Response(`: upstream ${upstream.status}\n\n`, { status: 502, headers: SSE_HEADERS });
-      }
-      const { stateToConfig } = await idMaps();
-      return new Response(upstream.body.pipeThrough(idRemapStream(stateToConfig)), { headers: SSE_HEADERS });
-    } catch {
-      // Client aborted or upstream unreachable — close cleanly.
-      return new Response(': stream proxy closed\n\n', { status: 502, headers: SSE_HEADERS });
-    }
+  if (!STATE_API_BASE_URL) {
+    return new Response(': STATE_API_BASE_URL not configured\n\n', { status: 503, headers: SSE_HEADERS });
   }
 
-  const encoder = new TextEncoder();
-  let unsub: (() => void) | undefined;
-
-  const stream = new ReadableStream({
-    start(controller) {
-      controller.enqueue(encoder.encode(': connected\n\n'));
-      unsub = subscribe((chunk) => {
-        try {
-          controller.enqueue(encoder.encode(chunk));
-        } catch {
-          unsub?.();
-        }
-      });
-    },
-    cancel() {
-      unsub?.();
-    },
-  });
-
-  return new Response(stream, { headers: SSE_HEADERS });
+  try {
+    const upstream = await fetch(`${STATE_API_BASE_URL}/stream`, {
+      headers: { Accept: 'text/event-stream' },
+      cache: 'no-store',
+      signal: req.signal,
+    });
+    if (!upstream.ok || !upstream.body) {
+      return new Response(`: upstream ${upstream.status}\n\n`, { status: 502, headers: SSE_HEADERS });
+    }
+    const { stateToConfig } = await idMaps();
+    return new Response(upstream.body.pipeThrough(idRemapStream(stateToConfig)), { headers: SSE_HEADERS });
+  } catch {
+    return new Response(': stream proxy closed\n\n', { status: 502, headers: SSE_HEADERS });
+  }
 }

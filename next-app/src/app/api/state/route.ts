@@ -1,19 +1,14 @@
 // GET /api/state — full state snapshot
-//
-// Proxy boundary (the "adapter" in the contracts): when STATE_API_BASE_URL is
-// set, forward to the real home-control service's GET /state; otherwise serve
-// the mock. The browser always talks to this same-origin route (no CORS).
+// Proxies to the home-control service at STATE_API_BASE_URL.
 
 import { NextResponse } from 'next/server';
-import { getMockState } from '@/lib/mock-state';
 import { STATE_API_BASE_URL, stateToConfigIds } from '@/lib/state-service';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   if (!STATE_API_BASE_URL) {
-    const state = getMockState();
-    return NextResponse.json({ ...state, ts: new Date().toISOString() });
+    return NextResponse.json({ error: 'STATE_API_BASE_URL not configured' }, { status: 503 });
   }
 
   try {

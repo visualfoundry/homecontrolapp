@@ -2,17 +2,11 @@
 // Config fetcher — Home Control App
 //
 // fetchConfig() is called by Server Components (page.tsx) at build/ISR time.
-// It tries WPGraphQL first; falls back to MOCK_CONFIG if:
-//   - the env var is unset
-//   - the request fails
-//   - WPGraphQL hasn't been set up yet
-//
-// The fallback means the app is fully buildable and runnable without the
-// WordPress CPT/ACF structure in place (mock-first, per CLAUDE.md).
+// Returns real WP data or an empty config (no devices shown) on failure.
 // =============================================================================
 
 import { gqlAllControls, HOME_CONFIG_QUERY, GraphQLError } from '@/lib/graphql';
-import { MOCK_CONFIG } from '@/lib/data';
+
 import type { AppConfig, ControlNodeRaw, SceneRoomType, SceneRoomConfig } from '@/types/config';
 
 // ---------------------------------------------------------------------------
@@ -470,77 +464,60 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
   const scenesGroup = lightSceneRoomsRaw.length > 0
     ? [{ group: 'Scenes', items: lightSceneRoomsRaw.map(r => ({ id: r.id, icon: 'bulb' as const, label: r.name })) }]
     : [];
-  // Keep non-Lights, non-Music, non-Fans, non-TV, non-Scenes mock groups (Outdoor, etc.).
-  // Drop the mock 'Doors' group when we have live exterior doors to replace it with.
-  const HANDLED_GROUPS = ['Lights', 'Music', 'Fans', 'TV', 'Scenes'];
-  const otherMockGroups = MOCK_CONFIG.favCatalog.filter(
-    g => !HANDLED_GROUPS.includes(g.group)
-      && !(doorsGroup.length > 0 && g.group === 'Doors')
-      && !(garageCarGroup.length > 0 && g.group === 'Garage Doors'),
-  );
-  const favCatalog = lightFavItems.length > 0
-    ? [...lightsGroup, ...musicGroup, ...fansGroup, ...tvGroup, ...doorsGroup, ...garageCarGroup, ...otherMockGroups, ...scenesGroup]
-    : [
-        ...MOCK_CONFIG.favCatalog.filter(
-          g => g.group !== 'Scenes' && !(doorsGroup.length > 0 && g.group === 'Doors'),
-        ),
-        ...doorsGroup,
-        ...garageCarGroup,
-        ...scenesGroup,
-      ];
+  const favCatalog = [
+    ...lightsGroup, ...musicGroup, ...fansGroup, ...tvGroup,
+    ...doorsGroup, ...garageCarGroup, ...scenesGroup,
+  ].filter(g => g.items.length > 0);
 
   return {
-    // Not yet in WP CPTs — use mock data
-    scenes:           MOCK_CONFIG.scenes,
-    sceneDefault:     MOCK_CONFIG.sceneDefault,
-    sceneSchedules:   MOCK_CONFIG.sceneSchedules,
-    favorites:        MOCK_CONFIG.favorites,
+    scenes:              [],
+    sceneDefault:        [],
+    sceneSchedules:      {},
+    favorites:           [],
     favCatalog,
-
-    // Mapped from real WP data (fall back to mock if WP returns nothing)
-    people:              people.length              > 0 ? people              : MOCK_CONFIG.people,
-    doorsExterior:       doorsExterior.length       > 0 ? doorsExterior       : MOCK_CONFIG.doorsExterior,
-    doorsInterior:       doorsInterior.length       > 0 ? doorsInterior       : MOCK_CONFIG.doorsInterior,
-    climate:             climate.length             > 0 ? climate             : MOCK_CONFIG.climate,
-    leakSensors:         leakSensors.length         > 0 ? leakSensors         : MOCK_CONFIG.leakSensors,
-    lightRooms:          lightRooms.length          > 0 ? lightRooms          : MOCK_CONFIG.lightRooms,
-    fans:                fans.length                > 0 ? fans                : MOCK_CONFIG.fans,
-    tvs:                 tvs.length                 > 0 ? tvs                 : MOCK_CONFIG.tvs,
-    musicZones:          musicZones.length          > 0 ? musicZones          : MOCK_CONFIG.musicZones,
-    irrigationPrograms:  irrigationPrograms.length  > 0 ? irrigationPrograms  : MOCK_CONFIG.irrigationPrograms,
-    irrigationZones:     irrigationZones.length     > 0 ? irrigationZones     : MOCK_CONFIG.irrigationZones,
-    motionSensors:       motionSensors.length       > 0 ? motionSensors       : MOCK_CONFIG.motionSensors,
-    outdoorsPool:        outdoorsPool.length        > 0 ? outdoorsPool        : MOCK_CONFIG.outdoorsPool,
-    outdoorsBackyard:    outdoorsBackyard.length    > 0 ? outdoorsBackyard    : MOCK_CONFIG.outdoorsBackyard,
-    whoIsHome:           whoIsHome.length           > 0 ? whoIsHome           : MOCK_CONFIG.whoIsHome,
-    settingsSecurity:    settingsSecurity.length    > 0 ? settingsSecurity    : MOCK_CONFIG.settingsSecurity,
-    settingsEnvironment: settingsEnvironment.length > 0 ? settingsEnvironment : MOCK_CONFIG.settingsEnvironment,
-    settingsSchedules:   settingsSchedules.length   > 0 ? settingsSchedules   : MOCK_CONFIG.settingsSchedules,
-    settingsHouse:       settingsHouse.length       > 0 ? settingsHouse       : MOCK_CONFIG.settingsHouse,
-    garage:              garage.length              > 0 ? garage              : MOCK_CONFIG.garage,
-    garageDoors:         garageDoors.length         > 0 ? garageDoors         : MOCK_CONFIG.garageDoors,
-    garageCarDoors:      garageCarDoors.length      > 0 ? garageCarDoors      : MOCK_CONFIG.garageCarDoors,
-    garageCars:          garageCars.length          > 0 ? garageCars          : MOCK_CONFIG.garageCars,
-    garageSceneId:       sceneRoomsRaw.length       > 0 ? garageSceneId       : MOCK_CONFIG.garageSceneId,
-    controlPlaces:       Object.keys(controlPlaces).length > 0 ? controlPlaces  : MOCK_CONFIG.controlPlaces,
-    controlStateIds:     Object.keys(controlStateIds).length > 0 ? controlStateIds : MOCK_CONFIG.controlStateIds,
-    weatherTempId:       weatherTempId ?? MOCK_CONFIG.weatherTempId,
-    weatherHighId:       weatherHighId ?? MOCK_CONFIG.weatherHighId,
-    weatherLowId:        weatherLowId  ?? MOCK_CONFIG.weatherLowId,
-    weatherCondId:       weatherCondId ?? MOCK_CONFIG.weatherCondId,
-    houseStatusId:       houseStatusId ?? MOCK_CONFIG.houseStatusId,
-    houseClimateId:      houseClimateId ?? MOCK_CONFIG.houseClimateId,
-    environmentalControls: environmentalControls.length > 0 ? environmentalControls : MOCK_CONFIG.environmentalControls,
-    poolNodeId:          poolNodeId        ?? MOCK_CONFIG.poolNodeId,
-    poolTempId:          poolTempId        ?? MOCK_CONFIG.poolTempId,
-    poolPumpId:          poolPumpId        ?? MOCK_CONFIG.poolPumpId,
-    poolPumpOnOffId:        poolPumpOnOffId        ?? MOCK_CONFIG.poolPumpOnOffId,
-    poolHeaterId:           poolHeaterId           ?? MOCK_CONFIG.poolHeaterId,
-    poolHeaterSetpointId:   poolHeaterSetpointId   ?? MOCK_CONFIG.poolHeaterSetpointId,
-    poolSalinatorId:        poolSalinatorId        ?? MOCK_CONFIG.poolSalinatorId,
-    poolChlorinatorId:      poolChlorinatorId      ?? MOCK_CONFIG.poolChlorinatorId,
-    sceneRooms:          sceneRoomsRaw.length       > 0 ? sceneRoomsRaw       : MOCK_CONFIG.sceneRooms,
-    lightSceneRooms:     lightSceneRoomsRaw.length  > 0 ? lightSceneRoomsRaw  : MOCK_CONFIG.lightSceneRooms,
+    people,
+    doorsExterior,
+    doorsInterior,
+    climate,
+    leakSensors,
+    lightRooms,
+    fans,
+    tvs,
+    musicZones,
+    irrigationPrograms,
+    irrigationZones,
+    motionSensors,
+    outdoorsPool,
+    outdoorsBackyard,
+    whoIsHome,
+    settingsSecurity,
+    settingsEnvironment,
+    settingsSchedules,
+    settingsHouse,
+    garage,
+    garageDoors,
+    garageCarDoors,
+    garageCars,
+    garageSceneId,
+    controlPlaces,
+    controlStateIds,
+    weatherTempId:       weatherTempId       ?? null,
+    weatherHighId:       weatherHighId       ?? null,
+    weatherLowId:        weatherLowId        ?? null,
+    weatherCondId:       weatherCondId       ?? null,
+    houseStatusId:       houseStatusId       ?? null,
+    houseClimateId:      houseClimateId      ?? null,
+    environmentalControls,
+    poolNodeId:          poolNodeId          ?? null,
+    poolTempId:          poolTempId          ?? null,
+    poolPumpId:          poolPumpId          ?? null,
+    poolPumpOnOffId:     poolPumpOnOffId     ?? null,
+    poolHeaterId:        poolHeaterId        ?? null,
+    poolHeaterSetpointId: poolHeaterSetpointId ?? null,
+    poolSalinatorId:     poolSalinatorId     ?? null,
+    poolChlorinatorId:   poolChlorinatorId   ?? null,
+    sceneRooms:          sceneRoomsRaw,
+    lightSceneRooms:     lightSceneRoomsRaw,
   };
 }
 
@@ -550,26 +527,22 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
 
 /**
  * Fetch the app config at build/ISR time.
- * Always returns a valid AppConfig — falls back to mock data on any error.
+ * Returns empty config (no devices shown) if WPGraphQL is unreachable or unconfigured.
  */
 export async function fetchConfig(): Promise<AppConfig> {
   const endpoint = process.env.NEXT_PUBLIC_WP_GRAPHQL_URL;
 
   if (!endpoint) {
-    if (process.env.NODE_ENV === 'development') {
-      console.info('[config] NEXT_PUBLIC_WP_GRAPHQL_URL not set — using mock data');
-    }
-    return MOCK_CONFIG;
+    console.warn('[config] NEXT_PUBLIC_WP_GRAPHQL_URL not set — returning empty config');
+    return toAppConfig([]);
   }
 
   try {
     const nodes = await gqlAllControls<ControlNodeRaw>(HOME_CONFIG_QUERY);
     return toAppConfig(nodes);
   } catch (err) {
-    const msg = err instanceof GraphQLError || err instanceof Error
-      ? err.message
-      : String(err);
-    console.warn(`[config] WPGraphQL fetch failed (${msg}) — using mock data`);
-    return MOCK_CONFIG;
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[config] WPGraphQL fetch failed (${msg}) — returning empty config`);
+    return toAppConfig([]);
   }
 }
