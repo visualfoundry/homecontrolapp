@@ -141,11 +141,17 @@ sudo mysql
 ```
 ```sql
 CREATE DATABASE wordpress DEFAULT CHARACTER SET utf8mb4;
-CREATE USER 'wpuser'@'localhost' IDENTIFIED BY 'your-strong-db-password';
+CREATE USER 'wpuser'@'localhost' IDENTIFIED BY 'replace-with-a-real-password';
 GRANT ALL PRIVILEGES ON wordpress.* TO 'wpuser'@'localhost';
 FLUSH PRIVILEGES;
 EXIT;
 ```
+
+> **Replace the password** before running — do not use the placeholder literally.
+> If you accidentally ran it with the placeholder, fix it:
+> ```bash
+> sudo mysql -e "ALTER USER 'wpuser'@'localhost' IDENTIFIED BY 'your-real-password'; FLUSH PRIVILEGES;"
+> ```
 
 ### Step 9 — Export WordPress from Local (on your Mac)
 
@@ -205,14 +211,16 @@ define( 'HCA_INTERNAL_KEY',   '...' );
 // ... and the AUTH_KEY / SECURE_AUTH_KEY / LOGGED_IN_KEY salts
 ```
 
-Update the WordPress site URL in the database (replace `192.168.1.91` with the server's actual IP):
+Update the WordPress site URL in the database:
 ```bash
-mysql -u wpuser -p wordpress -e "
-  UPDATE wp_options
-  SET option_value = 'http://192.168.1.91'
-  WHERE option_name IN ('siteurl', 'home');
-"
+mysql -u wpuser -p wordpress -e "UPDATE wp_options SET option_value = 'http://192.168.1.91' WHERE option_name IN ('siteurl', 'home');"
 ```
+
+Verify it took effect:
+```bash
+mysql -u wpuser -p wordpress -e "SELECT option_name, option_value FROM wp_options WHERE option_name IN ('siteurl', 'home');"
+```
+Both rows should show `http://192.168.1.91`.
 
 Configure Apache for WordPress:
 ```bash
@@ -244,27 +252,19 @@ sudo systemctl reload apache2
 
 ### Step 11 — Clone the repo
 
+Use HTTPS — the SSH key added during Ubuntu install authenticates to the server itself, not to GitHub:
 ```bash
 cd ~
-git clone <your-repo-url> homecontrolapp
-cd homecontrolapp
-```
-
-Or copy directly from your Mac:
-```bash
-# On your Mac:
-scp -r "/Volumes/Project Local/Development/Local Sites/home-control-app/app/public/wp-content/themes/homecontrolapp" \
-  administrator@192.168.1.91:~/homecontrolapp
+git clone https://github.com/visualfoundry/homecontrolapp.git homecontrolapp
 ```
 
 ### Step 12 — Configure environment files
 
-**`home-control-services/.env`** — EISY IPs don't change (same LAN):
+**`home-control-services/.env`** — create from scratch (no `.env.example` in the repo):
 ```bash
-cp home-control-services/.env.example home-control-services/.env
-# The EISY_*_URL values are already correct for your network
-# Verify: curl -u admin:'Pz%Fn3Mx#f' http://192.168.1.10:8080/rest/time
+nano ~/homecontrolapp/home-control-services/.env
 ```
+Paste the contents from your Mac's `home-control-services/.env`. The EISY IP addresses are the same LAN so no changes needed.
 
 **`next-app/.env.local`** — create this file:
 ```bash
@@ -464,11 +464,16 @@ pm2 logs hca-next
 # Restart a service
 pm2 restart hca-next
 
-# Deploy a code update
+# Deploy a code update (Next.js code changed)
 cd ~/homecontrolapp
 git pull
 cd next-app && npm install && npm run build
 pm2 restart hca-next
+
+# Deploy a config-only update (devices.json or home-control-services only — no rebuild needed)
+cd ~/homecontrolapp
+git pull
+pm2 restart hca-state
 
 # Restart everything after a config change
 pm2 restart all
