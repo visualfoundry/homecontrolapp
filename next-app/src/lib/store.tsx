@@ -197,9 +197,52 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
   // Hydrate from localStorage after mount to avoid SSR/client mismatch.
   const [prefs, setPrefsState] = useState<UserPrefs>(DEFAULT_PREFS);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounced server sync — reads from localStorage (always up-to-date by call time).
+  const schedulePrefsSync = useCallback(() => {
+    if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+    syncTimerRef.current = setTimeout(() => {
+      const savedPrefs = loadPrefs();
+      const savedFavs = loadFavs() ?? [];
+      const savedScenes = loadScenes() ?? [];
+      fetch('/api/prefs', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prefs: savedPrefs, favs: savedFavs, scenes: savedScenes }),
+      }).catch(() => {});
+    }, 1500);
+  }, []);
 
   // Load saved prefs after hydration (must not run on server)
   useEffect(() => { setPrefsState(loadPrefs()); }, []);
+
+  // Hydrate from server after mount — server wins over localStorage for cross-device sync
+  useEffect(() => {
+    fetch('/api/prefs')
+      .then(r => r.ok ? r.json() : null)
+      .then((data: { prefs?: Partial<UserPrefs>; favs?: string[]; scenes?: string[] } | null) => {
+        if (!data) return;
+        if (data.prefs && typeof data.prefs === 'object') {
+          const merged = { ...DEFAULT_PREFS, ...data.prefs } as UserPrefs;
+          if (!merged.tabs.includes('home')) merged.tabs = ['home', ...merged.tabs];
+          else if (merged.tabs[0] !== 'home') merged.tabs = ['home', ...merged.tabs.filter(t => t !== 'home')];
+          setPrefsState(merged);
+          savePrefs(merged);
+        }
+        if (Array.isArray(data.favs)) {
+          const favIds = data.favs as string[];
+          setSt(prev => ({ ...prev, _favs: { ids: favIds } } as StateMap));
+          saveFavs(favIds);
+        }
+        if (Array.isArray(data.scenes)) {
+          const sceneIds = data.scenes as string[];
+          setSt(prev => ({ ...prev, _scenes: { ids: sceneIds } } as StateMap));
+          saveScenes(sceneIds);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Apply theme attribute to #hca-root whenever theme pref changes.
   // 'system' follows the OS preference and re-applies when it changes.
@@ -319,9 +362,11 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
     }));
     if (id === '_favs' && 'ids' in patch) {
       saveFavs(patch.ids as string[]);
+      schedulePrefsSync();
     }
     if (id === '_scenes' && 'ids' in patch) {
       saveScenes(patch.ids as string[]);
+      schedulePrefsSync();
     }
     const isDeviceControl =
       !id.startsWith('_') &&
@@ -332,7 +377,7 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
       // cover 2–3 poll cycles while EISY processes the command.
       pendingUntil.current.set(id, Date.now() + 3_000);
     }
-  }, []);
+  }, [schedulePrefsSync]);
 
   const go = useCallback(
     (id: string) => {
@@ -354,9 +399,10 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
     setPrefsState((prev) => {
       const next = { ...prev, ...patch };
       savePrefs(next);
+      schedulePrefsSync();
       return next;
     });
-  }, []);
+  }, [schedulePrefsSync]);
 
   const value: HCContextValue = {
     st,

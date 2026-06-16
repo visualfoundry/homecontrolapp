@@ -710,6 +710,61 @@ function homecontrolapp_webauthn_update_or_delete( WP_REST_Request $req ) {
 }
 
 // -------------------------------------------------------------------------
+// User preferences — per-user server storage
+// -------------------------------------------------------------------------
+// GET  /wp-json/hca/v1/prefs?userId=X  — read hca_prefs user meta
+// PUT  /wp-json/hca/v1/prefs           — write hca_prefs user meta
+// Both gated by X-HCA-Internal-Key; called server-side from Next.js.
+
+add_action( 'rest_api_init', function () {
+	register_rest_route(
+		'hca/v1',
+		'/prefs',
+		array(
+			array(
+				'methods'             => 'GET',
+				'callback'            => 'homecontrolapp_prefs_get',
+				'permission_callback' => '__return_true',
+				'args'                => array(
+					'userId' => array( 'required' => true, 'type' => 'integer' ),
+				),
+			),
+			array(
+				'methods'             => 'PUT',
+				'callback'            => 'homecontrolapp_prefs_put',
+				'permission_callback' => '__return_true',
+			),
+		)
+	);
+} );
+
+function homecontrolapp_prefs_get( WP_REST_Request $req ) {
+	$key = defined( 'HCA_INTERNAL_KEY' ) ? HCA_INTERNAL_KEY : '';
+	if ( empty( $key ) || $req->get_header( 'X-HCA-Internal-Key' ) !== $key ) {
+		return new WP_REST_Response( array( 'error' => 'Forbidden' ), 403 );
+	}
+	$user_id = (int) $req->get_param( 'userId' );
+	$raw     = get_user_meta( $user_id, 'hca_prefs', true );
+	$data    = $raw ? json_decode( $raw, true ) : null;
+	return new WP_REST_Response( $data ?? new stdClass(), 200 );
+}
+
+function homecontrolapp_prefs_put( WP_REST_Request $req ) {
+	$key = defined( 'HCA_INTERNAL_KEY' ) ? HCA_INTERNAL_KEY : '';
+	if ( empty( $key ) || $req->get_header( 'X-HCA-Internal-Key' ) !== $key ) {
+		return new WP_REST_Response( array( 'error' => 'Forbidden' ), 403 );
+	}
+	$body    = $req->get_json_params();
+	$user_id = (int) ( $body['userId'] ?? 0 );
+	if ( ! $user_id ) {
+		return new WP_REST_Response( array( 'error' => 'Missing userId' ), 400 );
+	}
+	unset( $body['userId'] );
+	update_user_meta( $user_id, 'hca_prefs', wp_json_encode( $body ) );
+	return new WP_REST_Response( array( 'ok' => true ), 200 );
+}
+
+// -------------------------------------------------------------------------
 // Page template support
 // -------------------------------------------------------------------------
 // The "App Shell" page template (page-app-shell.php) outputs the minimal HTML

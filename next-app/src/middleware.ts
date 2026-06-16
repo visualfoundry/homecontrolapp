@@ -26,6 +26,7 @@ export const config = {
     '/api/state',
     '/api/stream',
     '/api/command',
+    '/api/prefs',
     '/api/spotify/:path*',
     '/api/cameras/:path*',
     '/api/debug',
