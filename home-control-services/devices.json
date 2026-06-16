@@ -737,7 +737,7 @@
   "eisy0/var/3": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "flag",
+    "class": "numeric-var",
     "varId": 3,
     "varType": 2
   },
@@ -2059,8 +2059,15 @@
   "eisy0/var/211": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "lock",
+    "class": "flag",
     "varId": 211,
+    "varType": 2
+  },
+  "eisy0/var/221": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "lock",
+    "varId": 221,
     "varType": 2
   },
   "eisy0/var/212": {

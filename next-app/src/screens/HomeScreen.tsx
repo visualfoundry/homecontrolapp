@@ -524,7 +524,7 @@ export function HomeScreen() {
           <StatTile icon="bulb"   label="Lights on"   value={lightsOn} tint="#F0A500" onTap={() => go('lights')} />
           <StatTile icon="lock"   label="Doors locked" value={`${doorsLocked}/${config.doorsExterior.length}`} tint="#34A853" onTap={() => go('doors')} />
           <StatTile icon="motion" label="Motion alerts" value={motionAlerts} tint="#E0483D" onTap={() => go('motion')} />
-          <StatTile icon="person" label="Home"        value={peopleHome} tint="#5B7FE0" />
+          <StatTile icon="person" label="Home"        value={peopleHome} tint="#5B7FE0" onTap={() => go('whoshome')} />
         </div>
       </div>
 

@@ -54,10 +54,10 @@ sudo dd if=~/Downloads/ubuntu-24.04-live-server-amd64.iso of=/dev/rdiskN bs=1m s
 > Go into BIOS → Advanced → Storage Configuration → SATA Mode → **AHCI**, save and reboot.
 >
 > **If Windows was installed in RAID mode**, switch Windows to AHCI first or it will blue screen:
-> 1. In Windows, open Command Prompt as Administrator and run: `bcdedit /set {current} safeboot minimal`
+> 1. In Windows, open Command Prompt as administrator and run: `bcdedit /set {current} safeboot minimal`
 > 2. Reboot → enter BIOS → change to AHCI → save/exit
 > 3. Windows boots into Safe Mode and installs the AHCI driver automatically
-> 4. Open Command Prompt as Administrator and run: `bcdedit /deletevalue {current} safeboot`
+> 4. Open Command Prompt as administrator and run: `bcdedit /deletevalue {current} safeboot`
 > 5. Reboot — Windows now boots normally with AHCI
 
 ### Step 3 — Install Ubuntu Server
@@ -73,7 +73,7 @@ Follow the installer prompts:
 - **Profile setup:**
   - Your name: anything
   - Server name: `homecontrol` (or your preference)
-  - Username: `Administrator` ← configured during install; used in all paths below
+  - Username: `administrator` ← configured during install; used in all paths below
   - Password: something strong
 - **SSH:** check **Install OpenSSH server** ✓ — SSH keys imported from GitHub during installer setup ✓
 - **Git keys:** SSH public key added during installer so the server can authenticate to GitHub for `git clone` / `git pull`
@@ -85,7 +85,7 @@ The installer will copy files and reboot. Remove the USB when prompted.
 
 Either plug in a monitor/keyboard, or SSH from your Mac once it boots:
 ```bash
-ssh Administrator@<server-ip>
+ssh administrator@<server-ip>
 ```
 
 Update everything:
@@ -149,30 +149,23 @@ EXIT;
 
 ### Step 9 — Export WordPress from Local (on your Mac)
 
-In **Local by Flywheel**, right-click the site → **Export** for a full archive.
+In **Local by Flywheel**, right-click the site → **Export** → unzip the archive.
+The export contains:
+- Database: `app/sql/local.sql`
+- WordPress files: `app/public/` (wp-content is what we need)
 
-Or export manually on the Mac:
+Copy both to the server (replace the path with wherever you unzipped the export):
 ```bash
-# Export the database (find your Local MySQL socket first)
-~/Library/Application\ Support/Local/run/njQLUlDmD/mysql/mysqld.sock
-
-mysqldump --socket="$HOME/Library/Application Support/Local/run/njQLUlDmD/mysql/mysqld.sock" \
-  -u root wordpress > ~/Desktop/wp_export.sql
-
-# The wp-content folder is at:
-# /Volumes/Project Local/Development/Local Sites/home-control-app/app/public/wp-content/
-```
-
-Copy both to the server:
-```bash
-scp ~/Desktop/wp_export.sql Administrator@192.168.1.50:~
-scp -r "/Volumes/Project Local/Development/Local Sites/home-control-app/app/public/wp-content" \
-  Administrator@192.168.1.50:~
+scp ~/Downloads/Home\ Control\ App/app/sql/local.sql administrator@192.168.1.91:~
+scp -r ~/Downloads/Home\ Control\ App/app/public/wp-content administrator@192.168.1.91:~
 ```
 
 ### Step 10 — Install WordPress on the server
 
 ```bash
+# Ensure the web root exists (Apache may not create it automatically)
+sudo mkdir -p /var/www/html
+
 # Download WordPress
 cd /var/www/html
 sudo wget -q https://wordpress.org/latest.tar.gz
@@ -180,11 +173,17 @@ sudo tar -xzf latest.tar.gz
 sudo rm latest.tar.gz
 
 # Restore wp-content from your Mac export
-sudo cp -r ~/wp-content /var/www/html/wordpress/wp-content
-sudo chown -R www-data:www-data /var/www/html/wordpress
+# Note: cp replaces the whole wp-content dir, so copy plugins and themes separately
+# to avoid overwriting WordPress core stubs (hello.php, akismet, etc.)
+sudo cp -r ~/wp-content/plugins/* /var/www/html/wordpress/wp-content/plugins/
+sudo cp -r ~/wp-content/themes/*  /var/www/html/wordpress/wp-content/themes/
+sudo chown -R www-data:www-data /var/www/html/wordpress/wp-content
+
+# Remove default placeholder themes
+sudo rm -rf /var/www/html/wordpress/wp-content/themes/twentytwenty*
 
 # Import the database
-mysql -u wpuser -p wordpress < ~/wp_export.sql
+mysql -u wpuser -p wordpress < ~/local.sql
 
 # Configure wp-config.php
 sudo cp /var/www/html/wordpress/wp-config-sample.php /var/www/html/wordpress/wp-config.php
@@ -206,11 +205,11 @@ define( 'HCA_INTERNAL_KEY',   '...' );
 // ... and the AUTH_KEY / SECURE_AUTH_KEY / LOGGED_IN_KEY salts
 ```
 
-Update the WordPress site URL in the database (replace `192.168.1.50` with the server's actual IP):
+Update the WordPress site URL in the database (replace `192.168.1.91` with the server's actual IP):
 ```bash
 mysql -u wpuser -p wordpress -e "
   UPDATE wp_options
-  SET option_value = 'http://192.168.1.50'
+  SET option_value = 'http://192.168.1.91'
   WHERE option_name IN ('siteurl', 'home');
 "
 ```
@@ -221,7 +220,7 @@ sudo nano /etc/apache2/sites-available/wordpress.conf
 ```
 ```apache
 <VirtualHost *:80>
-    ServerName 192.168.1.50
+    ServerName 192.168.1.91
     DocumentRoot /var/www/html/wordpress
 
     <Directory /var/www/html/wordpress>
@@ -255,7 +254,7 @@ Or copy directly from your Mac:
 ```bash
 # On your Mac:
 scp -r "/Volumes/Project Local/Development/Local Sites/home-control-app/app/public/wp-content/themes/homecontrolapp" \
-  Administrator@192.168.1.50:~/homecontrolapp
+  administrator@192.168.1.91:~/homecontrolapp
 ```
 
 ### Step 12 — Configure environment files
@@ -271,14 +270,18 @@ cp home-control-services/.env.example home-control-services/.env
 ```bash
 nano next-app/.env.local
 ```
+> **Important:** if you copy `.env.local` from your Mac (Local by Flywheel), `NEXT_PUBLIC_WP_GRAPHQL_URL`
+> will still point to `http://localhost:10048/graphql`. You **must** change it to the server IP — login
+> will return 503 until you do.
+
 ```bash
-NEXT_PUBLIC_WP_GRAPHQL_URL=http://192.168.1.50/graphql
+NEXT_PUBLIC_WP_GRAPHQL_URL=http://192.168.1.91/graphql
 STATE_API_BASE_URL=http://127.0.0.1:8081
 REVALIDATE_SECRET=<same value as wp-config.php>
 WP_AUTH_KEY=<same value as wp-config.php>
 HCA_INTERNAL_KEY=<same value as wp-config.php>
 NEXTAUTH_SECRET=<same value as on Mac>
-NEXTAUTH_URL=http://192.168.1.50:3000
+NEXTAUTH_URL=http://192.168.1.91:3000
 
 # Spotify — copy from Mac .env.local
 SPOTIFY_CLIENT_ID=...
@@ -307,7 +310,7 @@ module.exports = {
   apps: [
     {
       name: 'hca-state',
-      cwd: '/home/Administrator/homecontrolapp/home-control-services',
+      cwd: '/home/administrator/homecontrolapp/home-control-services',
       script: 'node',
       args: '--import tsx src/index.ts',
       env: { NODE_ENV: 'production' },
@@ -316,7 +319,7 @@ module.exports = {
     },
     {
       name: 'hca-next',
-      cwd: '/home/Administrator/homecontrolapp/next-app',
+      cwd: '/home/administrator/homecontrolapp/next-app',
       script: 'node_modules/.bin/next',
       args: 'start -p 3000',
       env: { NODE_ENV: 'production' },
@@ -343,9 +346,9 @@ pm2 logs hca-next --lines 30
 # Hook PM2 into systemd so services survive reboots
 pm2 startup systemd
 # The above command prints a sudo command — copy and run it, e.g.:
-sudo env PATH=$PATH:/home/Administrator/.nvm/versions/node/v20.x.x/bin \
-  /home/Administrator/.nvm/versions/node/v20.x.x/lib/node_modules/pm2/bin/pm2 \
-  startup systemd -u Administrator --hp /home/Administrator
+sudo env PATH=$PATH:/home/administrator/.nvm/versions/node/v20.x.x/bin \
+  /home/administrator/.nvm/versions/node/v20.x.x/lib/node_modules/pm2/bin/pm2 \
+  startup systemd -u administrator --hp /home/administrator
 
 # Save the current process list
 pm2 save
@@ -376,7 +379,7 @@ network:
     eno1:                        # replace with your interface name
       dhcp4: no
       addresses:
-        - 192.168.1.50/24        # choose a free IP on your LAN
+        - 192.168.1.91/24        # choose a free IP on your LAN
       routes:
         - to: default
           via: 192.168.1.1       # your router's IP
@@ -390,7 +393,7 @@ sudo netplan apply
 Verify:
 ```bash
 ip addr show eno1
-# Should show inet 192.168.1.50/24
+# Should show inet 192.168.1.91/24
 ```
 
 ---
@@ -427,7 +430,7 @@ systemctl status apache2
 systemctl status mysql
 
 # WordPress GraphQL responding?
-curl http://192.168.1.50/graphql \
+curl http://192.168.1.91/graphql \
   -d '{"query":"{ __typename }"}' \
   -H "Content-Type: application/json"
 
@@ -449,7 +452,7 @@ curl -I http://localhost:3000
 
 ```bash
 # SSH in from your Mac
-ssh Administrator@192.168.1.50
+ssh administrator@192.168.1.91
 
 # Check service status
 pm2 status
@@ -477,10 +480,10 @@ pm2 restart all
 
 | Service | URL |
 |---|---|
-| WordPress admin | `http://192.168.1.50/wp-admin` |
-| WPGraphQL endpoint | `http://192.168.1.50/graphql` |
-| Next.js PWA | `http://192.168.1.50:3000` |
+| WordPress admin | `http://192.168.1.91/wp-admin` |
+| WPGraphQL endpoint | `http://192.168.1.91/graphql` |
+| Next.js PWA | `http://192.168.1.91:3000` |
 | State service (internal only) | `http://127.0.0.1:8081` |
 
-> The PWA home screen shortcut points to `http://192.168.1.50:3000`.  
+> The PWA home screen shortcut points to `http://192.168.1.91:3000`.  
 > Port 8081 is never exposed outside the server — Next.js proxies it.

@@ -379,7 +379,7 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
 
   // --- House Climate variable -----------------------------------------------
   // Single numeric variable (WP post 488): value 1=Home, 2=Away, 3=Sleep.
-  const houseClimateControl = controls.find(n => ctTitle(n) === 'House Climate');
+  const houseClimateControl = controls.find(n => n.databaseId === 488);
   const houseClimateId: string | null = houseClimateControl ? toId(houseClimateControl) : null;
 
   // --- Weather: hub variables (current/high/low temp + conditions) ---------
