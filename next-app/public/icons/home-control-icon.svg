@@ -4,28 +4,38 @@
   <defs>
     <style>
       .st0 {
-        fill: #fff;
-        stroke: #fff;
-        stroke-linejoin: round;
-        stroke-width: 2px;
+        fill: #e0483d;
       }
 
-      .st1 {
+      .st1, .st2 {
+        stroke-width: 76px;
+      }
+
+      .st1, .st2, .st3 {
         fill: none;
-        stroke: #f59e0b;
-        stroke-linecap: round;
-        stroke-width: 60px;
+        stroke: #fff;
       }
 
       .st2 {
-        fill: #f59e0b;
+        stroke-linejoin: round;
+      }
+
+      .st2, .st3 {
+        stroke-linecap: round;
+      }
+
+      .st3 {
+        stroke-width: 36px;
       }
     </style>
   </defs>
-  <rect class="st2" width="1024" height="1024" rx="224" ry="224"/>
-  <path class="st0" d="M512,112.4l359.8,298v390.7c0,17.7-8.8,26.5-26.5,26.5H178.7c-17.7,0-26.5-8.8-26.5-26.5v-390.7L512,112.4Z"/>
+  <rect class="st0" width="1024" height="1024" rx="224" ry="224"/>
+  <g id="Layer_2">
+    <path class="st1" d="M237,372.6v459.2c0,13.8,6.9,20.8,20.8,20.8h508.5c13.8,0,20.8-6.9,20.8-20.8v-459.2"/>
+    <path class="st2" d="M128,456.9L512,171.5l384,285.4"/>
+  </g>
   <g>
-    <path class="st1" d="M586.9,369.6c93,41.4,134.8,150.3,93.4,243.3s-150.3,134.8-243.3,93.4c-93-41.4-134.8-150.3-93.4-243.3,18.5-41.6,51.8-74.9,93.4-93.4"/>
-    <line class="st1" x1="512" y1="304.5" x2="512" y2="513.4"/>
+    <path class="st3" d="M563.3,446.9c63.6,28.3,92.2,102.8,63.9,166.4-28.3,63.6-102.8,92.2-166.4,63.9-63.6-28.3-92.2-102.8-63.9-166.4,12.7-28.5,35.4-51.2,63.9-63.9"/>
+    <line class="st3" x1="512" y1="410.5" x2="512" y2="543.8"/>
   </g>
 </svg>
