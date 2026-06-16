@@ -37,6 +37,91 @@ function ToggleList({ items }: { items: SettingItem[] }) {
   );
 }
 
+function InstallAppCard() {
+  const [installed, setInstalled] = React.useState(false);
+  const [isIos, setIsIos] = React.useState(false);
+  const [deferredPrompt, setDeferredPrompt] = React.useState<Event & { prompt(): Promise<void> } | null>(null);
+  const [prompted, setPrompted] = React.useState(false);
+
+  React.useEffect(() => {
+    setInstalled(window.matchMedia('(display-mode: standalone)').matches);
+    setIsIos(/iphone|ipad|ipod/i.test(navigator.userAgent));
+
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as Event & { prompt(): Promise<void> });
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  if (installed) {
+    return (
+      <Card>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 22 }}>✓</span>
+          <span style={{ fontSize: 15, color: 'var(--text2)', lineHeight: 1.4 }}>
+            App is installed and running in standalone mode.
+          </span>
+        </div>
+      </Card>
+    );
+  }
+
+  if (isIos) {
+    return (
+      <Card>
+        <p style={{ margin: 0, fontSize: 14, color: 'var(--text2)', lineHeight: 1.6 }}>
+          In Safari, tap the{' '}
+          <strong style={{ color: 'var(--text)' }}>Share</strong> button
+          {' '}(the box with an arrow), then choose{' '}
+          <strong style={{ color: 'var(--text)' }}>Add to Home Screen</strong>.
+          The app will open full-screen without the browser bar.
+        </p>
+      </Card>
+    );
+  }
+
+  if (deferredPrompt && !prompted) {
+    return (
+      <Card>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <p style={{ margin: 0, fontSize: 14, color: 'var(--text2)', lineHeight: 1.5 }}>
+            Install Home Control as an app for quick access from your home screen.
+          </p>
+          <button
+            onClick={() => {
+              deferredPrompt.prompt();
+              setPrompted(true);
+            }}
+            style={{
+              padding: '10px 20px',
+              background: 'var(--accent)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 10,
+              fontSize: 15,
+              fontWeight: 600,
+              cursor: 'pointer',
+              alignSelf: 'center',
+            }}
+          >
+            Install App
+          </button>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <p style={{ margin: 0, fontSize: 14, color: 'var(--text2)', lineHeight: 1.5 }}>
+        Open this page in your device&apos;s browser and use the browser menu to add it to your home screen.
+      </p>
+    </Card>
+  );
+}
+
 function CertInstallCard() {
   const [certUrl, setCertUrl] = React.useState('http://192.168.1.91/mkcert-ca.pem');
   React.useEffect(() => {
@@ -115,6 +200,11 @@ export function SettingsScreen() {
             </div>
           </div>
         </Card>
+      </div>
+
+      <div style={{ marginTop: 22 }}>
+        <SectionTitle>Install App</SectionTitle>
+        <InstallAppCard />
       </div>
 
       <div style={{ marginTop: 22 }}>
