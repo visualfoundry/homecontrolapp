@@ -39,7 +39,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       */}
       <body>
         <SwRegistrar />
-        <div id="hca-root" className="relative flex flex-col h-full w-full max-w-[430px] md:max-w-none mx-auto overflow-hidden bg-bg">
+        <div id="hca-root" className="relative flex flex-col h-dvh w-full max-w-[430px] md:max-w-none mx-auto overflow-hidden bg-bg">
           {children}
         </div>
       </body>
