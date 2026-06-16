@@ -482,24 +482,25 @@ pm2 restart all
 
 ---
 
-## URL summary (LAN)
+## URL summary
 
-| Service | URL |
-|---|---|
-| WordPress admin | `https://192.168.1.91/wp-admin` |
-| WPGraphQL endpoint | `https://192.168.1.91/graphql` |
-| Next.js PWA | `https://192.168.1.91:3443` |
-| State service (internal only) | `http://127.0.0.1:8081` |
+| Service | LAN URL | Public URL |
+|---|---|---|
+| Next.js PWA | `https://192.168.1.91:3443` | `https://app.dixons.net` |
+| WordPress admin | `https://192.168.1.91/wp-admin` | LAN / VPN only |
+| WPGraphQL endpoint | `https://192.168.1.91/graphql` | `https://app.dixons.net/graphql` |
+| State service | internal only — `http://127.0.0.1:8081` | not exposed |
 
 > Port 8081 is never exposed outside the server — Next.js proxies it internally.
+> WP admin is restricted to `192.168.1.0/24` in Apache — use VPN to access it remotely.
 
 ---
 
 ## Part 7 — SSL certificates
 
-### Current setup (LAN only)
+### Current setup (LAN + public)
 
-SSL is provided by **mkcert** — a local CA that issues trusted certificates for LAN use.
+SSL is provided by **mkcert** — a local CA that issues trusted certificates for both LAN and public access.
 
 Two certificates to understand:
 | Certificate | Location | Valid for | Action on expiry |
@@ -507,22 +508,21 @@ Two certificates to understand:
 | Root CA | Installed on each device once | **10 years** | Reinstall on all devices |
 | Server cert | `/etc/ssl/hca/cert.pem` | **2 years (~June 2028)** | Renew on server only |
 
-The Root CA is installed once per device. When the server cert renews, devices automatically trust the new cert — no action needed on devices.
+The server cert covers both `192.168.1.91` and `app.dixons.net` as SANs. The Root CA is installed once per device. When the server cert renews, devices automatically trust the new cert — no action needed on devices.
 
 ### Apache SSL configuration (complete)
-
-After completing Part 2–4, replace the basic Apache config from Step 10 with this final version that includes SSL, the Next.js proxy, and the CA cert endpoint:
 
 ```bash
 sudo nano /etc/apache2/sites-available/wordpress.conf
 ```
 ```apache
+# ── Port 80 — CA cert + redirect ───────────────────────────────────────────
 <VirtualHost *:80>
     ServerName 192.168.1.91
+    ServerAlias app.dixons.net
     DocumentRoot /var/www/html/wordpress
 
-    # CA cert served from outside WordPress dir — .htaccess cannot redirect it.
-    # Must stay on plain HTTP: iOS can't trust HTTPS without the cert (chicken-and-egg).
+    # CA cert served over plain HTTP — iOS can't trust HTTPS until after CA install.
     Alias /mkcert-ca.pem /etc/ssl/hca/mkcert-ca.pem
     <Location /mkcert-ca.pem>
         Require all granted
@@ -536,9 +536,10 @@ sudo nano /etc/apache2/sites-available/wordpress.conf
     RewriteEngine On
     RewriteCond %{REMOTE_ADDR} !^127\.0\.0\.1$
     RewriteCond %{REQUEST_URI} !^/mkcert-ca\.pem$
-    RewriteRule ^ https://192.168.1.91%{REQUEST_URI} [R=301,L]
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
 </VirtualHost>
 
+# ── Port 443 — WordPress (LAN direct) ──────────────────────────────────────
 <VirtualHost *:443>
     ServerName 192.168.1.91
     DocumentRoot /var/www/html/wordpress
@@ -553,6 +554,46 @@ sudo nano /etc/apache2/sites-available/wordpress.conf
     CustomLog ${APACHE_LOG_DIR}/wp-access.log combined
 </VirtualHost>
 
+# ── Port 443 — app.dixons.net (public — WP paths + Next.js proxy) ──────────
+<VirtualHost *:443>
+    ServerName app.dixons.net
+    DocumentRoot /var/www/html/wordpress
+    SSLEngine on
+    SSLCertificateFile    /etc/ssl/hca/cert.pem
+    SSLCertificateKeyFile /etc/ssl/hca/key.pem
+
+    <Directory /var/www/html/wordpress>
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    # WP admin restricted to LAN only — use VPN to access remotely
+    <Location /wp-admin>
+        Require ip 192.168.1.0/24
+        Require ip 127.0.0.1
+    </Location>
+    <Location /wp-login.php>
+        Require ip 192.168.1.0/24
+        Require ip 127.0.0.1
+    </Location>
+
+    # WordPress paths served from local files; everything else → Next.js
+    ProxyPreserveHost On
+    ProxyPass /wp-admin     !
+    ProxyPass /wp-login.php !
+    ProxyPass /wp-json      !
+    ProxyPass /wp-content   !
+    ProxyPass /wp-includes  !
+    ProxyPass /xmlrpc.php   !
+    ProxyPass /graphql      !
+    ProxyPass / http://127.0.0.1:3000/
+    ProxyPassReverse / http://127.0.0.1:3000/
+
+    ErrorLog ${APACHE_LOG_DIR}/app-error.log
+    CustomLog ${APACHE_LOG_DIR}/app-access.log combined
+</VirtualHost>
+
+# ── Port 3443 — Next.js (LAN direct) ───────────────────────────────────────
 <VirtualHost *:3443>
     ServerName 192.168.1.91
     SSLEngine on
@@ -564,30 +605,41 @@ sudo nano /etc/apache2/sites-available/wordpress.conf
 </VirtualHost>
 ```
 ```bash
-sudo a2enmod ssl proxy proxy_http
+sudo a2enmod ssl proxy proxy_http rewrite
 sudo apache2ctl configtest && sudo systemctl reload apache2
+```
+
+### WordPress dynamic URL (wp-config.php)
+
+WordPress's `siteurl` must match the domain being used — otherwise the admin panel redirects to the wrong host. Override it dynamically so both LAN and public access work without a database change:
+
+Add these two lines to `/var/www/html/wordpress/wp-config.php` **before** the `/* That's all, stop editing! */` line:
+
+```php
+define( 'WP_HOME',    'https://' . $_SERVER['HTTP_HOST'] );
+define( 'WP_SITEURL', 'https://' . $_SERVER['HTTP_HOST'] );
 ```
 
 ### Adding a new device (iOS)
 
-The mkcert Root CA is served over plain HTTP for the initial install — this is intentional (iOS can't trust the HTTPS cert until after the CA is installed).
+The mkcert Root CA must be installed once per device before the app will load without a certificate warning.
 
 1. Open **Safari** on the iOS device and go to `http://192.168.1.91/mkcert-ca.pem`
 2. Tap **Allow** when prompted to download the profile
 3. Go to **Settings → General → VPN & Device Management** → tap the profile → **Install**
 4. Enter your passcode → **Install** on the warning screen
 5. Go to **Settings → General → About → Certificate Trust Settings** → enable full trust for the mkcert CA
+6. Open `https://app.dixons.net` in Safari — the app loads trusted and can be added to the home screen
 
-> If Safari redirects to `https://` instead of downloading, clear Safari history first:
+> If Safari redirects to `https://` instead of downloading in step 1, clear Safari history first:
 > **Settings → Apps → Safari → Clear History and Website Data**, then try again.
->
-> The CA file is permanently available at `http://192.168.1.91/mkcert-ca.pem` for any new device.
 
 ### Renewing the server certificate (June 2028)
 
 Run on your Mac:
 ```bash
-mkcert 192.168.1.91
+cd /path/to/theme
+mkcert -key-file 192.168.1.91-key.pem -cert-file 192.168.1.91.pem 192.168.1.91 app.dixons.net
 scp 192.168.1.91.pem administrator@192.168.1.91:~
 scp 192.168.1.91-key.pem administrator@192.168.1.91:~
 ```
@@ -604,74 +656,38 @@ No device changes needed — the Root CA is still valid.
 
 ---
 
-## Part 8 — Future: public access via app.dixons.net
+## Part 8 — Public access via app.dixons.net
 
-> **Not yet implemented.** This section documents what needs to change when port-forwarding
-> `app.dixons.net:443` → `192.168.1.91:443`.
+> **Live as of June 2026.** DNS, port forward, cert SAN, Apache routing, and security hardening are all in place.
 
-### Architecture change required
+### What's deployed
 
-Currently the PWA runs on port 3443 (Apache proxy → Next.js :3000). When going public, everything must be on port 443 via path-based routing in Apache:
+- **DNS:** `app.dixons.net` A record → home public IP
+- **Router:** port 443 forwarded to `192.168.1.91:443`
+- **Cert SAN:** mkcert cert covers both `192.168.1.91` and `app.dixons.net`
+- **Apache:** separate `app.dixons.net` VirtualHost on port 443 with path-based routing (see Part 7)
+- **Security:** WP admin restricted to LAN; fail2ban installed; SSH key-only
+- **NEXTAUTH_URL:** `https://app.dixons.net` in `.env.local`
 
-| Path | Routes to |
+### Path routing on app.dixons.net
+
+| Path | Served by |
 |---|---|
-| `/wp-admin`, `/wp-json`, `/wp-content`, `/wp-includes`, `/graphql` | WordPress (local files) |
-| Everything else | Next.js proxy (`:3000`) |
+| `/graphql`, `/wp-json`, `/wp-content`, `/wp-includes`, `/xmlrpc.php` | WordPress (local files) |
+| `/wp-admin`, `/wp-login.php` | WordPress — **LAN only** (403 from internet) |
+| Everything else | Next.js proxy → `127.0.0.1:3000` |
 
-### Certificate change required
+### Accessing WP admin remotely
 
-mkcert certificates are not trusted by public browsers. Replace with **Let's Encrypt** (free, auto-renewing):
+`/wp-admin` is blocked from the public internet. To access it when away from home, connect via VPN first — this puts you on the `192.168.1.0/24` LAN and the restriction is lifted.
 
-```bash
-sudo apt install -y certbot python3-certbot-apache
-sudo certbot --apache -d app.dixons.net
-```
+### Security hardening in place
 
-Certbot auto-renews via a systemd timer — no manual renewal needed.
-
-### Security hardening required before going public
-
-> These steps are **mandatory** before exposing the server to the internet.
-
-**1. Restrict WordPress admin to LAN only** — add to the port 443 VirtualHost:
-```apache
-<Location /wp-admin>
-    Require ip 192.168.1.0/24
-    Require ip 127.0.0.1
-</Location>
-<Location /wp-login.php>
-    Require ip 192.168.1.0/24
-    Require ip 127.0.0.1
-</Location>
-```
-
-**2. Install fail2ban** to block brute-force login attempts:
-```bash
-sudo apt install -y fail2ban
-```
-
-**3. Restrict SSH to key-only** (already enforced if keys were imported during install — verify):
-```bash
-sudo grep PasswordAuthentication /etc/ssh/sshd_config
-# Should show: PasswordAuthentication no
-```
-
-**4. Close port 3443 from the internet** — only forward 443 at the router; keep 3443 LAN-only in UFW.
-
-**5. Update environment variables** on the server after going live:
-```bash
-# next-app/.env.local
-NEXTAUTH_URL=https://app.dixons.net
-NEXT_PUBLIC_WP_GRAPHQL_URL=https://app.dixons.net/graphql
-# WP_GRAPHQL_URL stays as http://127.0.0.1/graphql (internal)
-```
-
-**6. Update WordPress URLs** in the database:
-```bash
-mysql -u wpuser -p wordpress -e "UPDATE wp_options SET option_value = 'https://app.dixons.net' WHERE option_name IN ('siteurl', 'home');"
-```
-
-**7. Rebuild Next.js** after env changes:
-```bash
-cd ~/homecontrolapp/next-app && npm run build && pm2 restart hca-next
-```
+- **fail2ban** — blocks brute-force SSH and login attempts
+- **WP admin LAN-only** — enforced in Apache `<Location>` block
+- **SSH key-only** — verify with:
+  ```bash
+  sudo grep PasswordAuthentication /etc/ssh/sshd_config
+  # Should show: PasswordAuthentication no
+  ```
+- **Port 3443 not forwarded** — LAN direct access only; internet traffic uses 443
