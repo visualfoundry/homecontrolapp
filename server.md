@@ -509,17 +509,79 @@ Two certificates to understand:
 
 The Root CA is installed once per device. When the server cert renews, devices automatically trust the new cert — no action needed on devices.
 
+### Apache SSL configuration (complete)
+
+After completing Part 2–4, replace the basic Apache config from Step 10 with this final version that includes SSL, the Next.js proxy, and the CA cert endpoint:
+
+```bash
+sudo nano /etc/apache2/sites-available/wordpress.conf
+```
+```apache
+<VirtualHost *:80>
+    ServerName 192.168.1.91
+    DocumentRoot /var/www/html/wordpress
+
+    # CA cert served from outside WordPress dir — .htaccess cannot redirect it.
+    # Must stay on plain HTTP: iOS can't trust HTTPS without the cert (chicken-and-egg).
+    Alias /mkcert-ca.pem /etc/ssl/hca/mkcert-ca.pem
+    <Location /mkcert-ca.pem>
+        Require all granted
+    </Location>
+
+    <Directory /var/www/html/wordpress>
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    RewriteEngine On
+    RewriteCond %{REMOTE_ADDR} !^127\.0\.0\.1$
+    RewriteCond %{REQUEST_URI} !^/mkcert-ca\.pem$
+    RewriteRule ^ https://192.168.1.91%{REQUEST_URI} [R=301,L]
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName 192.168.1.91
+    DocumentRoot /var/www/html/wordpress
+    SSLEngine on
+    SSLCertificateFile    /etc/ssl/hca/cert.pem
+    SSLCertificateKeyFile /etc/ssl/hca/key.pem
+    <Directory /var/www/html/wordpress>
+        AllowOverride All
+        Require all granted
+    </Directory>
+    ErrorLog ${APACHE_LOG_DIR}/wp-error.log
+    CustomLog ${APACHE_LOG_DIR}/wp-access.log combined
+</VirtualHost>
+
+<VirtualHost *:3443>
+    ServerName 192.168.1.91
+    SSLEngine on
+    SSLCertificateFile    /etc/ssl/hca/cert.pem
+    SSLCertificateKeyFile /etc/ssl/hca/key.pem
+    ProxyPreserveHost On
+    ProxyPass / http://127.0.0.1:3000/
+    ProxyPassReverse / http://127.0.0.1:3000/
+</VirtualHost>
+```
+```bash
+sudo a2enmod ssl proxy proxy_http
+sudo apache2ctl configtest && sudo systemctl reload apache2
+```
+
 ### Adding a new device (iOS)
 
-The mkcert Root CA is served from the server for easy installation:
+The mkcert Root CA is served over plain HTTP for the initial install — this is intentional (iOS can't trust the HTTPS cert until after the CA is installed).
 
-1. Open **Safari** on the iOS device and go to `https://192.168.1.91/mkcert-ca.pem`
+1. Open **Safari** on the iOS device and go to `http://192.168.1.91/mkcert-ca.pem`
 2. Tap **Allow** when prompted to download the profile
 3. Go to **Settings → General → VPN & Device Management** → tap the profile → **Install**
 4. Enter your passcode → **Install** on the warning screen
 5. Go to **Settings → General → About → Certificate Trust Settings** → enable full trust for the mkcert CA
 
-> The CA file is permanently available at `https://192.168.1.91/mkcert-ca.pem` — this is safe for a home LAN.
+> If Safari redirects to `https://` instead of downloading, clear Safari history first:
+> **Settings → Apps → Safari → Clear History and Website Data**, then try again.
+>
+> The CA file is permanently available at `http://192.168.1.91/mkcert-ca.pem` for any new device.
 
 ### Renewing the server certificate (June 2028)
 
