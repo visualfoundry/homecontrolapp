@@ -52,6 +52,7 @@ export async function GET() {
           owner: (p.owner as { display_name?: string; id: string } | null)?.display_name
             ?? (p.owner as { id: string } | null)?.id
             ?? '',
+          trackCount: (p.tracks as { total?: number } | null)?.total ?? 0,
         }));
     }
 
