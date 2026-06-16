@@ -221,11 +221,18 @@ function ViewportDebug() {
   const [info, setInfo] = useState<Record<string, string>>({});
   useEffect(() => {
     const root = document.getElementById('hca-root');
+    // Measure env(safe-area-inset-bottom) by checking a padded element
+    const probe = document.createElement('div');
+    probe.style.cssText = 'position:fixed;bottom:0;padding-bottom:env(safe-area-inset-bottom);pointer-events:none';
+    document.body.appendChild(probe);
+    const sab = parseFloat(getComputedStyle(probe).paddingBottom);
+    document.body.removeChild(probe);
     setInfo({
       'window.innerHeight': `${window.innerHeight}px`,
       'screen.height': `${screen.height}px`,
       '--app-height var': getComputedStyle(document.documentElement).getPropertyValue('--app-height').trim() || '(not set)',
       '#hca-root height': root ? `${root.getBoundingClientRect().height}px` : '?',
+      'safe-area-inset-bottom': `${sab}px`,
       'navigator.standalone': String((navigator as { standalone?: boolean }).standalone ?? 'n/a'),
       'viewport-fit': document.querySelector('meta[name="viewport"]')?.getAttribute('content') ?? '?',
     });

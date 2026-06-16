@@ -4,11 +4,12 @@ import { useEffect } from 'react';
 
 export function SwRegistrar() {
   useEffect(() => {
-    // iOS standalone PWA: dvh/fill-available are unreliable. window.innerHeight
-    // is always the exact visible viewport height in pixels.
+    // On iOS standalone PWA, window.innerHeight excludes the home indicator area
+    // even with viewport-fit=cover. screen.height gives the full physical screen.
+    const isIOSStandalone = (navigator as { standalone?: boolean }).standalone === true;
     document.documentElement.style.setProperty(
       '--app-height',
-      `${window.innerHeight}px`
+      `${isIOSStandalone ? screen.height : window.innerHeight}px`
     );
 
     if ('serviceWorker' in navigator) {
