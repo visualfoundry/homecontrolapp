@@ -654,27 +654,6 @@
     "varId": 50,
     "varType": 2
   },
-  "eisy0/var/57": {
-    "type": "variable",
-    "eisyIdx": 0,
-    "class": "flag",
-    "varId": 57,
-    "varType": 2
-  },
-  "eisy0/var/59": {
-    "type": "variable",
-    "eisyIdx": 0,
-    "class": "flag",
-    "varId": 59,
-    "varType": 2
-  },
-  "eisy0/var/61": {
-    "type": "variable",
-    "eisyIdx": 0,
-    "class": "numeric-var",
-    "varId": 61,
-    "varType": 2
-  },
   "eisy0/var/47": {
     "type": "variable",
     "eisyIdx": 0,

@@ -21,34 +21,41 @@ const SSE_HEADERS = {
   'X-Accel-Buffering': 'no',
 };
 
-// Remap each `data: {"id":<stateId>,...}` line's id → config id, leaving event
-// lines, comments (`:`), and blank lines untouched. Buffers partial lines.
-function idRemapStream(stateToConfig: Record<string, string>): TransformStream<Uint8Array, Uint8Array> {
+// Remap each `data: {"id":<stateId>,...}` line's id → config id(s), leaving
+// event lines, comments (`:`), and blank lines untouched. Buffers partial lines.
+// When multiple WP controls share one ISY variable, emits one data line per id.
+function idRemapStream(stateToConfig: Record<string, string[]>): TransformStream<Uint8Array, Uint8Array> {
   const dec = new TextDecoder();
   const enc = new TextEncoder();
   let buf = '';
-  const remap = (line: string): string => {
-    if (!line.startsWith('data:')) return line;
+  const remap = (line: string): string[] => {
+    if (!line.startsWith('data:')) return [line];
     try {
       const obj = JSON.parse(line.slice(5).trim()) as { id?: unknown };
-      if (typeof obj.id === 'string' && stateToConfig[obj.id]) {
-        obj.id = stateToConfig[obj.id];
-        return `data: ${JSON.stringify(obj)}`;
+      if (typeof obj.id === 'string') {
+        const ids = stateToConfig[obj.id];
+        if (ids && ids.length > 0) {
+          return ids.map(id => `data: ${JSON.stringify({ ...obj, id })}`);
+        }
       }
     } catch {
       // Not JSON — leave as-is.
     }
-    return line;
+    return [line];
   };
   return new TransformStream({
     transform(chunk, controller) {
       buf += dec.decode(chunk, { stream: true });
       const lines = buf.split('\n');
       buf = lines.pop() ?? '';
-      for (const line of lines) controller.enqueue(enc.encode(remap(line) + '\n'));
+      for (const line of lines) {
+        for (const out of remap(line)) controller.enqueue(enc.encode(out + '\n'));
+      }
     },
     flush(controller) {
-      if (buf) controller.enqueue(enc.encode(remap(buf)));
+      if (buf) {
+        for (const out of remap(buf)) controller.enqueue(enc.encode(out));
+      }
     },
   });
 }

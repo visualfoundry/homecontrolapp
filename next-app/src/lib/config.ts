@@ -377,6 +377,11 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
   const houseStatusControl = controls.find(n => n.databaseId === 473);
   const houseStatusId: string | null = houseStatusControl ? toId(houseStatusControl) : null;
 
+  // --- House Climate variable -----------------------------------------------
+  // Single numeric variable (WP post 488): value 1=Home, 2=Away, 3=Sleep.
+  const houseClimateControl = controls.find(n => ctTitle(n) === 'House Climate');
+  const houseClimateId: string | null = houseClimateControl ? toId(houseClimateControl) : null;
+
   // --- Weather: hub variables (current/high/low temp + conditions) ---------
   const ctrlIdByType = (title: string) => {
     const n = controls.find(c => ctTitle(c) === title);
@@ -524,6 +529,7 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     weatherLowId:        weatherLowId  ?? MOCK_CONFIG.weatherLowId,
     weatherCondId:       weatherCondId ?? MOCK_CONFIG.weatherCondId,
     houseStatusId:       houseStatusId ?? MOCK_CONFIG.houseStatusId,
+    houseClimateId:      houseClimateId ?? MOCK_CONFIG.houseClimateId,
     environmentalControls: environmentalControls.length > 0 ? environmentalControls : MOCK_CONFIG.environmentalControls,
     poolNodeId:          poolNodeId        ?? MOCK_CONFIG.poolNodeId,
     poolTempId:          poolTempId        ?? MOCK_CONFIG.poolTempId,

@@ -19,8 +19,8 @@ import { fetchConfig } from '@/lib/config';
 export const STATE_API_BASE_URL = (process.env.STATE_API_BASE_URL ?? '').replace(/\/+$/, '');
 
 interface IdMaps {
-  configToState: Record<string, string>; // databaseId → ISY id
-  stateToConfig: Record<string, string>; // ISY id → databaseId
+  configToState: Record<string, string>;    // databaseId → ISY id
+  stateToConfig: Record<string, string[]>;  // ISY id → databaseId[] (fan-out for shared variables)
 }
 
 let mapsPromise: Promise<IdMaps> | null = null;
@@ -35,27 +35,33 @@ export function idMaps(): Promise<IdMaps> {
       if (STATE_API_BASE_URL && Object.keys(configToState).length === 0) {
         mapsPromise = null;
       }
-      const stateToConfig: Record<string, string> = {};
-      for (const [cid, sid] of Object.entries(configToState)) stateToConfig[sid] = cid;
+      const stateToConfig: Record<string, string[]> = {};
+      for (const [cid, sid] of Object.entries(configToState)) (stateToConfig[sid] ??= []).push(cid);
       return { configToState, stateToConfig };
     });
   }
   return mapsPromise;
 }
 
-/** Remap a full /state snapshot's keys from state ids → config ids. Strips `ts`. */
+/** Remap a full /state snapshot's keys from state ids → config ids. Strips `ts`.
+ *  When multiple WP controls share one ISY variable, fans out to all of them. */
 export async function stateToConfigIds(
   snapshot: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
   const { ts: _ts, ...rest } = snapshot;
   const { stateToConfig } = await idMaps();
-  return Object.fromEntries(Object.entries(rest).map(([k, v]) => [stateToConfig[k] ?? k, v]));
+  return Object.fromEntries(
+    Object.entries(rest).flatMap(([k, v]) => {
+      const ids = stateToConfig[k];
+      return ids ? ids.map(id => [id, v]) : [[k, v]];
+    })
+  );
 }
 
-/** Remap one /stream patch's id from state id → config id. */
-export async function patchIdToConfigId(stateId: string): Promise<string> {
+/** Remap one /stream patch's id from state id → config ids (array for fan-out). */
+export async function patchIdToConfigIds(stateId: string): Promise<string[]> {
   const { stateToConfig } = await idMaps();
-  return stateToConfig[stateId] ?? stateId;
+  return stateToConfig[stateId] ?? [stateId];
 }
 
 /** Remap a /command target from config id → state id. */

@@ -12,6 +12,8 @@ This guide covers wiping Windows and installing Ubuntu Server 24.04 LTS, then de
 
 ## What will run on the server
 
+The server we are using is: DELL Optiplex 5070 Micro MFF Desktop PC Intel i5-9500T
+
 | Component | What it is | How it runs |
 |---|---|---|
 | WordPress | Config plane (CPT/ACF/WPGraphQL) | Apache + PHP + MySQL, systemd managed |
@@ -44,8 +46,19 @@ sudo dd if=~/Downloads/ubuntu-24.04-live-server-amd64.iso of=/dev/rdiskN bs=1m s
 ### Step 2 — Boot from USB
 
 1. Plug the USB into the server and power it on
-2. Press the BIOS/boot menu key as it starts — usually **F2**, **F12**, **Del**, or **Esc** (varies by motherboard)
-3. Select the USB drive as the boot device
+2. Press the BIOS/boot menu key as it starts — usually **F2**, **F12**, **Del**, or **Esc** (varies by motherboard) (F2 for the Dell)
+3. Select the USB drive as the boot device (UEFI)
+
+> **BIOS storage mode — must be AHCI, not RAID/RST**
+> If the installer shows *"Block probing did not discover any disks"*, the SATA controller is in RAID/RST mode.
+> Go into BIOS → Advanced → Storage Configuration → SATA Mode → **AHCI**, save and reboot.
+>
+> **If Windows was installed in RAID mode**, switch Windows to AHCI first or it will blue screen:
+> 1. In Windows, open Command Prompt as Administrator and run: `bcdedit /set {current} safeboot minimal`
+> 2. Reboot → enter BIOS → change to AHCI → save/exit
+> 3. Windows boots into Safe Mode and installs the AHCI driver automatically
+> 4. Open Command Prompt as Administrator and run: `bcdedit /deletevalue {current} safeboot`
+> 5. Reboot — Windows now boots normally with AHCI
 
 ### Step 3 — Install Ubuntu Server
 
@@ -60,9 +73,10 @@ Follow the installer prompts:
 - **Profile setup:**
   - Your name: anything
   - Server name: `homecontrol` (or your preference)
-  - Username: `hca` (used in paths throughout this guide — change consistently if you prefer another)
+  - Username: `Administrator` ← configured during install; used in all paths below
   - Password: something strong
-- **SSH:** check **Install OpenSSH server** ✓ — this lets you manage the server from your Mac without a monitor
+- **SSH:** check **Install OpenSSH server** ✓ — SSH keys imported from GitHub during installer setup ✓
+- **Git keys:** SSH public key added during installer so the server can authenticate to GitHub for `git clone` / `git pull`
 - **Featured snaps:** skip all, press Done
 
 The installer will copy files and reboot. Remove the USB when prompted.
@@ -71,7 +85,7 @@ The installer will copy files and reboot. Remove the USB when prompted.
 
 Either plug in a monitor/keyboard, or SSH from your Mac once it boots:
 ```bash
-ssh hca@<server-ip>
+ssh Administrator@<server-ip>
 ```
 
 Update everything:
@@ -87,8 +101,8 @@ sudo reboot
 ### Step 5 — Install PHP, Apache, MySQL
 
 ```bash
-sudo apt install -y apache2 php8.3 php8.3-mysql php8.3-curl php8.3-xml \
-  php8.3-mbstring php8.3-zip php8.3-gd libapache2-mod-php8.3 \
+sudo apt install -y apache2 php php-mysql php-curl php-xml \
+  php-mbstring php-zip php-gd libapache2-mod-php \
   mysql-server unzip curl git
 
 sudo a2enmod rewrite
@@ -151,9 +165,9 @@ mysqldump --socket="$HOME/Library/Application Support/Local/run/njQLUlDmD/mysql/
 
 Copy both to the server:
 ```bash
-scp ~/Desktop/wp_export.sql hca@192.168.1.50:~
+scp ~/Desktop/wp_export.sql Administrator@192.168.1.50:~
 scp -r "/Volumes/Project Local/Development/Local Sites/home-control-app/app/public/wp-content" \
-  hca@192.168.1.50:~
+  Administrator@192.168.1.50:~
 ```
 
 ### Step 10 — Install WordPress on the server
@@ -241,7 +255,7 @@ Or copy directly from your Mac:
 ```bash
 # On your Mac:
 scp -r "/Volumes/Project Local/Development/Local Sites/home-control-app/app/public/wp-content/themes/homecontrolapp" \
-  hca@192.168.1.50:~/homecontrolapp
+  Administrator@192.168.1.50:~/homecontrolapp
 ```
 
 ### Step 12 — Configure environment files
@@ -293,7 +307,7 @@ module.exports = {
   apps: [
     {
       name: 'hca-state',
-      cwd: '/home/hca/homecontrolapp/home-control-services',
+      cwd: '/home/Administrator/homecontrolapp/home-control-services',
       script: 'node',
       args: '--import tsx src/index.ts',
       env: { NODE_ENV: 'production' },
@@ -302,7 +316,7 @@ module.exports = {
     },
     {
       name: 'hca-next',
-      cwd: '/home/hca/homecontrolapp/next-app',
+      cwd: '/home/Administrator/homecontrolapp/next-app',
       script: 'node_modules/.bin/next',
       args: 'start -p 3000',
       env: { NODE_ENV: 'production' },
@@ -329,9 +343,9 @@ pm2 logs hca-next --lines 30
 # Hook PM2 into systemd so services survive reboots
 pm2 startup systemd
 # The above command prints a sudo command — copy and run it, e.g.:
-sudo env PATH=$PATH:/home/hca/.nvm/versions/node/v20.x.x/bin \
-  /home/hca/.nvm/versions/node/v20.x.x/lib/node_modules/pm2/bin/pm2 \
-  startup systemd -u hca --hp /home/hca
+sudo env PATH=$PATH:/home/Administrator/.nvm/versions/node/v20.x.x/bin \
+  /home/Administrator/.nvm/versions/node/v20.x.x/lib/node_modules/pm2/bin/pm2 \
+  startup systemd -u Administrator --hp /home/Administrator
 
 # Save the current process list
 pm2 save
@@ -435,7 +449,7 @@ curl -I http://localhost:3000
 
 ```bash
 # SSH in from your Mac
-ssh hca@192.168.1.50
+ssh Administrator@192.168.1.50
 
 # Check service status
 pm2 status

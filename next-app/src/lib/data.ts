@@ -467,6 +467,7 @@ export const MOCK_CONFIG: AppConfig = {
   weatherLowId: 'wx-low',
   weatherCondId: 'wx-cond',
   houseStatusId: 'hs-status',
+  houseClimateId: null,
   environmentalControls: [],
   poolNodeId:      null,
   poolTempId:      'pool-temp',

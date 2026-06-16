@@ -379,6 +379,16 @@ export function HomeScreen() {
     }
     setD('_global', { timeOfDay: v as TimeOfDayKey });
   };
+
+  const climateRaw = config.houseClimateId
+    ? (st[config.houseClimateId] as { value?: number } | undefined)?.value
+    : undefined;
+  const climateMode = climateRaw === 2 ? 'Away' : climateRaw === 3 ? 'Sleep' : 'Home';
+  const setClimateMode = (m: string) => {
+    if (config.houseClimateId) {
+      setD(config.houseClimateId, { value: m === 'Away' ? 2 : m === 'Sleep' ? 3 : 1 });
+    }
+  };
   const [activeScene, setActiveScene] = useState<string | null>(null);
 
   const lightsOn = config.lightRooms.reduce((n, r) =>
@@ -624,12 +634,19 @@ export function HomeScreen() {
       </div>
 
       {/* Mini Climate */}
-      {config.climate.length > 0 && (
+      {(config.climate.length > 0 || config.houseClimateId) && (
         <div style={{ marginTop: 22 }}>
           <SectionTitle action="Details" onAction={() => go('climate')}>Climate</SectionTitle>
-          <div className="hca-tile-grid">
-            {config.climate.map(zone => <MiniClimateZoneTile key={zone.id} zone={zone} />)}
-          </div>
+          {config.houseClimateId && (
+            <div style={{ marginBottom: 12 }}>
+              <Segmented options={['Home', 'Away', 'Sleep']} value={climateMode} onChange={setClimateMode} />
+            </div>
+          )}
+          {config.climate.length > 0 && (
+            <div className="hca-tile-grid">
+              {config.climate.map(zone => <MiniClimateZoneTile key={zone.id} zone={zone} />)}
+            </div>
+          )}
         </div>
       )}
 

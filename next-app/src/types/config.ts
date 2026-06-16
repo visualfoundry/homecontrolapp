@@ -259,6 +259,8 @@ export interface AppConfig {
   weatherCondId: string | null;
   /** Device id of the House Status variable (value 1=Morning, 2=Day, 3=Evening, 4=Night). */
   houseStatusId: string | null;
+  /** Device id of the House Climate variable (WP 488, value 1=Home, 2=Away, 3=Sleep). */
+  houseClimateId: string | null;
   /** Controls marked control_variable_environmental=true — shown in the Environments section on HomeScreen. */
   environmentalControls: Array<{ id: string; name: string }>;
   /** Pool controller node (PG3 Balboa, n003_bow1). State shape: PoolNodeState. Null when not in WP. */
