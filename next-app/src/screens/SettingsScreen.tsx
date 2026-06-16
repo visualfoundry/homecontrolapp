@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useHC } from '@/lib/store';
 import { Icon } from '@/components/Icon';
@@ -210,44 +210,7 @@ export function SettingsScreen() {
         <CertInstallCard />
       </div>
 
-      <ViewportDebug />
-
       <div style={{ height: 8 }} />
-    </div>
-  );
-}
-
-function ViewportDebug() {
-  const [info, setInfo] = useState<Record<string, string>>({});
-  useEffect(() => {
-    const root = document.getElementById('hca-root');
-    // Measure env(safe-area-inset-bottom) by checking a padded element
-    const probe = document.createElement('div');
-    probe.style.cssText = 'position:fixed;bottom:0;padding-bottom:env(safe-area-inset-bottom);pointer-events:none';
-    document.body.appendChild(probe);
-    const sab = parseFloat(getComputedStyle(probe).paddingBottom);
-    document.body.removeChild(probe);
-    setInfo({
-      'window.innerHeight': `${window.innerHeight}px`,
-      'screen.height': `${screen.height}px`,
-      '--app-height var': getComputedStyle(document.documentElement).getPropertyValue('--app-height').trim() || '(not set)',
-      '#hca-root height': root ? `${root.getBoundingClientRect().height}px` : '?',
-      'safe-area-inset-bottom': `${sab}px`,
-      'navigator.standalone': String((navigator as { standalone?: boolean }).standalone ?? 'n/a'),
-      'viewport-fit': document.querySelector('meta[name="viewport"]')?.getAttribute('content') ?? '?',
-    });
-  }, []);
-  return (
-    <div style={{ marginTop: 22 }}>
-      <SectionTitle>Viewport Debug</SectionTitle>
-      <Card>
-        {Object.entries(info).map(([k, v]) => (
-          <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 12, color: 'var(--text2)', gap: 8 }}>
-            <span style={{ color: 'var(--text3)' }}>{k}</span>
-            <span style={{ fontFamily: 'monospace', color: 'var(--text)' }}>{v}</span>
-          </div>
-        ))}
-      </Card>
     </div>
   );
 }
