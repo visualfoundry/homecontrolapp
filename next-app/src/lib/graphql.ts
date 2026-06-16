@@ -5,7 +5,10 @@
 // Tagged with 'hca-config' for on-demand revalidation via /api/revalidate.
 // =============================================================================
 
-const ENDPOINT = process.env.NEXT_PUBLIC_WP_GRAPHQL_URL ?? '';
+// WP_GRAPHQL_URL (private) takes precedence for server-to-server calls on the
+// production server so we can use plain HTTP internally and avoid SSL cert
+// trust issues with Next.js's undici-based fetch. Falls back to the public var.
+const ENDPOINT = process.env.WP_GRAPHQL_URL ?? process.env.NEXT_PUBLIC_WP_GRAPHQL_URL ?? '';
 
 export class GraphQLError extends Error {
   constructor(public errors: Array<{ message: string }>) {
