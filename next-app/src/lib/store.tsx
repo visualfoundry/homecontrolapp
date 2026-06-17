@@ -186,6 +186,15 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
     }
     for (const r of config.lightSceneRooms) seed[r.id] = { on: false };
     for (const f of config.fans) seed[f.id] = { on: false, speed: 0 };
+    seed['pool'] = {
+      pumpOn: false, pumpSpeed: 65,
+      heaterOn: false, heaterRunning: false,
+      poolTemp: 0, heaterTarget: 82,
+      ph: 7.4, phTarget: 7.4,
+      chlorinatorOn: false, orpSet: 700, orpNow: 650,
+      saltPPM: 3200,
+      pumpSchedules: [], heaterSchedules: [],
+    };
     return seed;
   });
   // Grace period map: device id → timestamp after which SSE patches are accepted again.
