@@ -158,7 +158,6 @@ function ScreenRenderer({ id }: { id: string }) {
 function Shell() {
   const { stack, prefs, go, overlayRef } = useHC();
   const current = stack[stack.length - 1];
-  console.log('[Shell] current:', current, 'Screen defined:', !!SCREEN_COMPONENTS[current]);
   const showBack = !isTabSlot(current, prefs.tabs);
   const scrollRef = useRef<HTMLDivElement>(null);
 
