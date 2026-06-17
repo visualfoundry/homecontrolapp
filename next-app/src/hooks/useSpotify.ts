@@ -154,6 +154,9 @@ export function useSpotify(deviceId?: string | null) {
   });
 
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // After a pause command, ignore poll results that say "playing" for this window.
+  // Prevents the race where the reconciliation poll fires before Spotify processes the pause.
+  const pausedUntil = useRef<number>(0);
 
   const stopTicker = () => {
     if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
@@ -178,6 +181,8 @@ export function useSpotify(deviceId?: string | null) {
         return;
       }
       const data = await res.json();
+      // If the user recently paused, don't let a stale "playing" response override it.
+      if (data.isPlaying && Date.now() < pausedUntil.current) return;
       setState({ isPlaying: data.isPlaying, progressMs: data.progressMs ?? 0, track: data.track, device: data.device, loading: false, error: null });
       if (data.isPlaying) startTicker(); else stopTicker();
     } catch (err) {
@@ -192,8 +197,15 @@ export function useSpotify(deviceId?: string | null) {
   }, [poll]);
 
   const command = useCallback(async (action: string, value?: number, context_uri?: string) => {
-    if (action === 'play' || action === 'play_context') setState(prev => ({ ...prev, isPlaying: true }));
-    if (action === 'pause') setState(prev => ({ ...prev, isPlaying: false }));
+    if (action === 'play' || action === 'play_context') {
+      setState(prev => ({ ...prev, isPlaying: true }));
+      pausedUntil.current = 0; // clear any pause lock so polls can confirm playing
+    }
+    if (action === 'pause') {
+      setState(prev => ({ ...prev, isPlaying: false }));
+      stopTicker();
+      pausedUntil.current = Date.now() + 3000; // suppress stale "playing" polls for 3s
+    }
 
     await fetch('/api/spotify', {
       method: 'POST',
