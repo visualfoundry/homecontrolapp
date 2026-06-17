@@ -282,6 +282,9 @@ function ScheduleEditor({ editor, setEditor, onSave, onDelete, portalTarget }: {
 
 export function PoolScreen() {
   const { st, setD, overlayRef, config } = useHC();
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[Pool] outdoorsPool:', config.outdoorsPool.length, 'poolNodeId:', config.poolNodeId, 'pumpNodeId:', config.poolPumpNodeId, 'st[622]:', st['622'], 'st[270]:', st['270']);
+  }
   const rawPool = st['pool'] as PoolState | undefined;
   const p: PoolState = {
     ...POOL_DEFAULT,

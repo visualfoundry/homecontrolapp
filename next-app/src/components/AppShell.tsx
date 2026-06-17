@@ -117,6 +117,9 @@ class ScreenErrorBoundary extends Component<
   static getDerivedStateFromError(e: unknown) {
     return { error: e instanceof Error ? e.message : String(e) };
   }
+  componentDidCatch(e: unknown, info: React.ErrorInfo) {
+    console.error(`[ScreenError:${this.props.id}]`, e, info.componentStack);
+  }
   render() {
     if (this.state.error) {
       return (
@@ -155,6 +158,7 @@ function ScreenRenderer({ id }: { id: string }) {
 function Shell() {
   const { stack, prefs, go, overlayRef } = useHC();
   const current = stack[stack.length - 1];
+  console.log('[Shell] current:', current, 'Screen defined:', !!SCREEN_COMPONENTS[current]);
   const showBack = !isTabSlot(current, prefs.tabs);
   const scrollRef = useRef<HTMLDivElement>(null);
 
