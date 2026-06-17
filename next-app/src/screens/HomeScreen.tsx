@@ -404,8 +404,7 @@ export function HomeScreen() {
     : '–';
   const numVar = (id: string | null) => (id ? (st[id] as VariableState | undefined)?.value : undefined);
   const poolNode = config.poolNodeId ? (st[config.poolNodeId] as PoolNodeState | undefined) : undefined;
-  const poolTempSensor = poolNode?.waterTemp ?? numVar(config.poolTempId);
-  const poolTemp = poolTempSensor ?? (st['pool'] as PoolState | undefined)?.poolTemp ?? 81;
+  const poolTemp = poolNode?.waterTemp ?? (st['pool'] as PoolState | undefined)?.poolTemp ?? 81;
   const weatherTemp = numVar(config.weatherTempId);
   const weatherHigh = numVar(config.weatherHighId);
   const weatherLow  = numVar(config.weatherLowId);

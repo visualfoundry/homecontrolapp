@@ -392,18 +392,10 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
   // WP ID 626 ('Pool', control type 'Pool Device') = PG3 Balboa node n003_bow1.
   // Provides PoolNodeState: pumpOn, ph, orp, waterTemp, saltLevel, saltLevelAvg, heaterFiring.
   // 'Pool Pump Speed' and 'Pool Pump' share control type 'Pool Pump'.
-  // Prefer title lookup (exact post title) so we get each one reliably;
-  // fall back to type lookup so speed still works if title doesn't match.
-  // Use title-based lookup so WP ID 626 ("Pool") and WP ID 627 ("Pool Chlorinator")
-  // don't collide — both share control type 'Pool Device'.
-  const poolNodeId             = ctrlIdByTitle('Pool') ?? ctrlIdByType('Pool Device');  // WP ID 626 → eisy0/n003_bow1
-  const poolChlorinatorId      = ctrlIdByTitle('Pool Chlorinator');  // WP ID 627
-  const poolTempId             = ctrlIdByTitle('Pool Temperature');  // control type 'Pool Device', reads { value: °F }
-  const poolPumpId             = ctrlIdByTitle('Pool Pump Speed') ?? ctrlIdByType('Pool Pump'); // numeric: 35-100=speed%
-  const poolPumpOnOffId        = ctrlIdByTitle('Pool Pump');          // numeric: 0=off, 1=on
-  const poolHeaterId           = ctrlIdByTitle('Pool Heater') ?? ctrlIdByType('Pool Heater');   // numeric: 0=off, 1=on
-  const poolHeaterSetpointId   = ctrlIdByTitle('Pool Heater Setpoint'); // numeric: 60-95°F
-  const poolSalinatorId        = ctrlIdByType('Pool Salinator');
+  // Three Pool Device nodes — all share PoolNodeState shape (pumpOn = circuit power / GV0).
+  const poolNodeId        = ctrlIdByTitle('Pool');              // WP 626 — main sensor (waterTemp, ph, orp, salt)
+  const poolChlorinatorId = ctrlIdByTitle('Pool Chlorinator');  // WP 627 — pumpOn = chlorinator on/off
+  const poolHeaterId      = ctrlIdByTitle('Pool Heater');       // WP 628 — pumpOn = heater on/off
 
   // --- Environmental controls (control_variable_environmental = true) -------
   const environmentalControls = controls
@@ -505,14 +497,9 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     houseStatusId:       houseStatusId       ?? null,
     houseClimateId:      houseClimateId      ?? null,
     environmentalControls,
-    poolNodeId:          poolNodeId          ?? null,
-    poolTempId:          poolTempId          ?? null,
-    poolPumpId:          poolPumpId          ?? null,
-    poolPumpOnOffId:     poolPumpOnOffId     ?? null,
-    poolHeaterId:        poolHeaterId        ?? null,
-    poolHeaterSetpointId: poolHeaterSetpointId ?? null,
-    poolSalinatorId:     poolSalinatorId     ?? null,
-    poolChlorinatorId:   poolChlorinatorId   ?? null,
+    poolNodeId:        poolNodeId        ?? null,
+    poolChlorinatorId: poolChlorinatorId ?? null,
+    poolHeaterId:      poolHeaterId      ?? null,
     sceneRooms:          sceneRoomsRaw,
     lightSceneRooms:     lightSceneRoomsRaw,
   };

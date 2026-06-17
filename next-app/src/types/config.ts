@@ -263,21 +263,12 @@ export interface AppConfig {
   houseClimateId: string | null;
   /** Controls marked control_variable_environmental=true — shown in the Environments section on HomeScreen. */
   environmentalControls: Array<{ id: string; name: string }>;
-  /** Pool controller node (PG3 Balboa, n003_bow1). State shape: PoolNodeState. Null when not in WP. */
+  /** Pool main sensor node (WP 626, PG3 Balboa n003_bow1). State shape: PoolNodeState. */
   poolNodeId: string | null;
-  /** Device id of the Pool Temperature sensor (state shape: { value: number }). Null when not in WP. */
-  poolTempId: string | null;
-  /** Pump speed variable (state shape: { value: number }, 0=off, 35–100=speed%). Null when not in WP. */
-  poolPumpId: string | null;
-  /** Pump on/off variable (state shape: { value: number }, 0=off, 1=on). Null when not in WP. */
-  poolPumpOnOffId: string | null;
-  /** Heater on/off variable (state shape: { value: number }, 0=off, 1=on). Null when not in WP. */
-  poolHeaterId: string | null;
-  /** Heater setpoint variable (state shape: { value: number }, 60–95°F). Null when not in WP. */
-  poolHeaterSetpointId: string | null;
-  poolSalinatorId: string | null;
-  /** Chlorinator on/off control (WP ID 627, state shape: { on: boolean }). Null when not in WP. */
+  /** Pool chlorinator node (WP 627). State shape: PoolNodeState — pumpOn = circuit on/off. */
   poolChlorinatorId: string | null;
+  /** Pool heater node (WP 628). State shape: PoolNodeState — pumpOn = heater on/off. */
+  poolHeaterId: string | null;
 }
 
 // ---------------------------------------------------------------------------

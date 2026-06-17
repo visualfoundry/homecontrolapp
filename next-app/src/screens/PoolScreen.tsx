@@ -293,79 +293,36 @@ export function PoolScreen() {
   const setP = (patch: Partial<PoolState>) => setD('pool', patch);
   const [editor, setEditor] = useState<EditorState | null>(null);
 
-  // Live pool controller node (PG3 Balboa, n003_bow1).
-  const poolNode = config.poolNodeId
-    ? (st[config.poolNodeId] as PoolNodeState | undefined)
-    : undefined;
+  // Live pool nodes — all share PoolNodeState shape (pumpOn = GV0 circuit power).
+  const node    = (id: string | null) => id ? (st[id] as PoolNodeState | undefined) : undefined;
+  const poolNode        = node(config.poolNodeId);        // WP 626 — main sensor
+  const chlorinatorNode = node(config.poolChlorinatorId); // WP 627
+  const heaterNode      = node(config.poolHeaterId);      // WP 628
 
-  // Pool temperature: prefer live node, then legacy temp sensor, then mock.
-  const poolTempSensor = config.poolTempId
-    ? (st[config.poolTempId] as { value?: number } | undefined)?.value ?? null
-    : null;
-  const poolTemp = poolNode?.waterTemp ?? poolTempSensor ?? p.poolTemp;
+  const poolTemp     = poolNode?.waterTemp ?? p.poolTemp;
   const poolTempDisplay = poolTemp > 0 ? `${poolTemp}°` : 'N/A';
 
-  // Live chemistry readings — fall back to mock PoolState values.
-  const ph          = poolNode?.ph          ?? p.ph;
-  const orp         = poolNode?.orp         ?? p.orpNow;
-  const saltLevel   = poolNode?.saltLevel   ?? p.saltPPM;
+  const ph           = poolNode?.ph          ?? p.ph;
+  const orp          = poolNode?.orp         ?? p.orpNow;
+  const saltLevel    = poolNode?.saltLevel   ?? p.saltPPM;
   const saltLevelAvg = poolNode?.saltLevelAvg ?? p.saltPPM;
-  const nodePumpOn  = poolNode?.pumpOn;
 
-  // Pump on/off: dedicated flag variable (value 0=off, 1=on).
-  const rawPumpOnOff = config.poolPumpOnOffId
-    ? ((st[config.poolPumpOnOffId] as { value?: number } | undefined)?.value ?? null)
-    : null;
+  const pumpOn      = poolNode?.pumpOn        ?? p.pumpOn;
+  const pumpSpeed   = p.pumpSpeed; // not exposed by node yet
+  const heaterOn    = heaterNode?.pumpOn      ?? p.heaterOn;
+  const heaterTarget = p.heaterTarget;         // not exposed by node yet
+  const salinatorOn = chlorinatorNode?.pumpOn ?? p.chlorinatorOn;
 
-  // Pump speed: numeric variable (0=off, 35–100=speed%).
-  const rawPumpSpeed = config.poolPumpId
-    ? ((st[config.poolPumpId] as { value?: number } | undefined)?.value ?? null)
-    : null;
-  const pumpSpeed = rawPumpSpeed ?? p.pumpSpeed;
+  const setPump      = (on: boolean) =>
+    config.poolNodeId        ? setD(config.poolNodeId,        { pumpOn: on }) : setP({ pumpOn: on });
+  const setPumpSpeed = (v: number) => setP({ pumpSpeed: v });
+  const setHeater    = (on: boolean) =>
+    config.poolHeaterId      ? setD(config.poolHeaterId,      { pumpOn: on }) : setP({ heaterOn: on });
+  const setHeaterTarget = (v: number) => setP({ heaterTarget: v });
+  const setSalinator = (on: boolean) =>
+    config.poolChlorinatorId ? setD(config.poolChlorinatorId, { pumpOn: on }) : setP({ chlorinatorOn: on });
 
-  // Prefer live node pump power, then dedicated on/off variable, then speed, then mock.
-  const pumpOn = nodePumpOn !== undefined ? nodePumpOn
-               : rawPumpOnOff !== null ? rawPumpOnOff > 0
-               : rawPumpSpeed !== null ? rawPumpSpeed > 0
-               : p.pumpOn;
-
-  const setPumpSpeed = (v: number) =>
-    config.poolPumpId ? setD(config.poolPumpId, { value: v }) : setP({ pumpSpeed: v, pumpOn: v > 0 });
-
-  const setPump = (on: boolean) => {
-    if (config.poolPumpOnOffId) {
-      setD(config.poolPumpOnOffId, { value: on ? 1 : 0 });
-    } else {
-      setP({ pumpOn: on }); // mock only — never write 0 to the speed variable
-    }
-  };
-
-  // Heater on/off: numeric variable (0=off, 1=on).
-  const rawHeaterOnOff = config.poolHeaterId
-    ? ((st[config.poolHeaterId] as { value?: number } | undefined)?.value ?? null)
-    : null;
-  const heaterOn = rawHeaterOnOff !== null ? rawHeaterOnOff > 0 : p.heaterOn;
-
-  // Heater setpoint: numeric variable (60–95°F).
-  const rawHeaterSetpoint = config.poolHeaterSetpointId
-    ? ((st[config.poolHeaterSetpointId] as { value?: number } | undefined)?.value ?? null)
-    : null;
-  const heaterTarget = rawHeaterSetpoint ?? p.heaterTarget;
-
-  const setHeater = (on: boolean) =>
-    config.poolHeaterId ? setD(config.poolHeaterId, { value: on ? 1 : 0 }) : setP({ heaterOn: on });
-
-  const setHeaterTarget = (v: number) =>
-    config.poolHeaterSetpointId ? setD(config.poolHeaterSetpointId, { value: v }) : setP({ heaterTarget: v });
-
-  // Chlorinator: prefer poolChlorinatorId (WP 627), fall back to poolSalinatorId, then mock.
-  const flag = (id: string | null, fallback: boolean) =>
-    id ? ((st[id] as { on?: boolean } | undefined)?.on ?? fallback) : fallback;
-  const chlorinatorId = config.poolChlorinatorId ?? config.poolSalinatorId;
-  const salinatorOn = flag(chlorinatorId, p.chlorinatorOn);
-  const setSalinator = (v: boolean) => chlorinatorId ? setD(chlorinatorId, { on: v }) : setP({ chlorinatorOn: v });
-
-  // Heater running: use live heaterFiring signal when available; fall back to inference.
+  // Heater running: live heaterFiring from the main sensor node, fall back to inference.
   const heaterRunning = poolNode?.heaterFiring ?? (heaterOn && poolTemp < heaterTarget);
   const phStatus = ph < 7.2 ? 'Low' : ph > 7.8 ? 'High' : 'Ideal';
   const phTint = phStatus === 'Ideal' ? 'var(--green)' : 'var(--red)';
