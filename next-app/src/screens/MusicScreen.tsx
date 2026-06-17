@@ -102,7 +102,12 @@ export function MusicScreen() {
     setDevicePickerOpen(true);
     setDevicesLoading(true);
     const devices = await spotify.fetchDevices();
-    setAvailableDevices(devices);
+    const sdkId = sdkPlayer.deviceId;
+    setAvailableDevices(
+      sdkId
+        ? devices.map(d => d.id === sdkId ? { ...d, name: 'This Device' } : d)
+        : devices
+    );
     setDevicesLoading(false);
   };
 
