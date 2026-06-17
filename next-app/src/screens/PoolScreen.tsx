@@ -293,41 +293,66 @@ export function PoolScreen() {
   const setP = (patch: Partial<PoolState>) => setD('pool', patch);
   const [editor, setEditor] = useState<EditorState | null>(null);
 
-  // Live pool nodes. Circuit power may arrive as 'on' (ISY adapter) or 'pumpOn' (OmniLogic adapter).
-  const node    = (id: string | null) => id ? (st[id] as PoolNodeState | undefined) : undefined;
-  const poolNode        = node(config.poolNodeId);        // WP 626 — main sensor
-  const chlorinatorNode = node(config.poolChlorinatorId); // WP 627
-  const heaterNode      = node(config.poolHeaterId);      // WP 628
-  const pumpNode        = node(config.poolPumpNodeId);    // WP 630 — Filter Pump (on + speed)
-  const nodeOn = (n: PoolNodeState | undefined) => n?.pumpOn ?? n?.on;
+  // Variable-based state helpers. All pool data comes from EISY variables, not PG3 device nodes.
+  // When the OmniLogic/PG3 adapter is live, poolNodeId will switch back to a PoolNodeState node
+  // and the poolNode?.waterTemp branch will take over automatically.
+  const varNode  = (id: string | null) => id ? (st[id] as Record<string, unknown> | undefined) : undefined;
+  const nodeOn   = (n: Record<string, unknown> | undefined) =>
+    (n as { pumpOn?: boolean })?.pumpOn ?? (n as { on?: boolean })?.on;
+  const varValue = (id: string | null): number | undefined => {
+    const n = varNode(id);
+    return (n as { value?: number } | undefined)?.value;
+  };
 
-  const poolTemp     = poolNode?.waterTemp ?? p.poolTemp;
+  const poolNode        = varNode(config.poolNodeId);        // WP 622 — eisy0/var/128, {value: °F}
+  const chlorinatorNode = varNode(config.poolChlorinatorId); // WP 274 — eisy0/var/69,  {on: bool}
+  const heaterNode      = varNode(config.poolHeaterId);      // WP 533 — eisy0/var/5,   {on: bool}
+  const pumpNode        = varNode(config.poolPumpNodeId);    // WP 623 — eisy0/var/123, {value: 1=on}
+
+  // Temperature: variable returns {value: N}, future PG3 node returns {waterTemp: N}
+  const poolTemp = (poolNode as { waterTemp?: number } | undefined)?.waterTemp
+    ?? varValue(config.poolNodeId)
+    ?? p.poolTemp;
   const poolTempDisplay = poolTemp > 0 ? `${poolTemp}°` : 'N/A';
 
-  const ph           = poolNode?.ph          ?? p.ph;
-  const orp          = poolNode?.orp         ?? p.orpNow;
-  const saltLevel    = poolNode?.saltLevel   ?? p.saltPPM;
-  const saltLevelAvg = poolNode?.saltLevelAvg ?? p.saltPPM;
+  // Chemistry — no live variables yet (future OmniLogic adapter); fall back to pool state defaults.
+  const ph           = (poolNode as { ph?: number } | undefined)?.ph        ?? p.ph;
+  const orp          = (poolNode as { orp?: number } | undefined)?.orp      ?? p.orpNow;
+  const saltLevel    = (poolNode as { saltLevel?: number } | undefined)?.saltLevel     ?? p.saltPPM;
+  const saltLevelAvg = (poolNode as { saltLevelAvg?: number } | undefined)?.saltLevelAvg ?? p.saltPPM;
 
-  const pumpOn      = nodeOn(pumpNode)        ?? nodeOn(poolNode) ?? p.pumpOn;
-  const pumpSpeed   = (pumpNode as { on?: boolean; speed?: number } | undefined)?.speed ?? p.pumpSpeed;
-  const heaterOn    = nodeOn(heaterNode)      ?? p.heaterOn;
-  const heaterTarget = p.heaterTarget;
+  // Pump: var/123 returns {value: 1} for on; speed comes from a separate var/124.
+  const pumpOn    = ((pumpNode as { value?: number } | undefined)?.value ?? 0) > 0
+    || (nodeOn(pumpNode) ?? false)
+    || p.pumpOn;
+  const pumpSpeed = varValue(config.poolPumpSpeedId) ?? p.pumpSpeed;
+
+  // Heater: var/5 returns {on: bool}; setpoint comes from var/126.
+  const heaterOn     = nodeOn(heaterNode) ?? p.heaterOn;
+  const heaterTarget = varValue(config.poolHeaterSetpointId) ?? p.heaterTarget;
+
   const salinatorOn = nodeOn(chlorinatorNode) ?? p.chlorinatorOn;
 
-  const setPump      = (on: boolean) =>
+  // Commands — pump on/off to var/123, speed to separate var/124, heater setpoint to var/126.
+  const setPump = (on: boolean) =>
     config.poolPumpNodeId    ? setD(config.poolPumpNodeId,    { on })
-    : config.poolNodeId      ? setD(config.poolNodeId,        { on }) : setP({ pumpOn: on });
-  const setPumpSpeed = (v: number) =>
-    config.poolPumpNodeId    ? setD(config.poolPumpNodeId,    { speed: v } as Record<string, unknown>) : setP({ pumpSpeed: v });
-  const setHeater    = (on: boolean) =>
+    : setP({ pumpOn: on });
+  const setPumpSpeed = (v: number) => {
+    if (config.poolPumpSpeedId) setD(config.poolPumpSpeedId, { value: v } as Record<string, unknown>);
+    setP({ pumpSpeed: v });
+  };
+  const setHeater = (on: boolean) =>
     config.poolHeaterId      ? setD(config.poolHeaterId,      { on }) : setP({ heaterOn: on });
-  const setHeaterTarget = (v: number) => setP({ heaterTarget: v });
+  const setHeaterTarget = (v: number) => {
+    if (config.poolHeaterSetpointId) setD(config.poolHeaterSetpointId, { value: v } as Record<string, unknown>);
+    setP({ heaterTarget: v });
+  };
   const setSalinator = (on: boolean) =>
     config.poolChlorinatorId ? setD(config.poolChlorinatorId, { on }) : setP({ chlorinatorOn: on });
 
-  // Heater running: live heaterFiring from the main sensor node, fall back to inference.
-  const heaterRunning = poolNode?.heaterFiring ?? (heaterOn && poolTemp < heaterTarget);
+  // Heater running: future PG3 node will provide heaterFiring; infer from on+temp until then.
+  const heaterRunning = (poolNode as { heaterFiring?: boolean } | undefined)?.heaterFiring
+    ?? (heaterOn && poolTemp > 0 && poolTemp < heaterTarget);
   const phStatus = ph < 7.2 ? 'Low' : ph > 7.8 ? 'High' : 'Ideal';
   const phTint = phStatus === 'Ideal' ? 'var(--green)' : 'var(--red)';
 
