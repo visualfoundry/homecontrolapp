@@ -112,7 +112,8 @@ export function MusicScreen() {
     artUrl: sdkTrack.album.images[0]?.url ?? null,
   } : spotify.track;
   const displayIsPlaying = sdkPlayer.sdkState ? !sdkPlayer.sdkState.paused : spotify.isPlaying;
-  const displayProgressMs = sdkPlayer.sdkState ? sdkPlayer.sdkState.position : spotify.progressMs;
+  // Always use the ticker-driven value — SDK position is a frozen snapshot from the last event.
+  const displayProgressMs = spotify.progressMs;
   const chipDeviceName = spotify.device
     ? (sdkPlayer.deviceId && spotify.device.id === sdkPlayer.deviceId ? 'This Device' : spotify.device.name)
     : 'No device';
