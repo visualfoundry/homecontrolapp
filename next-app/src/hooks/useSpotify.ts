@@ -90,7 +90,7 @@ export function useSpotifyPlayer() {
   useEffect(() => {
     const initPlayer = () => {
       const player = new window.Spotify.Player({
-        name: 'Home Control',
+        name: 'This Device',
         getOAuthToken: (cb) => {
           fetch('/api/spotify/token')
             .then(r => r.json())

@@ -103,11 +103,11 @@ export function MusicScreen() {
     setDevicesLoading(true);
     const devices = await spotify.fetchDevices();
     const sdkId = sdkPlayer.deviceId;
-    setAvailableDevices(
-      sdkId
-        ? devices.map(d => d.id === sdkId ? { ...d, name: 'This Device' } : d)
-        : devices
-    );
+    // Drop stale SDK browser sessions (type=Computer, not this tab's device), rename current one.
+    const cleaned = devices
+      .filter(d => d.type !== 'Computer' || (sdkId && d.id === sdkId))
+      .map(d => (sdkId && d.id === sdkId) ? { ...d, name: 'This Device' } : d);
+    setAvailableDevices(cleaned);
     setDevicesLoading(false);
   };
 
@@ -129,6 +129,9 @@ export function MusicScreen() {
   } : spotify.track;
   const displayIsPlaying = sdkPlayer.sdkState ? !sdkPlayer.sdkState.paused : spotify.isPlaying;
   const displayProgressMs = sdkPlayer.sdkState ? sdkPlayer.sdkState.position : spotify.progressMs;
+  const chipDeviceName = spotify.device
+    ? (sdkPlayer.deviceId && spotify.device.id === sdkPlayer.deviceId ? 'This Device' : spotify.device.name)
+    : 'No device';
   // Track pre-mute volumes so we can restore them on unmute (global mute only)
   const preMuteVols = useRef<Map<string, number>>(new Map());
   // Capture starting volumes + average when a global-slider drag begins
@@ -272,7 +275,7 @@ export function MusicScreen() {
                 fontSize: 12, fontWeight: 560, WebkitTapHighlightColor: 'transparent',
               }}>
               <Icon name="speaker" size={13} strokeWidth={2} />
-              {spotify.device?.name ?? 'No device'}
+              {chipDeviceName}
               <span style={{ transform: devicePickerOpen ? 'rotate(180deg)' : 'none', display: 'inline-flex', transition: 'transform 0.2s' }}>
                 <Icon name="chevDown" size={11} strokeWidth={2.5} />
               </span>
