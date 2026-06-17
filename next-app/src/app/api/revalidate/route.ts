@@ -13,6 +13,7 @@
 
 import { revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
+import { resetIdMaps } from '@/lib/state-service';
 
 export async function POST(req: NextRequest) {
   let body: unknown;
@@ -35,6 +36,7 @@ export async function POST(req: NextRequest) {
   }
 
   revalidateTag('hca-config');
+  resetIdMaps();
 
   return NextResponse.json({ revalidated: true });
 }

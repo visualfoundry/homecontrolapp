@@ -42,6 +42,12 @@ export function idMaps(): Promise<IdMaps> {
   return mapsPromise;
 }
 
+/** Invalidate the cached id map. Call after revalidating the 'hca-config' cache
+ *  tag so that the next API request rebuilds the map from the fresh config. */
+export function resetIdMaps(): void {
+  mapsPromise = null;
+}
+
 /** Remap a full /state snapshot's keys from state ids → config ids. Strips `ts`.
  *  When multiple WP controls share one ISY variable, fans out to all of them. */
 export async function stateToConfigIds(
