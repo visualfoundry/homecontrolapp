@@ -210,6 +210,33 @@ export function SettingsScreen() {
         <CertInstallCard />
       </div>
 
+      <div style={{ marginTop: 22 }}>
+        <SectionTitle>Account</SectionTitle>
+        <Card pad={false}>
+          <button
+            onClick={async () => {
+              await fetch('/api/auth/logout', { method: 'POST' });
+              window.location.reload();
+            }}
+            style={{
+              display: 'block',
+              width: '100%',
+              padding: '13px 16px',
+              textAlign: 'left',
+              fontSize: 16,
+              fontWeight: 520,
+              color: 'var(--red)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: 'var(--font)',
+            }}
+          >
+            Sign Out
+          </button>
+        </Card>
+      </div>
+
       <div style={{ height: 8 }} />
     </div>
   );
