@@ -265,10 +265,12 @@ export interface AppConfig {
   environmentalControls: Array<{ id: string; name: string }>;
   /** Pool main sensor node (WP 626, PG3 Balboa n003_bow1). State shape: PoolNodeState. */
   poolNodeId: string | null;
-  /** Pool chlorinator node (WP 627). State shape: PoolNodeState — pumpOn = circuit on/off. */
+  /** Pool chlorinator node (WP 627). State shape: PoolNodeState — on = circuit on/off. */
   poolChlorinatorId: string | null;
-  /** Pool heater node (WP 628). State shape: PoolNodeState — pumpOn = heater on/off. */
+  /** Pool heater node (WP 628). State shape: PoolNodeState — on = heater on/off. */
   poolHeaterId: string | null;
+  /** Filter pump node (WP 630, n003_pump2). State shape: { on: boolean, speed: number }. */
+  poolPumpNodeId: string | null;
 }
 
 // ---------------------------------------------------------------------------

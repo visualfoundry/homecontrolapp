@@ -298,6 +298,7 @@ export function PoolScreen() {
   const poolNode        = node(config.poolNodeId);        // WP 626 — main sensor
   const chlorinatorNode = node(config.poolChlorinatorId); // WP 627
   const heaterNode      = node(config.poolHeaterId);      // WP 628
+  const pumpNode        = node(config.poolPumpNodeId);    // WP 630 — Filter Pump (on + speed)
   const nodeOn = (n: PoolNodeState | undefined) => n?.pumpOn ?? n?.on;
 
   const poolTemp     = poolNode?.waterTemp ?? p.poolTemp;
@@ -308,15 +309,17 @@ export function PoolScreen() {
   const saltLevel    = poolNode?.saltLevel   ?? p.saltPPM;
   const saltLevelAvg = poolNode?.saltLevelAvg ?? p.saltPPM;
 
-  const pumpOn      = nodeOn(poolNode)        ?? p.pumpOn;
-  const pumpSpeed   = p.pumpSpeed; // not exposed by node yet
+  const pumpOn      = nodeOn(pumpNode)        ?? nodeOn(poolNode) ?? p.pumpOn;
+  const pumpSpeed   = (pumpNode as { on?: boolean; speed?: number } | undefined)?.speed ?? p.pumpSpeed;
   const heaterOn    = nodeOn(heaterNode)      ?? p.heaterOn;
-  const heaterTarget = p.heaterTarget;         // not exposed by node yet
+  const heaterTarget = p.heaterTarget;
   const salinatorOn = nodeOn(chlorinatorNode) ?? p.chlorinatorOn;
 
   const setPump      = (on: boolean) =>
-    config.poolNodeId        ? setD(config.poolNodeId,        { on }) : setP({ pumpOn: on });
-  const setPumpSpeed = (v: number) => setP({ pumpSpeed: v });
+    config.poolPumpNodeId    ? setD(config.poolPumpNodeId,    { on })
+    : config.poolNodeId      ? setD(config.poolNodeId,        { on }) : setP({ pumpOn: on });
+  const setPumpSpeed = (v: number) =>
+    config.poolPumpNodeId    ? setD(config.poolPumpNodeId,    { speed: v } as Record<string, unknown>) : setP({ pumpSpeed: v });
   const setHeater    = (on: boolean) =>
     config.poolHeaterId      ? setD(config.poolHeaterId,      { on }) : setP({ heaterOn: on });
   const setHeaterTarget = (v: number) => setP({ heaterTarget: v });

@@ -392,10 +392,11 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
   // WP ID 626 ('Pool', control type 'Pool Device') = PG3 Balboa node n003_bow1.
   // Provides PoolNodeState: pumpOn, ph, orp, waterTemp, saltLevel, saltLevelAvg, heaterFiring.
   // 'Pool Pump Speed' and 'Pool Pump' share control type 'Pool Pump'.
-  // Three Pool Device nodes — all share PoolNodeState shape (pumpOn = circuit power / GV0).
+  // Pool Device nodes.
   const poolNodeId        = ctrlIdByTitle('Pool');              // WP 626 — main sensor (waterTemp, ph, orp, salt)
-  const poolChlorinatorId = ctrlIdByTitle('Pool Chlorinator');  // WP 627 — pumpOn = chlorinator on/off
-  const poolHeaterId      = ctrlIdByTitle('Pool Heater');       // WP 628 — pumpOn = heater on/off
+  const poolChlorinatorId = ctrlIdByTitle('Pool Chlorinator');  // WP 627 — on = chlorinator on/off
+  const poolHeaterId      = ctrlIdByTitle('Pool Heater');       // WP 628 — on = heater on/off
+  const poolPumpNodeId    = ctrlIdByTitle('Filter Pump');       // WP 630 — on = pump on/off, speed = speed%
 
   // --- Environmental controls (control_variable_environmental = true) -------
   const environmentalControls = controls
@@ -500,6 +501,7 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     poolNodeId:        poolNodeId        ?? null,
     poolChlorinatorId: poolChlorinatorId ?? null,
     poolHeaterId:      poolHeaterId      ?? null,
+    poolPumpNodeId:    poolPumpNodeId    ?? null,
     sceneRooms:          sceneRoomsRaw,
     lightSceneRooms:     lightSceneRoomsRaw,
   };
