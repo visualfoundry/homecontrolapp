@@ -398,7 +398,7 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
   // don't collide — both share control type 'Pool Device'.
   const poolNodeId             = ctrlIdByTitle('Pool') ?? ctrlIdByType('Pool Device');  // WP ID 626 → eisy0/n003_bow1
   const poolChlorinatorId      = ctrlIdByTitle('Pool Chlorinator');  // WP ID 627
-  const poolTempId             = null; // temperature now read from poolNodeId.waterTemp
+  const poolTempId             = ctrlIdByTitle('Pool Temperature');  // control type 'Pool Device', reads { value: °F }
   const poolPumpId             = ctrlIdByTitle('Pool Pump Speed') ?? ctrlIdByType('Pool Pump'); // numeric: 35-100=speed%
   const poolPumpOnOffId        = ctrlIdByTitle('Pool Pump');          // numeric: 0=off, 1=on
   const poolHeaterId           = ctrlIdByTitle('Pool Heater') ?? ctrlIdByType('Pool Heater');   // numeric: 0=off, 1=on
