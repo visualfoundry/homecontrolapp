@@ -319,6 +319,21 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
           for (const r of config.sceneRooms) {
             if (r.steps && r.id in prev && !(r.id in live)) preserved[r.id] = prev[r.id];
           }
+          // Outdoor pool toggle IDs (270, 271, 272 / eisy4/var/*): preserve when
+          // absent from live snapshot — eisy4 variables can be missing from a
+          // snapshot if the EISY 4 poll hasn't completed yet, which would drop
+          // the tiles from the DOM entirely since the tile guards with `if (!s)`.
+          for (const o of config.outdoorsPool) {
+            if (o.id in prev && !(o.id in live)) preserved[o.id] = prev[o.id];
+          }
+          // Pool hardware variable IDs: preserve so readings don't revert to
+          // seed/default when a reseed races the state snapshot.
+          for (const id of [
+            config.poolNodeId, config.poolPumpNodeId, config.poolPumpSpeedId,
+            config.poolHeaterId, config.poolHeaterSetpointId, config.poolChlorinatorId,
+          ]) {
+            if (id && id in prev && !(id in live)) preserved[id] = prev[id];
+          }
           // Strip user-owned keys from live state — they must never overwrite preserved values.
           const deviceState = Object.fromEntries(
             Object.entries(live).filter(([k]) => !k.startsWith('_') && !k.startsWith('auto:')),
