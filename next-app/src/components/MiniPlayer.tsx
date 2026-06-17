@@ -31,7 +31,7 @@ export function MiniPlayer() {
   const displayTrack = miniDismissed ? null : (track ?? lastTrackRef.current);
 
   const isPlaying = sdkPlayer.sdkState ? !sdkPlayer.sdkState.paused : spotify.isPlaying;
-  const progressMs = sdkPlayer.sdkState ? sdkPlayer.sdkState.position : spotify.progressMs;
+  const progressMs = spotify.progressMs;
   const progress = displayTrack && displayTrack.durationMs > 0 ? progressMs / displayTrack.durationMs : 0;
 
   if (!displayTrack) return null;
