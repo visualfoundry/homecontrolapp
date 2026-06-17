@@ -231,21 +231,18 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     .map(n => ({ id: toId(n), name: n.title }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  // --- Pool controls: place 'Back Yard' + control type title contains 'Pool'
-  const POOL_BACKYARD_PLACES = new Set(['Back Yard']);
+  // --- Pool controls: control type 'Pool Light' or 'Pool Waterfall' (no place filter)
+  const POOL_LIGHT_CT_TITLES = new Set(['Pool Light', 'Pool Waterfall']);
   const poolIconFor = (ctTitle: string): import('@/components/Icon').IconName => {
     const t = ctTitle.toLowerCase();
     if (t.includes('light')) return 'bulb';
-    if (t.includes('heat')) return 'thermo';
     if (t.includes('waterfall')) return 'waterfall';
     return 'pool';
   };
-  const POOL_PREVIEW_NAMES = new Set(['Pool Light', 'Pool Waterfall', 'Pool Waterfall Light']);
   const outdoorsPool = controls
     .filter(n => {
-      const place = getPlace(n) ?? '';
       const ct = n.controlFields?.controlType?.nodes[0]?.title ?? '';
-      return POOL_BACKYARD_PLACES.has(place) && ct.includes('Pool') && POOL_PREVIEW_NAMES.has(n.title);
+      return POOL_LIGHT_CT_TITLES.has(ct);
     })
     .map(n => ({
       id: toId(n), name: n.title, kind: 'toggle' as const,

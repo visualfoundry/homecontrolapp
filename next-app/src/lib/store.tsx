@@ -186,6 +186,8 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
     }
     for (const r of config.lightSceneRooms) seed[r.id] = { on: false };
     for (const f of config.fans) seed[f.id] = { on: false, speed: 0 };
+    for (const o of config.outdoorsPool) seed[o.id] = { on: false };
+    for (const o of config.outdoorsBackyard) seed[o.id] = { on: false };
     seed['pool'] = {
       pumpOn: false, pumpSpeed: 65,
       heaterOn: false, heaterRunning: false,
@@ -317,14 +319,14 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
           for (const r of config.sceneRooms) {
             if (r.steps && r.id in prev && !(r.id in live)) preserved[r.id] = prev[r.id];
           }
-          // Pool state is managed by the OmniLogic adapter (not yet wired to the service).
-          // Preserve mock/prev state until the real adapter delivers it.
-          if ('pool' in prev && !('pool' in live)) preserved['pool'] = prev['pool'];
           // Strip user-owned keys from live state — they must never overwrite preserved values.
           const deviceState = Object.fromEntries(
             Object.entries(live).filter(([k]) => !k.startsWith('_') && !k.startsWith('auto:')),
           );
-          return { ...preserved, ...deviceState };
+          // Pool state is managed by OmniLogic (not the ISY state service).
+          // Always carry forward from prev — placed AFTER deviceState so it wins the spread.
+          const poolState = prev['pool'];
+          return { ...preserved, ...deviceState, ...(poolState ? { pool: poolState } : {}) };
         });
       }).catch(() => {
         // Service unreachable — keep using seed state.

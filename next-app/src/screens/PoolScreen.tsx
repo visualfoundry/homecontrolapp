@@ -13,6 +13,16 @@ import { LargeTitle } from '@/components/LargeTitle';
 import { poolStep } from '@/lib/styles';
 import type { PoolState, PoolNodeState, PumpScheduleItem, HeaterScheduleItem, OutdoorState } from '@/types/state';
 
+const POOL_DEFAULT: PoolState = {
+  pumpOn: false, pumpSpeed: 65,
+  heaterOn: false, heaterRunning: false,
+  poolTemp: 0, heaterTarget: 82,
+  ph: 7.4, phTarget: 7.4,
+  chlorinatorOn: false, orpSet: 700, orpNow: 650,
+  saltPPM: 3200,
+  pumpSchedules: [], heaterSchedules: [],
+};
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -272,11 +282,16 @@ function ScheduleEditor({ editor, setEditor, onSave, onDelete, portalTarget }: {
 
 export function PoolScreen() {
   const { st, setD, overlayRef, config } = useHC();
-  const p = st['pool'] as PoolState | undefined;
+  const rawPool = st['pool'] as PoolState | undefined;
+  const p: PoolState = {
+    ...POOL_DEFAULT,
+    ...rawPool,
+    // Guard arrays — a null from the state service would crash .map() calls.
+    pumpSchedules:   Array.isArray(rawPool?.pumpSchedules)   ? rawPool.pumpSchedules   : POOL_DEFAULT.pumpSchedules,
+    heaterSchedules: Array.isArray(rawPool?.heaterSchedules) ? rawPool.heaterSchedules : POOL_DEFAULT.heaterSchedules,
+  };
   const setP = (patch: Partial<PoolState>) => setD('pool', patch);
   const [editor, setEditor] = useState<EditorState | null>(null);
-
-  if (!p) return null;
 
   // Live pool controller node (PG3 Balboa, n003_bow1).
   const poolNode = config.poolNodeId
