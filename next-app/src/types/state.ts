@@ -73,13 +73,15 @@ export interface FlagState {
 // ---------------------------------------------------------------------------
 
 export interface PoolNodeState {
-  pumpOn: boolean;       // GV0: pump circuit power
-  ph: number;            // GV1÷10: water pH
-  orp: number;           // GV2: ORP in mV
-  waterTemp: number;     // ST: pool water temperature °F
-  saltLevel: number;     // GV5: current salt level ppm
-  saltLevelAvg: number;  // GV6: averaged salt level ppm
-  heaterFiring: boolean; // GV7: heater is actively firing
+  // Circuit power — service returns 'on'; 'pumpOn' kept for forward-compat with OmniLogic adapter.
+  on?: boolean;
+  pumpOn?: boolean;
+  waterTemp?: number;     // ST: pool water temperature °F
+  ph?: number;            // GV1÷10: water pH
+  orp?: number;           // GV2: ORP in mV
+  saltLevel?: number;     // GV5: current salt level ppm
+  saltLevelAvg?: number;  // GV6: averaged salt level ppm
+  heaterFiring?: boolean; // GV7: heater is actively firing
 }
 
 // ---------------------------------------------------------------------------

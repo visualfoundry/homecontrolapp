@@ -293,11 +293,12 @@ export function PoolScreen() {
   const setP = (patch: Partial<PoolState>) => setD('pool', patch);
   const [editor, setEditor] = useState<EditorState | null>(null);
 
-  // Live pool nodes — all share PoolNodeState shape (pumpOn = GV0 circuit power).
+  // Live pool nodes. Circuit power may arrive as 'on' (ISY adapter) or 'pumpOn' (OmniLogic adapter).
   const node    = (id: string | null) => id ? (st[id] as PoolNodeState | undefined) : undefined;
   const poolNode        = node(config.poolNodeId);        // WP 626 — main sensor
   const chlorinatorNode = node(config.poolChlorinatorId); // WP 627
   const heaterNode      = node(config.poolHeaterId);      // WP 628
+  const nodeOn = (n: PoolNodeState | undefined) => n?.pumpOn ?? n?.on;
 
   const poolTemp     = poolNode?.waterTemp ?? p.poolTemp;
   const poolTempDisplay = poolTemp > 0 ? `${poolTemp}°` : 'N/A';
@@ -307,20 +308,20 @@ export function PoolScreen() {
   const saltLevel    = poolNode?.saltLevel   ?? p.saltPPM;
   const saltLevelAvg = poolNode?.saltLevelAvg ?? p.saltPPM;
 
-  const pumpOn      = poolNode?.pumpOn        ?? p.pumpOn;
+  const pumpOn      = nodeOn(poolNode)        ?? p.pumpOn;
   const pumpSpeed   = p.pumpSpeed; // not exposed by node yet
-  const heaterOn    = heaterNode?.pumpOn      ?? p.heaterOn;
+  const heaterOn    = nodeOn(heaterNode)      ?? p.heaterOn;
   const heaterTarget = p.heaterTarget;         // not exposed by node yet
-  const salinatorOn = chlorinatorNode?.pumpOn ?? p.chlorinatorOn;
+  const salinatorOn = nodeOn(chlorinatorNode) ?? p.chlorinatorOn;
 
   const setPump      = (on: boolean) =>
-    config.poolNodeId        ? setD(config.poolNodeId,        { pumpOn: on }) : setP({ pumpOn: on });
+    config.poolNodeId        ? setD(config.poolNodeId,        { on }) : setP({ pumpOn: on });
   const setPumpSpeed = (v: number) => setP({ pumpSpeed: v });
   const setHeater    = (on: boolean) =>
-    config.poolHeaterId      ? setD(config.poolHeaterId,      { pumpOn: on }) : setP({ heaterOn: on });
+    config.poolHeaterId      ? setD(config.poolHeaterId,      { on }) : setP({ heaterOn: on });
   const setHeaterTarget = (v: number) => setP({ heaterTarget: v });
   const setSalinator = (on: boolean) =>
-    config.poolChlorinatorId ? setD(config.poolChlorinatorId, { pumpOn: on }) : setP({ chlorinatorOn: on });
+    config.poolChlorinatorId ? setD(config.poolChlorinatorId, { on }) : setP({ chlorinatorOn: on });
 
   // Heater running: live heaterFiring from the main sensor node, fall back to inference.
   const heaterRunning = poolNode?.heaterFiring ?? (heaterOn && poolTemp < heaterTarget);
