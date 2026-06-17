@@ -123,8 +123,10 @@ function InstallAppCard() {
 }
 
 function CertInstallCard() {
-  const localIp = process.env.NEXT_PUBLIC_LOCAL_IP ?? '192.168.1.91';
-  const certUrl = `http://${localIp}/mkcert-ca.pem`;
+  const [certUrl, setCertUrl] = React.useState('http://app.dixons.net/mkcert-ca.pem');
+  React.useEffect(() => {
+    setCertUrl(`http://${window.location.hostname}/mkcert-ca.pem`);
+  }, []);
 
   return (
     <Card>
