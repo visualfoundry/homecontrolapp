@@ -12,10 +12,7 @@ const PASSKEY_KEY = 'hca:passkey_enrolled';
 function getPasskeyLabel(): string {
   if (typeof navigator === 'undefined') return 'Passkey';
   const ua = navigator.userAgent;
-  if (/iPhone|iPad|iPod/.test(ua)) return 'Face ID';
-  if (/Macintosh/.test(ua)) return 'Touch ID';
   if (/Windows/.test(ua)) return 'Windows Hello';
-  if (/Android/.test(ua)) return 'Fingerprint';
   return 'Passkey';
 }
 
