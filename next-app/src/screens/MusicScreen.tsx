@@ -74,9 +74,6 @@ function LibraryCard({ uri, name, artUrl, sub, artCircle = false, onPlay }: {
   );
 }
 
-// The preferred Spotify Connect device. Playback is auto-routed here on mount.
-const DEFAULT_SPOTIFY_DEVICE = 'House Music';
-
 export function MusicScreen() {
   const { st, setD, config } = useHC();
   const { sdkPlayer, spotify, dismissMini } = useSpotifyContext();
@@ -84,19 +81,6 @@ export function MusicScreen() {
   const [devicePickerOpen, setDevicePickerOpen] = React.useState(false);
   const [availableDevices, setAvailableDevices] = React.useState<SpotifyDevice[]>([]);
   const [devicesLoading, setDevicesLoading] = React.useState(false);
-
-  // Auto-route to the default device when the Music screen opens.
-  // Skips if already on the correct device or if it isn't available (powered off).
-  React.useEffect(() => {
-    if (spotify.loading) return;
-    if (spotify.device?.name === DEFAULT_SPOTIFY_DEVICE) return;
-    spotify.fetchDevices().then(devices => {
-      const target = devices.find(d => d.name === DEFAULT_SPOTIFY_DEVICE);
-      if (target && !target.isActive) void spotify.transferTo(target.id);
-    });
-  // Run once when loading resolves — intentionally not re-running on device changes.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spotify.loading]);
 
   const openDevicePicker = async () => {
     setDevicePickerOpen(true);
