@@ -15,7 +15,7 @@
 // Currently renders a placeholder for all screen ids.
 // =============================================================================
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, Component } from 'react';
 import { HCProvider, useHC } from '@/lib/store';
 import { SpotifyProvider } from '@/lib/spotify-context';
 import { MiniPlayer } from '@/components/MiniPlayer';
@@ -106,15 +106,46 @@ const SCREEN_COMPONENTS: Record<string, React.FC> = {
   notifications: NotificationsScreen,
 };
 
+class ScreenErrorBoundary extends Component<
+  { id: string; children: React.ReactNode },
+  { error: string | null }
+> {
+  constructor(props: { id: string; children: React.ReactNode }) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(e: unknown) {
+    return { error: e instanceof Error ? e.message : String(e) };
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 24, color: 'var(--text2)', fontSize: 14 }}>
+          <strong style={{ color: 'var(--red)' }}>Screen error ({this.props.id})</strong>
+          <pre style={{ marginTop: 8, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{this.state.error}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function ScreenRenderer({ id }: { id: string }) {
   // Per-place room pages: "room:<place>". Garage keeps its bespoke page.
   if (id.startsWith('room:')) {
     const place = id.slice(5);
-    return place === 'Garage' ? <GarageScreen /> : <RoomScreen place={place} />;
+    return (
+      <ScreenErrorBoundary id={id}>
+        {place === 'Garage' ? <GarageScreen /> : <RoomScreen place={place} />}
+      </ScreenErrorBoundary>
+    );
   }
   const Screen = SCREEN_COMPONENTS[id];
-  if (Screen) return <Screen />;
-  return <PlaceholderScreen id={id} />;
+  return (
+    <ScreenErrorBoundary id={id}>
+      {Screen ? <Screen /> : <PlaceholderScreen id={id} />}
+    </ScreenErrorBoundary>
+  );
 }
 
 // ---------------------------------------------------------------------------

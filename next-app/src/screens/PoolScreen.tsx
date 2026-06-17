@@ -384,10 +384,10 @@ export function PoolScreen() {
           status={heaterRunning ? 'Firing' : heaterOn ? 'Idle' : null} />
         <Reading icon="power"   label="Pump"        value={pumpOn ? 'On' : 'Off'}              tint="#2bb3a3"
           status={pumpOn ? 'Running' : null} />
-        <Reading icon="droplet" label="pH"          value={ph.toFixed(1)}                      tint={phTint} status={phStatus} />
-        <Reading icon="power"   label="ORP"         value={orp + ' mV'}                        tint="#2bb3a3" />
-        <Reading icon="water"   label="Salt"        value={saltLevel.toLocaleString()}          tint="#5a9bd4" />
-        <Reading icon="water"   label="Salt avg"    value={saltLevelAvg.toLocaleString()}       tint="#5a9bd4" />
+        <Reading icon="droplet" label="pH"          value={Number(ph).toFixed(1)}                      tint={phTint} status={phStatus} />
+        <Reading icon="power"   label="ORP"         value={Number(orp) + ' mV'}                        tint="#2bb3a3" />
+        <Reading icon="water"   label="Salt"        value={Number(saltLevel).toLocaleString()}          tint="#5a9bd4" />
+        <Reading icon="water"   label="Salt avg"    value={Number(saltLevelAvg).toLocaleString()}       tint="#5a9bd4" />
       </div>
 
       {/* Lighting & Features */}
