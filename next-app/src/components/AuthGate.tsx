@@ -194,8 +194,11 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       if (verRes.ok) {
         localStorage.setItem(PASSKEY_KEY, '1');
       }
-    } catch {
-      // Enrollment failure is non-fatal — just proceed to the app.
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(`Face ID setup failed: ${msg}`);
+      setState('enroll-prompt');
+      return;
     }
     setState('ok');
   }
@@ -277,6 +280,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         {(state === 'enroll-prompt' || state === 'enrolling') && (
           <>
             <p style={subStyle}>Enable {passkeyLabel} for quick sign-in next time.</p>
+            {error && <p style={errStyle}>{error}</p>}
             <button
               onClick={handleEnroll}
               disabled={state === 'enrolling'}
