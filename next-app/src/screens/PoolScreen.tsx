@@ -305,8 +305,8 @@ export function PoolScreen() {
   };
 
   const poolNode        = varNode(config.poolNodeId);        // WP 622 — eisy0/var/128, {value: °F}
-  const chlorinatorNode = varNode(config.poolChlorinatorId); // WP 274 — eisy0/var/69,  {on: bool}
-  const heaterNode      = varNode(config.poolHeaterId);      // WP 533 — eisy0/var/5,   {on: bool}
+  const chlorinatorNode = varNode(config.poolChlorinatorId); // {value: 1=on}
+  const heaterNode      = varNode(config.poolHeaterId);      // WP 533 — eisy0/var/5, {value: 1=on}
   const pumpNode        = varNode(config.poolPumpNodeId);    // WP 623 — eisy0/var/123, {value: 1=on}
 
   // Temperature: variable returns {value: N}, future PG3 node returns {waterTemp: N}
@@ -315,11 +315,12 @@ export function PoolScreen() {
     ?? p.poolTemp;
   const poolTempDisplay = poolTemp > 0 ? `${poolTemp}°` : 'N/A';
 
-  // Chemistry — no live variables yet (future OmniLogic adapter); fall back to pool state defaults.
-  const ph           = (poolNode as { ph?: number } | undefined)?.ph        ?? p.ph;
-  const orp          = (poolNode as { orp?: number } | undefined)?.orp      ?? p.orpNow;
-  const saltLevel    = (poolNode as { saltLevel?: number } | undefined)?.saltLevel     ?? p.saltPPM;
-  const saltLevelAvg = (poolNode as { saltLevelAvg?: number } | undefined)?.saltLevelAvg ?? p.saltPPM;
+  // Chemistry — live values from EISY indicator variables; fall back to pool state defaults.
+  const rawPh     = varValue(config.poolPhId)          ?? (poolNode as { ph?: number } | undefined)?.ph;
+  const ph        = rawPh !== undefined ? (rawPh > 14 ? rawPh / 10 : rawPh) : p.ph;
+  const orp       = varValue(config.poolOrpId)         ?? (poolNode as { orp?: number } | undefined)?.orp          ?? p.orpNow;
+  const saltLevel = varValue(config.poolSaltLevelId)   ?? (poolNode as { saltLevel?: number } | undefined)?.saltLevel     ?? p.saltPPM;
+  const saltLevelAvg = varValue(config.poolSaltLevelAvgId) ?? (poolNode as { saltLevelAvg?: number } | undefined)?.saltLevelAvg ?? p.saltPPM;
 
   // Pump: var/123 returns {value: 1} for on; speed comes from a separate var/124.
   const pumpOn    = ((pumpNode as { value?: number } | undefined)?.value ?? 0) > 0
@@ -327,11 +328,16 @@ export function PoolScreen() {
     || p.pumpOn;
   const pumpSpeed = varValue(config.poolPumpSpeedId) ?? p.pumpSpeed;
 
-  // Heater: var/5 returns {on: bool}; setpoint comes from var/126.
-  const heaterOn     = nodeOn(heaterNode) ?? p.heaterOn;
+  // Heater: var/5 returns {value: 1=on}; setpoint comes from var/126.
+  const heaterOn     = ((heaterNode as { value?: number } | undefined)?.value ?? 0) > 0
+    || (nodeOn(heaterNode) ?? false)
+    || p.heaterOn;
   const heaterTarget = varValue(config.poolHeaterSetpointId) ?? p.heaterTarget;
 
-  const salinatorOn = nodeOn(chlorinatorNode) ?? p.chlorinatorOn;
+  // Chlorinator: {value: 1=on}
+  const salinatorOn = ((chlorinatorNode as { value?: number } | undefined)?.value ?? 0) > 0
+    || (nodeOn(chlorinatorNode) ?? false)
+    || p.chlorinatorOn;
 
   // Commands — pump on/off to var/123, speed to separate var/124, heater setpoint to var/126.
   const setPump = (on: boolean) =>
@@ -350,9 +356,13 @@ export function PoolScreen() {
   const setSalinator = (on: boolean) =>
     config.poolChlorinatorId ? setD(config.poolChlorinatorId, { on }) : setP({ chlorinatorOn: on });
 
-  // Heater running: future PG3 node will provide heaterFiring; infer from on+temp until then.
-  const heaterRunning = (poolNode as { heaterFiring?: boolean } | undefined)?.heaterFiring
-    ?? (heaterOn && poolTemp > 0 && poolTemp < heaterTarget);
+  // Heater running: live Pool Heater Firing indicator (flag var → {on: bool}); fall back to inference.
+  const heaterFiringNode = varNode(config.poolHeaterFiringId);
+  const heaterFiringKnown = nodeOn(heaterFiringNode);
+  const heaterRunning = heaterFiringKnown !== undefined
+    ? heaterFiringKnown
+    : (poolNode as { heaterFiring?: boolean } | undefined)?.heaterFiring
+      ?? (heaterOn && poolTemp > 0 && poolTemp < heaterTarget);
   const phStatus = ph < 7.2 ? 'Low' : ph > 7.8 ? 'High' : 'Ideal';
   const phTint = phStatus === 'Ideal' ? 'var(--green)' : 'var(--red)';
 

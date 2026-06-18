@@ -403,8 +403,17 @@ export function HomeScreen() {
     ? (config.climate.reduce((sum, c) => sum + ((st[c.id] as { temp?: number } | undefined)?.temp ?? 72), 0) / config.climate.length).toFixed(1)
     : '–';
   const numVar = (id: string | null) => (id ? (st[id] as VariableState | undefined)?.value : undefined);
-  const poolNode = config.poolNodeId ? (st[config.poolNodeId] as PoolNodeState | undefined) : undefined;
-  const poolTemp = poolNode?.waterTemp ?? (st['pool'] as PoolState | undefined)?.poolTemp ?? 81;
+  const varOn  = (id: string | null) => {
+    const n = id ? (st[id] as Record<string, unknown> | undefined) : undefined;
+    const v = (n as { value?: number } | undefined)?.value;
+    if (v !== undefined) return v > 0;
+    return (n as { on?: boolean } | undefined)?.on ?? false;
+  };
+  const poolTemp    = numVar(config.poolNodeId) ?? (st['pool'] as PoolState | undefined)?.poolTemp ?? 0;
+  const poolPumpOn  = varOn(config.poolPumpNodeId);
+  const poolPumpSpd = numVar(config.poolPumpSpeedId);
+  const poolHeatOn  = varOn(config.poolHeaterId);
+  const poolStatus  = poolHeatOn ? 'Heating' : poolPumpOn ? `Pump · ${poolPumpSpd ?? ''}%`.trim() : 'Idle';
   const weatherTemp = numVar(config.weatherTempId);
   const weatherHigh = numVar(config.weatherHighId);
   const weatherLow  = numVar(config.weatherLowId);
@@ -519,7 +528,7 @@ export function HomeScreen() {
         <SectionTitle>Status</SectionTitle>
         <div style={{ display: 'flex', gap: 11, overflowX: 'auto', padding: '0 0 4px', scrollbarWidth: 'none' }}>
           <StatTile icon="thermo" label="Avg. indoor" value={avgTemp + '°'} tint="#E07B53" onTap={() => go('climate')} />
-          <StatTile icon="pool"   label="Pool temp"   value={poolTemp > 0 ? poolTemp + '°' : 'N/A'} tint="#2bb3a3" onTap={() => go('pool')} />
+          <StatTile icon="pool"   label={poolStatus}   value={poolTemp > 0 ? poolTemp + '°' : 'N/A'} tint="#2bb3a3" onTap={() => go('pool')} />
           <StatTile icon="bulb"   label="Lights on"   value={lightsOn} tint="#F0A500" onTap={() => go('lights')} />
           <StatTile icon="lock"   label="Doors locked" value={`${doorsLocked}/${config.doorsExterior.length}`} tint="#34A853" onTap={() => go('doors')} />
           <StatTile icon="motion" label="Motion alerts" value={motionAlerts} tint="#E0483D" onTap={() => go('motion')} />

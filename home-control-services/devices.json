@@ -1,23 +1,79 @@
 {
-  "eisy0/var/126": {
+  "eisy0/var/180": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "numeric-var",
-    "varId": 126,
+    "class": "flag",
+    "varId": 180,
     "varType": 2
   },
-  "eisy0/var/123": {
+  "eisy0/var/179": {
     "type": "variable",
     "eisyIdx": 0,
     "class": "numeric-var",
-    "varId": 123,
+    "varId": 179,
     "varType": 2
   },
-  "eisy0/var/128": {
+  "eisy0/var/178": {
     "type": "variable",
     "eisyIdx": 0,
     "class": "numeric-var",
-    "varId": 128,
+    "varId": 178,
+    "varType": 2
+  },
+  "eisy0/var/177": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 177,
+    "varType": 2
+  },
+  "eisy0/var/176": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 176,
+    "varType": 2
+  },
+  "eisy0/var/175": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "numeric-var",
+    "varId": 175,
+    "varType": 2
+  },
+  "eisy0/var/174": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 174,
+    "varType": 2
+  },
+  "eisy0/var/173": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "numeric-var",
+    "varId": 173,
+    "varType": 2
+  },
+  "eisy0/var/172": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "numeric-var",
+    "varId": 172,
+    "varType": 2
+  },
+  "eisy0/var/169": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "numeric-var",
+    "varId": 169,
+    "varType": 2
+  },
+  "eisy0/var/165": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "numeric-var",
+    "varId": 165,
     "varType": 2
   },
   "eisy2/var/281": {
@@ -457,18 +513,11 @@
     "class": "motion-sensor",
     "address": "37 B8 EB 1"
   },
-  "eisy0/var/125": {
+  "eisy0/var/168": {
     "type": "variable",
     "eisyIdx": 0,
     "class": "numeric-var",
-    "varId": 125,
-    "varType": 2
-  },
-  "eisy0/var/5": {
-    "type": "variable",
-    "eisyIdx": 0,
-    "class": "flag",
-    "varId": 5,
+    "varId": 168,
     "varType": 2
   },
   "eisy0/var/40": {
@@ -717,11 +766,11 @@
     "varId": 3,
     "varType": 2
   },
-  "eisy0/var/124": {
+  "eisy0/var/166": {
     "type": "variable",
     "eisyIdx": 0,
     "class": "numeric-var",
-    "varId": 124,
+    "varId": 166,
     "varType": 2
   },
   "eisy0/var/1": {
@@ -1934,11 +1983,11 @@
     "class": "light-dimmer",
     "address": "39 A6 60 1"
   },
-  "eisy0/var/69": {
+  "eisy0/var/171": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "flag",
-    "varId": 69,
+    "class": "numeric-var",
+    "varId": 171,
     "varType": 2
   },
   "eisy4/var/58": {

@@ -265,9 +265,9 @@ export interface AppConfig {
   environmentalControls: Array<{ id: string; name: string }>;
   /** Pool temperature variable (WP 622, eisy0/var/128). State shape: { value: number } °F. */
   poolNodeId: string | null;
-  /** Pool salinator on/off variable (WP 274, eisy0/var/69). State shape: { on: boolean }. */
+  /** Pool chlorinator on/off variable. State shape: { value: number } (1=on, 0=off). */
   poolChlorinatorId: string | null;
-  /** Pool heater on/off variable (WP 533, eisy0/var/5). State shape: { on: boolean }. */
+  /** Pool heater on/off variable (WP 533, eisy0/var/5). State shape: { value: number } (1=on, 0=off). */
   poolHeaterId: string | null;
   /** Pool pump on/off variable (WP 623, eisy0/var/123). State shape: { value: number } (1=on). */
   poolPumpNodeId: string | null;
@@ -275,6 +275,16 @@ export interface AppConfig {
   poolPumpSpeedId: string | null;
   /** Pool heater setpoint variable (WP 624, eisy0/var/126). State shape: { value: number } °F. */
   poolHeaterSetpointId: string | null;
+  /** Pool heater firing indicator. State shape: { value: number } (1=firing, 0=not). */
+  poolHeaterFiringId: string | null;
+  /** Pool pH indicator. State shape: { value: number } (raw integer; ÷10 if >14). */
+  poolPhId: string | null;
+  /** Pool ORP indicator. State shape: { value: number } mV. */
+  poolOrpId: string | null;
+  /** Pool salt level indicator. State shape: { value: number } ppm. */
+  poolSaltLevelId: string | null;
+  /** Pool salt level average indicator. State shape: { value: number } ppm. */
+  poolSaltLevelAvgId: string | null;
 }
 
 // ---------------------------------------------------------------------------

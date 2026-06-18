@@ -331,6 +331,8 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
           for (const id of [
             config.poolNodeId, config.poolPumpNodeId, config.poolPumpSpeedId,
             config.poolHeaterId, config.poolHeaterSetpointId, config.poolChlorinatorId,
+            config.poolHeaterFiringId, config.poolPhId, config.poolOrpId,
+            config.poolSaltLevelId, config.poolSaltLevelAvgId,
           ]) {
             if (id && id in prev && !(id in live)) preserved[id] = prev[id];
           }
