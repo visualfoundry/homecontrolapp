@@ -10,21 +10,29 @@
 
 set -euo pipefail
 
+# Re-exec with sudo if not root — needed to read /etc/ssl, /etc/apache2, wp-config.php
+if [[ $EUID -ne 0 ]]; then
+  exec sudo -E bash "$0" "$@"
+fi
+
+# SUDO_USER is the original non-root user; use it to find the real home directory
+REAL_USER="${SUDO_USER:-administrator}"
+REAL_HOME=$(eval echo "~$REAL_USER")
+
 STAMP=$(date +%Y%m%d-%H%M%S)
 WORKDIR="/tmp/hca-backup-$STAMP"
-ARCHIVE="$HOME/hca-backup-$STAMP.tar.gz"
+ARCHIVE="$REAL_HOME/hca-backup-$STAMP.tar.gz"
 
-echo "==> Starting backup $STAMP"
+echo "==> Starting backup $STAMP (as $REAL_USER)"
 mkdir -p "$WORKDIR"
 
 # ── 1. WordPress database ────────────────────────────────────────────────────
 echo "==> Dumping WordPress database..."
 mkdir -p "$WORKDIR/db"
-# Read credentials from wp-config.php using awk (split on single-quote, field 4 = value)
 WP_CONF=/var/www/html/wordpress/wp-config.php
-WP_DB_NAME=$(sudo awk -F"'" "/DB_NAME/{print \$4}"   "$WP_CONF")
-WP_DB_USER=$(sudo awk -F"'" "/DB_USER/{print \$4}"   "$WP_CONF")
-WP_DB_PASS=$(sudo awk -F"'" "/DB_PASSWORD/{print \$4}" "$WP_CONF")
+WP_DB_NAME=$(awk -F"'" '/DB_NAME/{print $4}'     "$WP_CONF")
+WP_DB_USER=$(awk -F"'" '/DB_USER/{print $4}'     "$WP_CONF")
+WP_DB_PASS=$(awk -F"'" '/DB_PASSWORD/{print $4}' "$WP_CONF")
 
 mysqldump --single-transaction \
   -u "$WP_DB_USER" -p"$WP_DB_PASS" "$WP_DB_NAME" \
@@ -34,17 +42,17 @@ echo "    DB dump: $(du -sh "$WORKDIR/db/wordpress.sql.gz" | cut -f1)"
 # ── 2. WordPress files (config + content, not core — core is re-downloadable) ─
 echo "==> Backing up WordPress files..."
 mkdir -p "$WORKDIR/wordpress"
-sudo cp /var/www/html/wordpress/wp-config.php "$WORKDIR/wordpress/wp-config.php"
-sudo cp /var/www/html/wordpress/.htaccess "$WORKDIR/wordpress/.htaccess" 2>/dev/null || true
+cp /var/www/html/wordpress/wp-config.php "$WORKDIR/wordpress/wp-config.php"
+cp /var/www/html/wordpress/.htaccess     "$WORKDIR/wordpress/.htaccess" 2>/dev/null || true
 
 # wp-content: uploads (media) + plugins. Skip themes (in git). Skip cache.
 echo "    Copying wp-content/uploads..."
-sudo rsync -a --quiet \
+rsync -a --quiet \
   /var/www/html/wordpress/wp-content/uploads/ \
   "$WORKDIR/wordpress/wp-content/uploads/"
 
 echo "    Copying wp-content/plugins..."
-sudo rsync -a --quiet \
+rsync -a --quiet \
   /var/www/html/wordpress/wp-content/plugins/ \
   "$WORKDIR/wordpress/wp-content/plugins/"
 
@@ -54,54 +62,52 @@ echo "    WordPress files: $(du -sh "$WORKDIR/wordpress" | cut -f1)"
 echo "==> Backing up app env files..."
 mkdir -p "$WORKDIR/app"
 
-cp "$HOME/homecontrolapp/next-app/.env.local" \
+cp "$REAL_HOME/homecontrolapp/next-app/.env.local" \
    "$WORKDIR/app/next-app.env.local"
 
-if [[ -f "$HOME/homecontrolapp/home-control-services/.env" ]]; then
-  cp "$HOME/homecontrolapp/home-control-services/.env" \
+if [[ -f "$REAL_HOME/homecontrolapp/home-control-services/.env" ]]; then
+  cp "$REAL_HOME/homecontrolapp/home-control-services/.env" \
      "$WORKDIR/app/home-control-services.env"
 fi
 
-if [[ -f "$HOME/homecontrolapp/ecosystem.config.js" ]]; then
-  cp "$HOME/homecontrolapp/ecosystem.config.js" \
+if [[ -f "$REAL_HOME/homecontrolapp/ecosystem.config.js" ]]; then
+  cp "$REAL_HOME/homecontrolapp/ecosystem.config.js" \
      "$WORKDIR/app/ecosystem.config.js"
 fi
 
 # ── 4. Apache config ─────────────────────────────────────────────────────────
 echo "==> Backing up Apache config..."
 mkdir -p "$WORKDIR/apache"
-sudo cp /etc/apache2/sites-available/wordpress.conf \
-        "$WORKDIR/apache/wordpress.conf"
-sudo cp -r /etc/apache2/sites-enabled/ "$WORKDIR/apache/sites-enabled/" 2>/dev/null || true
+cp /etc/apache2/sites-available/wordpress.conf \
+   "$WORKDIR/apache/wordpress.conf"
+cp -r /etc/apache2/sites-enabled/ "$WORKDIR/apache/sites-enabled/" 2>/dev/null || true
 
 # ── 5. Netplan (static IP) ───────────────────────────────────────────────────
 echo "==> Backing up Netplan config..."
 mkdir -p "$WORKDIR/netplan"
-sudo cp /etc/netplan/*.yaml "$WORKDIR/netplan/" 2>/dev/null || true
+cp /etc/netplan/*.yaml "$WORKDIR/netplan/" 2>/dev/null || true
 
 # ── 6. SSL certificates ──────────────────────────────────────────────────────
 echo "==> Backing up SSL certificates..."
 mkdir -p "$WORKDIR/ssl"
-sudo cp /etc/ssl/hca/cert.pem "$WORKDIR/ssl/cert.pem"
-sudo cp /etc/ssl/hca/key.pem  "$WORKDIR/ssl/key.pem"
+cp /etc/ssl/hca/cert.pem "$WORKDIR/ssl/cert.pem"
+cp /etc/ssl/hca/key.pem  "$WORKDIR/ssl/key.pem"
 
 # mkcert root CA (needed for new device setup)
-if [[ -f "$HOME/mkcert-ca.pem" ]]; then
-  cp "$HOME/mkcert-ca.pem" "$WORKDIR/ssl/mkcert-ca.pem"
+if [[ -f "$REAL_HOME/mkcert-ca.pem" ]]; then
+  cp "$REAL_HOME/mkcert-ca.pem" "$WORKDIR/ssl/mkcert-ca.pem"
 fi
 
 # ── 7. PM2 saved process list ────────────────────────────────────────────────
 echo "==> Saving PM2 process list..."
-pm2 save --force 2>/dev/null || true
-if [[ -f "$HOME/.pm2/dump.pm2" ]]; then
+# Save as the real user (PM2 runs under their account, not root)
+su - "$REAL_USER" -c "pm2 save --force" 2>/dev/null || true
+if [[ -f "$REAL_HOME/.pm2/dump.pm2" ]]; then
   mkdir -p "$WORKDIR/pm2"
-  cp "$HOME/.pm2/dump.pm2" "$WORKDIR/pm2/dump.pm2"
+  cp "$REAL_HOME/.pm2/dump.pm2" "$WORKDIR/pm2/dump.pm2"
 fi
 
-# ── 8. Fix ownership so we can read everything ──────────────────────────────
-sudo chown -R administrator:administrator "$WORKDIR"
-
-# ── 9. Write a manifest ──────────────────────────────────────────────────────
+# ── 8. Write a manifest ──────────────────────────────────────────────────────
 cat > "$WORKDIR/MANIFEST.txt" << EOF
 Home Control App — Disaster Recovery Backup
 Created: $STAMP
@@ -134,9 +140,12 @@ Restore:
   See restore.sh in ~/homecontrolapp/scripts/
 EOF
 
-# ── 10. Create the archive ───────────────────────────────────────────────────
+# ── 9. Fix ownership and create the archive ──────────────────────────────────
+chown -R "$REAL_USER:$REAL_USER" "$WORKDIR"
+
 echo "==> Creating archive..."
 tar -czf "$ARCHIVE" -C /tmp "hca-backup-$STAMP"
+chown "$REAL_USER:$REAL_USER" "$ARCHIVE"
 rm -rf "$WORKDIR"
 
 echo ""
