@@ -34,7 +34,7 @@ WP_DB_NAME=$(awk -F"'" '/DB_NAME/{print $4}'     "$WP_CONF")
 WP_DB_USER=$(awk -F"'" '/DB_USER/{print $4}'     "$WP_CONF")
 WP_DB_PASS=$(awk -F"'" '/DB_PASSWORD/{print $4}' "$WP_CONF")
 
-mysqldump --single-transaction \
+mysqldump --single-transaction --no-tablespaces \
   -u "$WP_DB_USER" -p"$WP_DB_PASS" "$WP_DB_NAME" \
   | gzip > "$WORKDIR/db/wordpress.sql.gz"
 echo "    DB dump: $(du -sh "$WORKDIR/db/wordpress.sql.gz" | cut -f1)"
@@ -47,11 +47,13 @@ cp /var/www/html/wordpress/.htaccess     "$WORKDIR/wordpress/.htaccess" 2>/dev/n
 
 # wp-content: uploads (media) + plugins. Skip themes (in git). Skip cache.
 echo "    Copying wp-content/uploads..."
+mkdir -p "$WORKDIR/wordpress/wp-content/uploads"
 rsync -a --quiet \
   /var/www/html/wordpress/wp-content/uploads/ \
   "$WORKDIR/wordpress/wp-content/uploads/"
 
 echo "    Copying wp-content/plugins..."
+mkdir -p "$WORKDIR/wordpress/wp-content/plugins"
 rsync -a --quiet \
   /var/www/html/wordpress/wp-content/plugins/ \
   "$WORKDIR/wordpress/wp-content/plugins/"
