@@ -413,7 +413,13 @@ export function HomeScreen() {
   const poolPumpOn  = varOn(config.poolPumpNodeId);
   const poolPumpSpd = numVar(config.poolPumpSpeedId);
   const poolHeatOn  = varOn(config.poolHeaterId);
-  const poolStatus  = poolHeatOn ? 'Heating' : poolPumpOn ? `Pump · ${poolPumpSpd ?? ''}%`.trim() : 'Idle';
+  const poolStatus  = poolHeatOn
+    ? (poolPumpOn ? `Heater on · ${poolPumpSpd ?? '–'}%` : 'Heater on')
+    : poolPumpOn ? `Pump · ${poolPumpSpd ?? '–'}%` : 'Idle';
+  const rawPh   = numVar(config.poolPhId);
+  const poolPh  = rawPh !== undefined ? (rawPh > 14 ? rawPh / 10 : rawPh) : null;
+  const phStatus = poolPh !== null ? (poolPh < 7.2 ? 'Low' : poolPh > 7.8 ? 'High' : 'Ideal') : null;
+  const phTint   = phStatus === 'Ideal' ? 'var(--green)' : phStatus !== null ? 'var(--red)' : '#5a9bd4';
   const weatherTemp = numVar(config.weatherTempId);
   const weatherHigh = numVar(config.weatherHighId);
   const weatherLow  = numVar(config.weatherLowId);
@@ -528,7 +534,8 @@ export function HomeScreen() {
         <SectionTitle>Status</SectionTitle>
         <div style={{ display: 'flex', gap: 11, overflowX: 'auto', padding: '0 0 4px', scrollbarWidth: 'none' }}>
           <StatTile icon="thermo" label="Avg. indoor" value={avgTemp + '°'} tint="#E07B53" onTap={() => go('climate')} />
-          <StatTile icon="pool"   label={poolStatus}   value={poolTemp > 0 ? poolTemp + '°' : 'N/A'} tint="#2bb3a3" onTap={() => go('pool')} />
+          <StatTile icon="pool"    label={poolStatus}          value={poolTemp > 0 ? poolTemp + '°' : 'N/A'} tint="#2bb3a3" onTap={() => go('pool')} />
+          {poolPh !== null && <StatTile icon="droplet" label={phStatus ?? 'Pool pH'} value={poolPh.toFixed(1)}             tint={phTint}    onTap={() => go('pool')} />}
           <StatTile icon="bulb"   label="Lights on"   value={lightsOn} tint="#F0A500" onTap={() => go('lights')} />
           <StatTile icon="lock"   label="Doors locked" value={`${doorsLocked}/${config.doorsExterior.length}`} tint="#34A853" onTap={() => go('doors')} />
           <StatTile icon="motion" label="Motion alerts" value={motionAlerts} tint="#E0483D" onTap={() => go('motion')} />
