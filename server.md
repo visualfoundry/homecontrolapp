@@ -516,27 +516,29 @@ The server cert covers both `192.168.1.91` and `app.dixons.net` as SANs. The Roo
 sudo nano /etc/apache2/sites-available/wordpress.conf
 ```
 ```apache
-# ── Port 80 — CA cert + redirect ───────────────────────────────────────────
+# ── Port 80 — localhost internal (no redirect — serves WP directly for Next.js) ─
+# Must be first so Apache matches it before the wildcard *:80 block below.
+# Next.js fetches http://127.0.0.1/graphql internally; without this block Apache
+# would redirect that request to HTTPS, dropping the POST body and breaking config.
 <VirtualHost *:80>
-    ServerName 192.168.1.91
-    ServerAlias app.dixons.net
+    ServerName 127.0.0.1
     DocumentRoot /var/www/html/wordpress
-
-    # CA cert served over plain HTTP — iOS can't trust HTTPS until after CA install.
-    Alias /mkcert-ca.pem /etc/ssl/hca/mkcert-ca.pem
-    <Location /mkcert-ca.pem>
-        Require all granted
-    </Location>
-
     <Directory /var/www/html/wordpress>
         AllowOverride All
         Require all granted
     </Directory>
+</VirtualHost>
 
-    RewriteEngine On
-    RewriteCond %{REMOTE_ADDR} !^127\.0\.0\.1$
-    RewriteCond %{REQUEST_URI} !^/mkcert-ca\.pem$
-    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+# ── Port 80 — CA cert + redirect ───────────────────────────────────────────
+<VirtualHost *:80>
+    ServerName app.dixons.net
+    # Serve the mkcert CA cert over plain HTTP (needed for iOS install before cert is trusted)
+    Alias /mkcert-ca.pem /home/administrator/mkcert-ca.pem
+    <Location /mkcert-ca.pem>
+        Require all granted
+    </Location>
+    # Redirect everything else to HTTPS
+    RedirectMatch permanent "^/(?!mkcert-ca\.pem)" https://app.dixons.net/
 </VirtualHost>
 
 # ── Port 443 — WordPress (LAN direct) ──────────────────────────────────────
