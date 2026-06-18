@@ -45,9 +45,9 @@ echo ""
 echo "==> Restoring WordPress database..."
 WP_CONFIG_SRC="$SRC/wordpress/wp-config.php"
 
-WP_DB_NAME=$(php -r "\$c=file_get_contents('$WP_CONFIG_SRC'); preg_match(\"/define\(\s*'DB_NAME'\s*,\s*'([^']+)'\)/\", \$c, \$m); echo \$m[1];")
-WP_DB_USER=$(php -r "\$c=file_get_contents('$WP_CONFIG_SRC'); preg_match(\"/define\(\s*'DB_USER'\s*,\s*'([^']+)'\)/\", \$c, \$m); echo \$m[1];")
-WP_DB_PASS=$(php -r "\$c=file_get_contents('$WP_CONFIG_SRC'); preg_match(\"/define\(\s*'DB_PASSWORD'\s*,\s*'([^']+)'\)/\", \$c, \$m); echo \$m[1];")
+WP_DB_NAME=$(awk -F"'" '/DB_NAME/{print $4}'     "$WP_CONFIG_SRC")
+WP_DB_USER=$(awk -F"'" '/DB_USER/{print $4}'     "$WP_CONFIG_SRC")
+WP_DB_PASS=$(awk -F"'" '/DB_PASSWORD/{print $4}' "$WP_CONFIG_SRC")
 
 # Create DB and user if they don't exist
 sudo mysql << SQL

@@ -20,10 +20,11 @@ mkdir -p "$WORKDIR"
 # ── 1. WordPress database ────────────────────────────────────────────────────
 echo "==> Dumping WordPress database..."
 mkdir -p "$WORKDIR/db"
-# Read credentials from wp-config.php so we don't hard-code them here
-WP_DB_NAME=$(php -r "define('ABSPATH',''); \$c=file_get_contents('/var/www/html/wordpress/wp-config.php'); preg_match(\"/define\(\s*'DB_NAME'\s*,\s*'([^']+)'\)/\", \$c, \$m); echo \$m[1];")
-WP_DB_USER=$(php -r "define('ABSPATH',''); \$c=file_get_contents('/var/www/html/wordpress/wp-config.php'); preg_match(\"/define\(\s*'DB_USER'\s*,\s*'([^']+)'\)/\", \$c, \$m); echo \$m[1];")
-WP_DB_PASS=$(php -r "define('ABSPATH',''); \$c=file_get_contents('/var/www/html/wordpress/wp-config.php'); preg_match(\"/define\(\s*'DB_PASSWORD'\s*,\s*'([^']+)'\)/\", \$c, \$m); echo \$m[1];")
+# Read credentials from wp-config.php using awk (split on single-quote, field 4 = value)
+WP_CONF=/var/www/html/wordpress/wp-config.php
+WP_DB_NAME=$(sudo awk -F"'" "/DB_NAME/{print \$4}"   "$WP_CONF")
+WP_DB_USER=$(sudo awk -F"'" "/DB_USER/{print \$4}"   "$WP_CONF")
+WP_DB_PASS=$(sudo awk -F"'" "/DB_PASSWORD/{print \$4}" "$WP_CONF")
 
 mysqldump --single-transaction \
   -u "$WP_DB_USER" -p"$WP_DB_PASS" "$WP_DB_NAME" \
