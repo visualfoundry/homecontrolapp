@@ -15,5 +15,11 @@ next-app/tsconfig.tsbuildinfo
 # Claude
 .claude/
 
+# SSL certificates (local copies — never commit private keys)
+*.pem
+
+# ACF exports
+acf-export-*.json
+
 # OS
 .DS_Store
