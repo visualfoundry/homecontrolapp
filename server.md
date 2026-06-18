@@ -693,3 +693,86 @@ No device changes needed — the Root CA is still valid.
   # Should show: PasswordAuthentication no
   ```
 - **Port 3443 not forwarded** — LAN direct access only; internet traffic uses 443
+
+---
+
+## Part 9 — Disaster-recovery backups
+
+The backup script (`scripts/backup.sh`) captures everything needed to restore the server from scratch:
+
+| Item | Location in archive |
+|---|---|
+| WordPress database | `db/wordpress.sql.gz` |
+| `wp-config.php` (all secrets) | `wordpress/wp-config.php` |
+| WordPress `.htaccess` | `wordpress/.htaccess` |
+| Media uploads | `wordpress/wp-content/uploads/` |
+| Installed plugins | `wordpress/wp-content/plugins/` |
+| Next.js env file | `app/next-app.env.local` |
+| State service env file | `app/home-control-services.env` |
+| PM2 ecosystem config | `app/ecosystem.config.js` |
+| Apache vhost config | `apache/wordpress.conf` |
+| Netplan static IP config | `netplan/00-installer-config.yaml` |
+| TLS certificate | `ssl/cert.pem` |
+| TLS private key ⚠️ | `ssl/key.pem` |
+| mkcert root CA | `ssl/mkcert-ca.pem` |
+| PM2 saved process list | `pm2/dump.pm2` |
+
+**Not included** (re-clone or re-download on restore): app code (GitHub), WordPress core (wordpress.org), `node_modules/`, `.next/` build.
+
+### Step 1 — One-time sudo setup (run once on the server)
+
+The backup script needs root to read `/etc/ssl`, `/etc/apache2`, and `wp-config.php`. Grant the administrator account passwordless sudo so the script can run non-interactively:
+
+```bash
+ssh administrator@192.168.1.91
+echo 'administrator ALL=(ALL) NOPASSWD: ALL' | sudo tee /etc/sudoers.d/administrator-nopasswd
+exit
+```
+
+### Step 2 — Run the backup
+
+SSH in and run the script. It re-execs itself with sudo automatically, then creates a timestamped archive in `~/`:
+
+```bash
+ssh administrator@192.168.1.91 \
+  "cd ~/homecontrolapp && git pull && bash scripts/backup.sh"
+```
+
+The script prints the archive path and size at the end, e.g.:
+
+```
+==> Backup complete!
+    Archive: /home/administrator/hca-backup-20260618-221927.tar.gz
+    Size:    12M
+```
+
+### Step 3 — Copy archive to your Mac
+
+Run this from your Mac (the key file lives in the theme directory):
+
+```bash
+cd "/Volumes/Project Local/Development/Local Sites/home-control-app/app/public/wp-content/themes/homecontrolapp"
+
+scp -i 192.168.1.91-key.pem \
+  administrator@192.168.1.91:/home/administrator/hca-backup-YYYYMMDD-HHMMSS.tar.gz \
+  ~/Desktop/
+```
+
+Replace `YYYYMMDD-HHMMSS` with the actual timestamp from Step 2.
+
+> **Keep the archive secure.** It contains the TLS private key and all application secrets. Store it on an encrypted drive or as an encrypted attachment — not in iCloud or git.
+
+### Restoring from a backup
+
+See `scripts/restore.sh`. Copy the archive to the new server first, then:
+
+```bash
+scp -i 192.168.1.91-key.pem \
+  ~/Desktop/hca-backup-YYYYMMDD-HHMMSS.tar.gz \
+  administrator@192.168.1.91:~/
+
+ssh administrator@192.168.1.91
+bash ~/homecontrolapp/scripts/restore.sh ~/hca-backup-YYYYMMDD-HHMMSS.tar.gz
+```
+
+The restore script: imports the DB, downloads WordPress core, restores all files and env, clones the app repo, runs `npm install && npm run build`, and starts PM2.
