@@ -19,10 +19,9 @@ interface TabBarProps {
   current: string;
   tabs: string[];       // the user's chosen tab ids (up to MAX_TABS)
   go: (id: string) => void;
-  dark: boolean;
 }
 
-export function TabBar({ current, tabs, go, dark }: TabBarProps) {
+export function TabBar({ current, tabs, go }: TabBarProps) {
   // Build the visible items: user tabs + pinned More
   const items = [
     ...tabs.slice(0, MAX_TABS).map((id) => ({
@@ -49,12 +48,10 @@ export function TabBar({ current, tabs, go, dark }: TabBarProps) {
         paddingRight: 6,
         display: 'flex',
         justifyContent: 'space-around',
-        background: dark ? 'rgba(20,20,18,0.82)' : 'rgba(255,255,255,0.82)',
+        background: 'var(--chrome-bg)',
         backdropFilter: 'blur(20px) saturate(180%)',
         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-        borderTop: dark
-          ? '0.5px solid rgba(255,255,255,0.08)'
-          : '0.5px solid rgba(0,0,0,0.07)',
+        borderTop: '0.5px solid var(--chrome-border)',
       }}
     >
       {items.map((item) => {

@@ -57,6 +57,10 @@
   --screen-px:  18px;
   --grid-gap:   12px;
   --section-gap: 22px;
+
+  /* Tab bar / sidebar frosted glass */
+  --chrome-bg:     rgba(255, 255, 255, 0.82);
+  --chrome-border: rgba(0, 0, 0, 0.07);
 }
 
 [data-theme="dark"] {
@@ -72,6 +76,9 @@
   --seg-bg:       #232320;
   --seg-active:   #3C3C38;
   --shadow:       0 1px 3px rgba(0, 0, 0, 0.4);
+
+  --chrome-bg:     rgba(20, 20, 18, 0.82);
+  --chrome-border: rgba(255, 255, 255, 0.08);
 
   --green: #34D159;
   --amber: #F0A92B;

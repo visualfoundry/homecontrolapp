@@ -17,10 +17,9 @@ interface SidebarProps {
   current: string;
   tabs: string[];
   go: (id: string) => void;
-  dark: boolean;
 }
 
-export function Sidebar({ current, tabs, go, dark }: SidebarProps) {
+export function Sidebar({ current, tabs, go }: SidebarProps) {
   const items = [
     ...tabs.slice(0, MAX_TABS).map((id) => ({
       id,
@@ -93,11 +92,7 @@ export function Sidebar({ current, tabs, go, dark }: SidebarProps) {
               cursor: 'pointer',
               width: '100%',
               textAlign: 'left',
-              background: on
-                ? dark
-                  ? 'rgba(255,255,255,0.08)'
-                  : 'rgba(0,0,0,0.06)'
-                : 'transparent',
+              background: on ? 'var(--sep)' : 'transparent',
               color: on ? 'var(--accent)' : 'var(--text2)',
               fontFamily: 'var(--font)',
               transition: 'background 0.15s',

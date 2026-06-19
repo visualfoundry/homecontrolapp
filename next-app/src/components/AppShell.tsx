@@ -166,12 +166,10 @@ function Shell() {
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
   }, [current]);
 
-  const dark = prefs.theme === 'dark';
-
   return (
     <div className="hca-shell">
       {/* Sidebar — hidden on phone, visible on tablet via CSS */}
-      <Sidebar current={current} tabs={prefs.tabs} go={go} dark={dark} />
+      <Sidebar current={current} tabs={prefs.tabs} go={go} />
 
       {/* Main content column */}
       <div className="hca-shell-main">
@@ -205,7 +203,6 @@ function Shell() {
             current={current}
             tabs={prefs.tabs}
             go={go}
-            dark={dark}
           />
         </div>
 
