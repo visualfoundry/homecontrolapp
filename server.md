@@ -24,6 +24,23 @@ The server must be on the **same local network as the EISYs** (192.168.1.x).
 
 ---
 
+## Table of Contents
+
+- [Part 1 — Wipe Windows and install Ubuntu Server](#part-1--wipe-windows-and-install-ubuntu-server)
+- [Part 2 — Install server dependencies](#part-2--install-server-dependencies)
+- [Part 3 — Set up WordPress](#part-3--set-up-wordpress)
+- [Part 4 — Deploy the app code](#part-4--deploy-the-app-code)
+- [Part 5 — Network and static IP](#part-5--network-and-static-ip)
+- [Part 6 — Security basics](#part-6--security-basics)
+- [Part 7 — SSL certificates](#part-7--ssl-certificates)
+- [Part 8 — Public access via app.dixons.net](#part-8--public-access-via-appdixonsnet)
+- [Part 9 — Disaster-recovery backups](#part-9--disaster-recovery-backups)
+- [Verification checklist](#verification-checklist)
+- [Managing the server day-to-day](#managing-the-server-day-to-day)
+- [URL summary](#url-summary)
+
+---
+
 ## Part 1 — Wipe Windows and install Ubuntu Server
 
 ### Step 1 — Create a bootable USB (on your Mac)
@@ -626,6 +643,13 @@ define( 'WP_SITEURL', 'https://' . $_SERVER['HTTP_HOST'] );
 
 The mkcert Root CA must be installed once per device before the app will load without a certificate warning.
 
+> **Prerequisite:** `mkcert-ca.pem` must be in the Apache web root so it can be served over plain HTTP (the device can't use HTTPS before the cert is trusted). If you get a 404 when scanning the QR code, run this on the server:
+> ```bash
+> sudo cp ~/mkcert-ca.pem /var/www/html/wordpress/mkcert-ca.pem
+> sudo chmod 644 /var/www/html/wordpress/mkcert-ca.pem
+> ```
+> The backup/restore scripts handle this automatically going forward.
+
 1. Open **Safari** on the iOS device and go to `http://192.168.1.91/mkcert-ca.pem`
 2. Tap **Allow** when prompted to download the profile
 3. Go to **Settings → General → VPN & Device Management** → tap the profile → **Install**
@@ -721,13 +745,21 @@ The backup script (`scripts/backup.sh`) captures everything needed to restore th
 
 ### Step 1 — One-time sudo setup (run once on the server)
 
-The backup script needs root to read `/etc/ssl`, `/etc/apache2`, and `wp-config.php`. Grant the administrator account passwordless sudo so the script can run non-interactively:
+The backup script re-execs itself with `sudo` to read `/etc/ssl`, `/etc/apache2`, and `wp-config.php`. Without this step, running the backup over non-interactive SSH will fail with:
+
+```
+sudo: A terminal is required to authenticate
+```
+
+This happens because non-interactive SSH has no TTY for sudo to prompt for a password. Fix it once by SSHing in interactively (where you can type your password) and creating a NOPASSWD rule:
 
 ```bash
 ssh administrator@192.168.1.91
 echo 'administrator ALL=(ALL) NOPASSWD: ALL' | sudo tee /etc/sudoers.d/administrator-nopasswd
 exit
 ```
+
+After this, `sudo` works without a password or TTY and the backup command in Step 2 runs cleanly over non-interactive SSH.
 
 ### Step 2 — Run the backup
 
