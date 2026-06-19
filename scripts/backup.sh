@@ -96,8 +96,12 @@ cp /etc/ssl/hca/cert.pem "$WORKDIR/ssl/cert.pem"
 cp /etc/ssl/hca/key.pem  "$WORKDIR/ssl/key.pem"
 
 # mkcert root CA (needed for new device setup)
+# Also served from web root at /mkcert-ca.pem for QR-code cert install flow
 if [[ -f "$REAL_HOME/mkcert-ca.pem" ]]; then
   cp "$REAL_HOME/mkcert-ca.pem" "$WORKDIR/ssl/mkcert-ca.pem"
+fi
+if [[ -f /var/www/html/wordpress/mkcert-ca.pem ]]; then
+  cp /var/www/html/wordpress/mkcert-ca.pem "$WORKDIR/ssl/mkcert-ca-webroot.pem"
 fi
 
 # ── 7. PM2 saved process list ────────────────────────────────────────────────

@@ -136,6 +136,9 @@ sudo chown root:root /etc/ssl/hca/key.pem
 
 if [[ -f "$SRC/ssl/mkcert-ca.pem" ]]; then
   cp "$SRC/ssl/mkcert-ca.pem" "$HOME/mkcert-ca.pem"
+  # Also serve from web root for QR-code cert install flow
+  sudo cp "$SRC/ssl/mkcert-ca.pem" /var/www/html/wordpress/mkcert-ca.pem
+  sudo chmod 644 /var/www/html/wordpress/mkcert-ca.pem
 fi
 
 echo "==> Testing Apache config..."
