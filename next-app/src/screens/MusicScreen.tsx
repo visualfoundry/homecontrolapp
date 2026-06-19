@@ -98,6 +98,10 @@ export function MusicScreen() {
   const selectDevice = async (device: SpotifyDevice) => {
     setDevicePickerOpen(false);
     await spotify.transferTo(device.id);
+    // When routing to the house speaker system, power on any speakers that are off
+    if (device.name.toLowerCase().includes('house music') && !anyOn) {
+      allOn();
+    }
   };
 
   // Prefer real-time SDK state when the in-browser player is active,
