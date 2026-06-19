@@ -69,3 +69,21 @@
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+
+// Weather widget — cloudy drift
+@keyframes cloudDrift {
+  0%, 100% { transform: translateX(-3px); }
+  50%       { transform: translateX(3px); }
+}
+
+// Weather widget — clear sky sun pulse (outer halo)
+@keyframes sunHalo {
+  0%, 100% { opacity: 0.25; transform: scale(1); }
+  50%       { opacity: 0.45; transform: scale(1.12); }
+}
+
+// Weather widget — star twinkle
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; }
+  50%       { opacity: 0.9; }
+}

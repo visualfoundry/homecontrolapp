@@ -26,6 +26,119 @@ function mapCondition(text: string): WeatherCondition {
   if (/(cloud|overcast|fog|mist|haze)/.test(t)) return 'Cloudy';
   return 'Clear';
 }
+
+// Map tomorrow.io weatherCode integer to a visual bucket + human label.
+const TOMORROW_LABELS: Record<number, string> = {
+  1000: 'Clear', 1100: 'Mostly Clear', 1101: 'Partly Cloudy', 1102: 'Mostly Cloudy',
+  1001: 'Cloudy', 2000: 'Foggy', 2100: 'Light Fog',
+  4000: 'Drizzle', 4001: 'Rain', 4200: 'Light Rain', 4201: 'Heavy Rain',
+  5000: 'Snow', 5001: 'Flurries', 5100: 'Light Snow', 5101: 'Heavy Snow',
+  6000: 'Freezing Drizzle', 6001: 'Freezing Rain',
+  6200: 'Light Freezing Rain', 6201: 'Heavy Freezing Rain',
+  7000: 'Ice Pellets', 7101: 'Heavy Ice Pellets', 7102: 'Light Ice Pellets',
+  8000: 'Thunderstorm',
+};
+function mapTomorrowIoCode(code: number): WeatherCondition {
+  if (code >= 4000 && code <= 4201) return 'Rain';
+  if (code === 8000) return 'Rain';
+  if (code >= 5000 && code <= 7102) return 'Snow';
+  if (code === 1001 || code === 1102 || code >= 2000) return 'Cloudy';
+  return 'Clear';
+}
+
+// Animated weather icon — replaces the old cycleWeather button.
+function WeatherWidget({ cond, skyDark }: { cond: WeatherCondition; skyDark: boolean }) {
+  const c = 'rgba(255,255,255,0.92)';
+  const box: React.CSSProperties = {
+    background: 'rgba(255,255,255,0.18)', width: 56, height: 56, borderRadius: 16,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden', position: 'relative', flexShrink: 0,
+  };
+
+  if (cond === 'Clear' && !skyDark) {
+    return (
+      <div style={box}>
+        {/* pulsing halo */}
+        <div style={{ position: 'absolute', width: 38, height: 38, borderRadius: '50%', background: c, animation: 'sunHalo 3s ease-in-out infinite' }} />
+        {/* rays ring — slow spin */}
+        <div style={{ position: 'absolute', width: 52, height: 52, animation: 'spin 16s linear infinite' }}>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} style={{
+              position: 'absolute', left: '50%', top: 0,
+              width: 2, height: 8, marginLeft: -1,
+              background: c, borderRadius: 1, opacity: 0.85,
+              transform: `rotate(${i * 45}deg)`,
+              transformOrigin: '1px 26px',
+            }} />
+          ))}
+        </div>
+        {/* sun disk */}
+        <div style={{ width: 20, height: 20, borderRadius: '50%', background: c, position: 'relative', zIndex: 1 }} />
+      </div>
+    );
+  }
+
+  if (cond === 'Clear' && skyDark) {
+    return (
+      <div style={box}>
+        {/* stars */}
+        {[{ x: 38, y: 10, s: 3, d: '0s' }, { x: 14, y: 16, s: 2, d: '0.8s' }, { x: 42, y: 36, s: 2.5, d: '1.5s' }].map((star, i) => (
+          <div key={i} style={{
+            position: 'absolute', left: star.x, top: star.y,
+            width: star.s, height: star.s, borderRadius: '50%',
+            background: c, animation: `twinkle 2s ease-in-out ${star.d} infinite`,
+          }} />
+        ))}
+        {/* moon crescent */}
+        <Icon name="moon" size={28} strokeWidth={1.6} style={{ color: c, position: 'relative', zIndex: 1 }} />
+      </div>
+    );
+  }
+
+  if (cond === 'Cloudy') {
+    return (
+      <div style={box}>
+        <div style={{ animation: 'cloudDrift 4s ease-in-out infinite' }}>
+          <Icon name="cloud" size={30} strokeWidth={1.6} style={{ color: c }} />
+        </div>
+      </div>
+    );
+  }
+
+  if (cond === 'Rain') {
+    return (
+      <div style={box}>
+        <div style={{ position: 'absolute', top: 8, animation: 'cloudDrift 4s ease-in-out infinite' }}>
+          <Icon name="cloud" size={22} strokeWidth={1.6} style={{ color: c }} />
+        </div>
+        {[0.42, 0.54, 0.48, 0.60, 0.50].map((dur, i) => (
+          <div key={i} style={{
+            position: 'absolute', left: `${16 + i * 9}%`, top: 0,
+            width: 1.5, height: 11, background: c, borderRadius: 2, opacity: 0.85,
+            animation: `rainfall ${dur}s linear ${(i * 0.09).toFixed(2)}s infinite`,
+          }} />
+        ))}
+      </div>
+    );
+  }
+
+  // Snow
+  return (
+    <div style={box}>
+      <div style={{ position: 'absolute', top: 8, animation: 'cloudDrift 4s ease-in-out infinite' }}>
+        <Icon name="cloud" size={22} strokeWidth={1.6} style={{ color: c }} />
+      </div>
+      {[2.0, 2.4, 1.8, 2.6, 2.2].map((dur, i) => (
+        <div key={i} style={{
+          position: 'absolute', left: `${12 + i * 10}%`, top: 0,
+          width: 5, height: 5, borderRadius: '50%', background: c,
+          animation: `snowfall ${dur}s linear ${(i * 0.22).toFixed(2)}s infinite`,
+        }} />
+      ))}
+    </div>
+  );
+}
+
 import type { SceneRoomTypeKey, TimeOfDayKey, ClimateZone } from '@/types/config';
 import { deviceTag } from '@/lib/debug';
 
@@ -424,11 +537,17 @@ export function HomeScreen() {
   const weatherHigh = numVar(config.weatherHighId);
   const weatherLow  = numVar(config.weatherLowId);
 
-  // Weather conditions come from a hub variable; map its text to a visual bucket.
+  // Weather conditions: tomorrow.io sends a numeric code via EISY variable.
+  // Try numeric value first; fall back to text mapping, then ambient mock state.
+  const condCode = config.weatherCondId
+    ? (st[config.weatherCondId] as VariableState | undefined)?.value
+    : undefined;
   const condRaw = config.weatherCondId
     ? (st[config.weatherCondId] as TextVariableState | undefined)?.text
     : undefined;
-  const cond = condRaw ? mapCondition(condRaw) : global.weather;
+  const cond = condCode !== undefined
+    ? mapTomorrowIoCode(condCode)
+    : condRaw ? mapCondition(condRaw) : global.weather;
   const skyDark = tod === 'Night';
   const clearSky: Record<string, string> = {
     Morning: 'linear-gradient(160deg,#ffd9a8 0%,#ffc1a0 35%,#a8c8e8 100%)',
@@ -445,17 +564,10 @@ export function HomeScreen() {
     ? (clearSky[tod] ?? clearSky.Day)
     : skyDark ? 'linear-gradient(160deg,#20252c 0%,#39414b 100%)' : (condDay[cond] ?? condDay.Cloudy);
   const darkText = skyDark || cond === 'Rain';
-  const wIcon: React.ComponentProps<typeof Icon>['name'] =
-    cond === 'Clear' ? (skyDark ? 'moon' : 'sun') : cond === 'Cloudy' ? 'cloud' : cond === 'Rain' ? 'rain' : 'snow';
-  const wLabel = condRaw ?? cond;
+  const wLabel = condCode !== undefined
+    ? (TOMORROW_LABELS[condCode] ?? cond)
+    : (condRaw ?? cond);
   const hiLo = `L:${weatherLow != null ? Math.round(weatherLow) : '–'}° H:${weatherHigh != null ? Math.round(weatherHigh) : '–'}°`;
-  const cycleWeather = () => {
-    const seq: GlobalState['weather'][] = ['Clear', 'Cloudy', 'Rain', 'Snow'];
-    const next = seq[(seq.indexOf(cond) + 1) % seq.length];
-    // Drive the conditions variable when present (mock toggle), else ambient state.
-    if (config.weatherCondId) setD(config.weatherCondId, { text: next });
-    else setD('_global', { weather: next });
-  };
 
   const sceneIds = (st['_scenes'] as ScenesListState).ids;
   const favIds   = (st['_favs']   as FavsState).ids;
@@ -514,13 +626,7 @@ export function HomeScreen() {
                 <div style={{ fontSize: 46, fontWeight: 300, letterSpacing: -2, lineHeight: 1, marginTop: 6 }}>{weatherTemp != null ? `${Math.round(weatherTemp)}°` : '–'}</div>
                 <div style={{ fontSize: 13.5, fontWeight: 500, opacity: 0.85, marginTop: 4 }}>{wLabel} · {hiLo}</div>
               </div>
-              <button onClick={cycleWeather} style={{
-                background: 'rgba(255,255,255,0.18)', border: 'none', cursor: 'pointer',
-                width: 56, height: 56, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: darkText ? '#fff' : '#1f3047', WebkitTapHighlightColor: 'transparent',
-              }}>
-                <Icon name={wIcon} size={32} strokeWidth={1.7} />
-              </button>
+              <WeatherWidget cond={cond} skyDark={skyDark} />
             </div>
           </div>
           <div style={{ padding: 10, background: 'rgba(255,255,255,0.16)', backdropFilter: 'blur(6px)', position: 'relative', zIndex: 1 }}>
