@@ -177,6 +177,19 @@ button {
   50%       { opacity: 0.9; }
 }
 
+/* Short-travel rain/snow for the 56px weather icon widget */
+@keyframes rainWidget {
+  from { transform: translateY(-8px); opacity: 0; }
+  20%  { opacity: 1; }
+  to   { transform: translateY(52px); opacity: 0.6; }
+}
+
+@keyframes snowWidget {
+  from { transform: translateY(-8px) translateX(0); opacity: 0; }
+  20%  { opacity: 1; }
+  to   { transform: translateY(52px) translateX(5px); opacity: 0.6; }
+}
+
 /* --app-height is set by SwRegistrar to window.innerHeight (px) — the only
    reliable way to get the true visible viewport height on iOS standalone PWA.
    Falls back to 100dvh on non-iOS / before JS runs. */

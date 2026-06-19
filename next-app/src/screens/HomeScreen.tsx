@@ -108,14 +108,14 @@ function WeatherWidget({ cond, skyDark }: { cond: WeatherCondition; skyDark: boo
   if (cond === 'Rain') {
     return (
       <div style={box}>
-        <div style={{ position: 'absolute', top: 8, animation: 'cloudDrift 4s ease-in-out infinite' }}>
-          <Icon name="cloud" size={22} strokeWidth={1.6} style={{ color: c }} />
+        <div style={{ position: 'absolute', top: 4, left: 15, animation: 'cloudDrift 4s ease-in-out infinite' }}>
+          <Icon name="cloud" size={26} strokeWidth={1.6} style={{ color: c }} />
         </div>
         {[0.42, 0.54, 0.48, 0.60, 0.50].map((dur, i) => (
           <div key={i} style={{
-            position: 'absolute', left: `${16 + i * 9}%`, top: 0,
-            width: 1.5, height: 11, background: c, borderRadius: 2, opacity: 0.85,
-            animation: `rainfall ${dur}s linear ${(i * 0.09).toFixed(2)}s infinite`,
+            position: 'absolute', left: `${8 + i * 10}px`, top: 22,
+            width: 1.5, height: 10, background: c, borderRadius: 2, opacity: 0.85,
+            animation: `rainWidget ${dur}s linear ${(i * 0.09).toFixed(2)}s infinite`,
           }} />
         ))}
       </div>
@@ -125,14 +125,14 @@ function WeatherWidget({ cond, skyDark }: { cond: WeatherCondition; skyDark: boo
   // Snow
   return (
     <div style={box}>
-      <div style={{ position: 'absolute', top: 8, animation: 'cloudDrift 4s ease-in-out infinite' }}>
-        <Icon name="cloud" size={22} strokeWidth={1.6} style={{ color: c }} />
+      <div style={{ position: 'absolute', top: 4, left: 15, animation: 'cloudDrift 4s ease-in-out infinite' }}>
+        <Icon name="cloud" size={26} strokeWidth={1.6} style={{ color: c }} />
       </div>
       {[2.0, 2.4, 1.8, 2.6, 2.2].map((dur, i) => (
         <div key={i} style={{
-          position: 'absolute', left: `${12 + i * 10}%`, top: 0,
+          position: 'absolute', left: `${8 + i * 10}px`, top: 22,
           width: 5, height: 5, borderRadius: '50%', background: c,
-          animation: `snowfall ${dur}s linear ${(i * 0.22).toFixed(2)}s infinite`,
+          animation: `snowWidget ${dur}s linear ${(i * 0.22).toFixed(2)}s infinite`,
         }} />
       ))}
     </div>
