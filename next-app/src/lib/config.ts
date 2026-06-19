@@ -386,7 +386,8 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
   const weatherTempId = ctrlIdByType('Weather Variable Current Temperature');
   const weatherHighId = ctrlIdByType('Weather Variable Current High Temperature');
   const weatherLowId  = ctrlIdByType('Weather Variable Current Low Temperature');
-  const weatherCondId = ctrlIdByType('Weather Variable Weather Conditions');
+  // Use ctrlIdByTitle — 6 controls share this control type, so ctrlIdByType is ambiguous.
+  const weatherCondId = ctrlIdByTitle('Weather Current Climate Conditions');
 
   // --- Pool hardware controls -----------------------------------------------
   // All pool data is variable-based (PG3 Device nodes n003_* don't exist in the service yet).
