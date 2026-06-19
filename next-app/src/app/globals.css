@@ -162,6 +162,21 @@ button {
   to   { opacity: 1; }
 }
 
+@keyframes cloudDrift {
+  0%, 100% { transform: translateX(-3px); }
+  50%       { transform: translateX(3px); }
+}
+
+@keyframes sunHalo {
+  0%, 100% { opacity: 0.25; transform: scale(1); }
+  50%       { opacity: 0.45; transform: scale(1.12); }
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; }
+  50%       { opacity: 0.9; }
+}
+
 /* --app-height is set by SwRegistrar to window.innerHeight (px) — the only
    reliable way to get the true visible viewport height on iOS standalone PWA.
    Falls back to 100dvh on non-iOS / before JS runs. */
