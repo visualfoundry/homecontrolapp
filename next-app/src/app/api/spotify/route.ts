@@ -51,6 +51,10 @@ export async function GET() {
         type: data.device.type as string,
         volumePct: data.device.volume_percent as number,
       } : null,
+      context: data.context ? {
+        type: data.context.type as string,
+        uri: data.context.uri as string,
+      } : null,
     });
   } catch (err) {
     return NextResponse.json(
@@ -91,8 +95,8 @@ export async function POST(req: NextRequest) {
         res = await spotifyFetch(`/play${dq}`, 'PUT', context_uri ? { context_uri } : undefined);
         break;
       case 'transfer':
-        // Transfer playback to device_id. play:true keeps playback running after transfer.
-        res = await spotifyFetch('', 'PUT', { device_ids: [device_id], play: true });
+        // play:false transfers the active device without starting/resuming playback.
+        res = await spotifyFetch('', 'PUT', { device_ids: [device_id], play: false });
         break;
       default:
         return NextResponse.json({ error: `unknown action: ${action}` }, { status: 400 });

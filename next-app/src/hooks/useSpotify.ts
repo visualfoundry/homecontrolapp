@@ -26,6 +26,7 @@ export interface SpotifyState {
   progressMs: number;
   track: SpotifyTrack | null;
   device: { id: string; name: string; type: string; volumePct: number } | null;
+  context: { type: string; uri: string } | null;
   loading: boolean;
   error: string | null;
 }
@@ -150,7 +151,7 @@ const POLL_MS = 5000;
 
 export function useSpotify(deviceId?: string | null) {
   const [state, setState] = useState<SpotifyState>({
-    isPlaying: false, progressMs: 0, track: null, device: null, loading: true, error: null,
+    isPlaying: false, progressMs: 0, track: null, device: null, context: null, loading: true, error: null,
   });
 
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -183,7 +184,7 @@ export function useSpotify(deviceId?: string | null) {
       const data = await res.json();
       // If the user recently paused, don't let a stale "playing" response override it.
       if (data.isPlaying && Date.now() < pausedUntil.current) return;
-      setState({ isPlaying: data.isPlaying, progressMs: data.progressMs ?? 0, track: data.track, device: data.device, loading: false, error: null });
+      setState({ isPlaying: data.isPlaying, progressMs: data.progressMs ?? 0, track: data.track, device: data.device, context: data.context ?? null, loading: false, error: null });
       if (data.isPlaying) startTicker(); else stopTicker();
     } catch (err) {
       setState(prev => ({ ...prev, loading: false, error: err instanceof Error ? err.message : 'fetch error' }));

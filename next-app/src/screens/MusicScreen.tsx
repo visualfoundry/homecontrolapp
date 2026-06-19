@@ -41,29 +41,41 @@ function LibraryGrid({ children }: { children: React.ReactNode }) {
   );
 }
 
-function LibraryCard({ uri, name, artUrl, sub, artCircle = false, onPlay }: {
+function LibraryCard({ uri, name, artUrl, sub, artCircle = false, isActive = false, onPlay }: {
   uri: string; name: string; artUrl: string | null; sub: string;
-  artCircle?: boolean;
+  artCircle?: boolean; isActive?: boolean;
   onPlay: (action: string, value?: number, context_uri?: string) => void;
 }) {
   return (
     <button onClick={() => onPlay('play_context', undefined, uri)} style={{
       background: 'var(--card)', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)',
-      border: 'none', cursor: 'pointer', padding: 0, overflow: 'hidden', textAlign: 'left',
+      border: isActive ? '2px solid #1DB954' : '2px solid transparent',
+      cursor: 'pointer', padding: 0, overflow: 'hidden', textAlign: 'left',
       WebkitTapHighlightColor: 'transparent',
     }}>
-      {artUrl ? (
-        <img src={artUrl} alt={name} style={{
-          width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block',
-          borderRadius: artCircle ? '50% 50% 0 0' : 0,
-        }} />
-      ) : (
-        <div style={{ width: '100%', aspectRatio: '1', background: 'var(--icon-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: artCircle ? '50% 50% 0 0' : 0 }}>
-          <Icon name="speaker" size={28} strokeWidth={1.5} />
-        </div>
-      )}
+      <div style={{ position: 'relative' }}>
+        {artUrl ? (
+          <img src={artUrl} alt={name} style={{
+            width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block',
+            borderRadius: artCircle ? '50% 50% 0 0' : 0,
+          }} />
+        ) : (
+          <div style={{ width: '100%', aspectRatio: '1', background: 'var(--icon-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: artCircle ? '50% 50% 0 0' : 0 }}>
+            <Icon name="speaker" size={28} strokeWidth={1.5} />
+          </div>
+        )}
+        {isActive && (
+          <div style={{
+            position: 'absolute', bottom: 6, right: 6,
+            background: '#1DB954', borderRadius: '50%',
+            width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Icon name="play" size={11} strokeWidth={2} style={{ color: '#fff', marginLeft: 1 }} />
+          </div>
+        )}
+      </div>
       <div style={{ padding: '8px 10px 10px' }}>
-        <div style={{ fontSize: 13, fontWeight: 640, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ fontSize: 13, fontWeight: isActive ? 700 : 640, color: isActive ? '#1DB954' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {name}
         </div>
         <div style={{ fontSize: 11.5, color: 'var(--text3)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -126,6 +138,12 @@ export function MusicScreen() {
   // Capture starting volumes + average when a global-slider drag begins
   const dragBaseVols = useRef<Map<string, number>>(new Map());
   const dragBaseAvg  = useRef<number>(0);
+
+  // Derive the active playlist uri and name from the polling context
+  const activePlaylistUri = spotify.context?.type === 'playlist' ? spotify.context.uri : null;
+  const activePlaylist = activePlaylistUri
+    ? library.playlists.find(pl => pl.uri === activePlaylistUri) ?? null
+    : null;
 
   const zones = config.musicZones.map(m => ({
     ...m,
@@ -215,6 +233,11 @@ export function MusicScreen() {
                   <div style={{ fontSize: 13, opacity: 0.8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {displayTrack.artist}
                   </div>
+                  {activePlaylist && (
+                    <div style={{ fontSize: 11, opacity: 0.6, marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      ▶ {activePlaylist.name}
+                    </div>
+                  )}
                 </>
               ) : (
                 <>
@@ -340,7 +363,8 @@ export function MusicScreen() {
               <LibraryGrid>
                 {library.playlists.map(pl => (
                   <LibraryCard key={pl.id} uri={pl.uri} name={pl.name} artUrl={pl.artUrl}
-                    sub={pl.owner || 'Playlist'} onPlay={spotify.command} />
+                    sub={pl.owner || 'Playlist'} isActive={pl.uri === activePlaylistUri}
+                    onPlay={spotify.command} />
                 ))}
               </LibraryGrid>
             </div>
