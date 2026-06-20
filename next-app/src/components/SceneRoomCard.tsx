@@ -196,11 +196,10 @@ export function SceneRoomCard({ room, a, scene, compact }: {
   const nightDim = room.nightDimId
     ? (nightDimRaw !== undefined ? !nightDimRaw : a.nightDim)
     : a.nightDim;
-  // Timer Wait variable: { on: true } = motion active (timer running), false = clear.
-  const motionRaw = st[room.timerWaitId ?? ''] as { on?: boolean } | undefined;
-  const motion = room.timerWaitId
-    ? (motionRaw?.on ?? a.motion)
-    : a.motion;
+  // Timer Wait is an integer variable: service may emit { value: 1/0 } or { on: bool }.
+  const motionRaw = st[room.timerWaitId ?? ''] as { on?: boolean; value?: number } | undefined;
+  const motionFromState = motionRaw?.on ?? (motionRaw?.value != null ? motionRaw.value > 0 : undefined);
+  const motion = room.timerWaitId ? (motionFromState ?? a.motion) : a.motion;
   // Door: variable gives { open: bool } (1=open, 0=closed); fall back to local state.
   const doorRaw = st[room.doorId ?? ''] as { open?: boolean; on?: boolean } | undefined;
   const doorOpen = room.doorId
