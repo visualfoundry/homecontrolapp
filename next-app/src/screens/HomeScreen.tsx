@@ -233,7 +233,7 @@ function LightFavTile({ id, label }: { id: string; label: string }) {
   };
   const toggle = () => setD(id, { on: !s.on, level: !s.on ? 100 : 0 });
   return (
-    <div data-control={deviceTag(label, id, config.controlStateIds)} style={{ gridColumn: 'span 2', position: 'relative', height: 96, borderRadius: 'var(--radius)', overflow: 'hidden', background: 'var(--slider-track)', touchAction: 'none', userSelect: 'none' }}>
+    <div className="hca-fav-wide" data-control={deviceTag(label, id, config.controlStateIds)} style={{ position: 'relative', height: 96, borderRadius: 'var(--radius)', overflow: 'hidden', background: 'var(--slider-track)', touchAction: 'none', userSelect: 'none' }}>
       <Slider value={displayLevel} onChange={onDrag} onCommit={onCommit} height={96} track="transparent" fill="linear-gradient(90deg,#f5b942,#ffd86b)" />
       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px', pointerEvents: 'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
@@ -257,7 +257,7 @@ function FanFavTile({ id, label }: { id: string; label: string }) {
   const setSpeed = (sp: number) => setD(id, { speed: sp as FanState['speed'], on: sp > 0 });
   const spinDuration = s.on ? `${1.4 - s.speed * 0.3}s` : undefined;
   return (
-    <div data-control={deviceTag(label, id, config.controlStateIds)} style={{ gridColumn: 'span 2' }}>
+    <div className="hca-fav-wide" data-control={deviceTag(label, id, config.controlStateIds)}>
       <Card style={{ padding: '12px 14px 10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -295,7 +295,7 @@ function SpeakerFavTile({ id, label }: { id: string; label: string }) {
   const toggle = () => setD(id, { on: !s.on, vol: !s.on ? (s.vol || 30) : s.vol });
   const name = speakerName(label);
   return (
-    <div data-control={deviceTag(label, id, config.controlStateIds)} style={{ gridColumn: 'span 2' }}>
+    <div className="hca-fav-wide" data-control={deviceTag(label, id, config.controlStateIds)}>
       <Card style={{ padding: '12px 14px 10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -327,7 +327,7 @@ function SceneFavTile({ id }: { id: string; label: string }) {
   const tod = (st['_global'] as GlobalState).timeOfDay as TimeOfDayKey;
   const scene = config.sceneSchedules[room.type as SceneRoomTypeKey]?.[tod] ?? '—';
   return (
-    <div data-control={deviceTag(room.name, id, config.controlStateIds)} style={{ gridColumn: 'span 2' }}>
+    <div className="hca-fav-wide" data-control={deviceTag(room.name, id, config.controlStateIds)}>
       <SceneRoomCard room={room} a={a} scene={scene} compact />
     </div>
   );

@@ -255,6 +255,11 @@ button {
   gap: var(--grid-gap);
 }
 
+/* Wide favorite tiles: span 2 on phone (2-col = full width),
+   span 3 on tablet (3-col = full width when stacked),
+   span 2 on large tablet (4-col = half width, two sit side by side). */
+.hca-fav-wide { grid-column: span 2; }
+
 /* =============================================================================
    Responsive breakpoints
    ============================================================================= */
@@ -272,6 +277,7 @@ button {
   .hca-sidebar     { display: flex; }
   .hca-tab-bar-phone { display: none; }
   .hca-tile-grid   { grid-template-columns: repeat(3, 1fr); }
+  .hca-fav-wide    { grid-column: span 3; }
 }
 
 /* Large tablet / iPad Pro 12.9" portrait and up */
@@ -283,4 +289,5 @@ button {
   }
 
   .hca-tile-grid { grid-template-columns: repeat(4, 1fr); }
+  .hca-fav-wide  { grid-column: span 2; }
 }
