@@ -509,8 +509,8 @@ export function HomeScreen() {
   const doorsLocked = config.doorsExterior.filter(d => (st[d.id] as LockState | undefined)?.locked).length;
   const peopleHome = config.people.filter(p => (st[p.id] as FlagState | undefined)?.on).length;
   const motionAlerts = config.motionSensors.filter(s => {
-    const rec = st[s.id] as { motion?: boolean } | undefined;
-    return rec?.motion;
+    const rec = st[s.id] as { motion?: boolean; on?: boolean } | undefined;
+    return rec?.motion ?? rec?.on ?? false;
   }).length;
   const avgTemp = config.climate.length
     ? (config.climate.reduce((sum, c) => sum + ((st[c.id] as { temp?: number } | undefined)?.temp ?? 72), 0) / config.climate.length).toFixed(1)
