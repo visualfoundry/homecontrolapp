@@ -52,12 +52,17 @@ type AuthState =
  *   1. Check session → 200 → render app immediately (no flash)
  */
 export function AuthGate({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
   const [state, setState] = useState<AuthState>('pending');
   const [error, setError] = useState('');
   const [sessionExpired, setSessionExpired] = useState(false);
   const usernameRef = useRef<HTMLInputElement>(null);
   // Lazy-init so it only runs in the browser (avoids SSR mismatch)
   const [passkeyLabel] = useState(() => getPasskeyLabel());
+
+  // Render nothing during SSR and initial hydration — the auth check is a
+  // client-only fetch, so there's nothing to show until the browser takes over.
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     fetch('/api/auth/check').then(async r => {
@@ -204,6 +209,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   // Render
   // ---------------------------------------------------------------------------
 
+  if (!mounted) return null;
   if (state === 'ok') return <>{children}</>;
   if (state === 'pending') return (
     <div style={wrapStyle}>

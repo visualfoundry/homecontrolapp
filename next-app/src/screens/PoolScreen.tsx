@@ -13,7 +13,7 @@ import { Segmented } from '@/components/Segmented';
 import { Tile } from '@/components/Tile';
 import { LargeTitle } from '@/components/LargeTitle';
 import { poolStep } from '@/lib/styles';
-import type { PoolState, PoolNodeState, PumpScheduleItem, HeaterScheduleItem, OutdoorState, ValvePosState } from '@/types/state';
+import type { PoolState, PoolNodeState, PumpScheduleItem, HeaterScheduleItem, OutdoorState, ValvePosState, PoolValveNodeState } from '@/types/state';
 import type { PoolValveDevice } from '@/types/config';
 
 const POOL_DEFAULT: PoolState = {
@@ -458,7 +458,12 @@ export function PoolScreen() {
               // Position stored under auto:valve:<id> — preserved across reseeds,
               // never sent as a command, never overwritten by SSE.
               const posKey = `auto:valve:${valve.id}`;
-              const valvePos = (st[posKey] as ValvePosState | undefined)?.position ?? 'Off';
+              const openNode = st[valve.openStateId] as PoolValveNodeState | undefined;
+              const closeNode = st[valve.closeStateId] as PoolValveNodeState | undefined;
+              const localPos = (st[posKey] as ValvePosState | undefined)?.position;
+              // Relay sub-node state from EISY is authoritative when available.
+              // localPos is the optimistic fallback during transitions (or for momentary relays).
+              const valvePos = openNode?.on ? 'Open' : closeNode?.on ? 'Closed' : localPos ?? 'Off';
               return (
                 <div key={valve.id} style={{
                   display: 'flex', alignItems: 'center', padding: '13px 16px', gap: 12,
@@ -475,13 +480,17 @@ export function PoolScreen() {
                     value={valvePos}
                     onChange={(pos) => {
                       setD(posKey, { position: pos as ValvePosState['position'] });
-                      if (pos === 'Open') {
-                        if (valve.openStateId)  postCommand(valve.openStateId,  { on: true });
-                        if (valve.closeStateId) postCommand(valve.closeStateId, { on: false });
-                      } else if (pos === 'Closed') {
-                        if (valve.closeStateId) postCommand(valve.closeStateId, { on: true });
-                        if (valve.openStateId)  postCommand(valve.openStateId,  { on: false });
-                      } else {
+                      if (pos === 'Open' && valve.openStateId) {
+                        postCommand(valve.openStateId, { on: true });
+                        for (const other of config.poolValves) {
+                          if (other.id !== valve.id) setD(`auto:valve:${other.id}`, { position: 'Off' as ValvePosState['position'] });
+                        }
+                      } else if (pos === 'Closed' && valve.closeStateId) {
+                        postCommand(valve.closeStateId, { on: true });
+                        for (const other of config.poolValves) {
+                          if (other.id !== valve.id) setD(`auto:valve:${other.id}`, { position: 'Off' as ValvePosState['position'] });
+                        }
+                      } else if (pos === 'Off') {
                         if (valve.openStateId)  postCommand(valve.openStateId,  { on: false });
                         if (valve.closeStateId) postCommand(valve.closeStateId, { on: false });
                       }
