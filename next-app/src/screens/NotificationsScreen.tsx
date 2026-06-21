@@ -5,6 +5,7 @@ import { LargeTitle } from '@/components/LargeTitle';
 import { Card, SectionTitle } from '@/components/Card';
 import { Toggle } from '@/components/Toggle';
 import { useHC, loadNotifPrefs, saveNotifPrefs } from '@/lib/store';
+import { PushPermission } from '@/components/PushPermission';
 import type { NotificationPrefs } from '@/types/config';
 
 function Row({
@@ -100,6 +101,13 @@ export function NotificationsScreen() {
               last={i === statusRows.length - 1}
             />
           ))}
+        </Card>
+      </div>
+
+      <div style={{ marginTop: 22 }}>
+        <SectionTitle>Device Alerts</SectionTitle>
+        <Card pad={false}>
+          <PushPermission last />
         </Card>
       </div>
     </div>

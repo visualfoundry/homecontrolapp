@@ -51,7 +51,7 @@ async function unsubscribePush(): Promise<void> {
  * (if not already granted) then subscribes. Turning it off unsubscribes.
  * Renders nothing if the browser doesn't support push.
  */
-export function PushPermission() {
+export function PushPermission({ last }: { last?: boolean }) {
   const [status, setStatus] = useState<NotificationPermission | 'unsupported' | null>(null);
   const [enabled, setEnabled] = useState(false);
 
@@ -94,16 +94,15 @@ export function PushPermission() {
   const denied = status === 'denied';
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', padding: '13px 16px' }}>
-      <div style={{ flex: 1 }}>
-        <span style={{ fontSize: 16, fontWeight: 520, color: 'var(--text)' }}>
-          Low battery alerts
-        </span>
-        {denied && (
-          <div style={{ fontSize: 13, color: 'var(--text2)', marginTop: 2 }}>
-            Blocked — enable in device Settings → Notifications
-          </div>
-        )}
+    <div style={{ display: 'flex', alignItems: 'center', padding: '13px 16px', gap: 12,
+      borderBottom: last ? 'none' : '0.5px solid var(--sep)' }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 16, fontWeight: 520, color: 'var(--text)' }}>Low battery alerts</div>
+        <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 2 }}>
+          {denied
+            ? 'Blocked — enable in device Settings → Notifications'
+            : 'Get notified when a sensor battery is low'}
+        </div>
       </div>
       <Toggle on={enabled} onChange={denied ? undefined : handleToggle} size={0.85} />
     </div>
