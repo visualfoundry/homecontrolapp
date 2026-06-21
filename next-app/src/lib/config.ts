@@ -413,12 +413,12 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
   // All pool data is variable-based (PG3 Device nodes n003_* don't exist in the service yet).
   // Future: when the PG3/OmniLogic adapter is live, swap poolNodeId back to WP 626 (n003_bow1)
   // to get ph, orp, saltLevel, saltLevelAvg, heaterFiring from PoolNodeState.
-  const poolNodeId           = ctrlIdByTitle('Pool Temperature');           // WP 622 — eisy0/var/128, {value: °F}
-  const poolChlorinatorId    = ctrlIdByTitle('Pool Chlorinator');           // eisy0/var/69, {value: 1=on}
-  const poolHeaterId         = ctrlIdByTitle('Pool Heater');                // WP 533 — eisy0/var/5, {value: 1=on}
-  const poolPumpNodeId       = ctrlIdByTitle('Pool Pump');                  // WP 623 — eisy0/var/123, {value: 1=on}
-  const poolPumpSpeedId      = ctrlIdByTitle('Pool Pump Speed');            // WP 273 — eisy0/var/124, {value: 0-100}
-  const poolHeaterSetpointId = ctrlIdByTitle('Pool Heater Setpoint');       // WP 624 — eisy0/var/126, {value: °F}
+  const poolNodeId           = ctrlIdByTitle('Pool Temperature');           // WP 622 — eisy0/var/173, {value: °F}
+  const poolChlorinatorId    = ctrlIdByTitle('Pool Chlorinator');           // WP 274 — eisy0/var/171, {value: 1=on}
+  const poolHeaterId         = ctrlIdByTitle('Pool Heater');                // WP 534 — eisy0/var/168, {value: 1=on}
+  const poolPumpNodeId       = ctrlIdByTitle('Pool Pump');                  // WP 623 — eisy0/var/165, {value: 1=on}
+  const poolPumpSpeedId      = ctrlIdByTitle('Pool Pump Speed');            // WP 273 — eisy0/var/166, {value: 0-100}
+  const poolHeaterSetpointId = ctrlIdByTitle('Pool Heater Setpoint');       // WP 624 — eisy0/var/169, {value: °F}
   const poolHeaterFiringId   = ctrlIdByTitle('Pool Heater Firing');         // {value: 1=firing}
   const poolPhId             = ctrlIdByTitle('Pool pH');                    // {value: N, ÷10 if >14}
   const poolOrpId            = ctrlIdByTitle('Pool ORP');                   // {value: N mV}
