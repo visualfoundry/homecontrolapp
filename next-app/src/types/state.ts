@@ -170,6 +170,11 @@ export interface TextVariableState {
   text: string;
 }
 
+/** Commanded position for a pool valve — stored under auto:valve:<id>, never sent to hardware. */
+export interface ValvePosState {
+  position: 'Open' | 'Closed' | 'Off';
+}
+
 // ---------------------------------------------------------------------------
 // Union of all record types that can live in the flat state map
 // ---------------------------------------------------------------------------
@@ -195,7 +200,8 @@ export type DeviceRecord =
   | PersonState
   | AutomationState
   | VariableState
-  | TextVariableState;
+  | TextVariableState
+  | ValvePosState;
 
 /** The full flat state map keyed by device id or special key. */
 export type StateMap = Record<string, DeviceRecord>;
