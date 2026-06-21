@@ -172,6 +172,8 @@ export interface ControlFieldsRaw {
   controlAddress: string | null;
   controlVariableId: number | null;
   controlVariableValueCopy: boolean | null;
+  controlVariableHardwareValueOpen:  number | null;
+  controlVariableHardwareValueClose: number | null;
   controlType:  { nodes: ControlTypeNodeRaw[] } | null;
   controlPlace: { nodes: PlaceNodeRaw[] } | null;
 }
@@ -203,6 +205,7 @@ export interface IrrigationProgram { id: string; name: string }
 export interface IrrigationZone    { id: string; name: string }
 export interface SensorDevice  { id: string; name: string }
 export interface OutdoorDevice { id: string; name: string; kind: 'toggle' | 'dimmer'; icon?: IconName }
+export interface PoolValveDevice { id: string; name: string; openValue: number; closeValue: number }
 export interface SettingItem   { id: string; name: string }
 
 export type SceneRoomTypeKey = 'bedroom' | 'bath' | 'living' | 'utility' | 'hall';
@@ -231,6 +234,7 @@ export interface AppConfig {
   leakSensors: SensorDevice[];
   motionSensors: SensorDevice[];
   outdoorsPool: OutdoorDevice[];
+  poolValves: PoolValveDevice[];
   outdoorsBackyard: OutdoorDevice[];
   garage: SettingItem[];
   garageDoors: ExteriorDoor[];

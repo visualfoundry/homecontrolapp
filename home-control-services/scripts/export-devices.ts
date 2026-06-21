@@ -137,6 +137,7 @@ function titleToClass(ctTitle: string): DeviceClass {
   if (t.startsWith('weather variable'))           return 'numeric-var';
   if (t.startsWith('current-'))                   return 'numeric-var';
   if (t === 'pool')                               return 'toggle';
+  if (t === 'pool valve')                         return 'pool-valve';
   if (t === 'pool device')                        return 'numeric-var'; // temperature sensor
   if (t === 'pool pump')                          return 'numeric-var'; // 0=off, 35-100=speed%
   if (t === 'pool heater')                          return 'numeric-var'; // 0=off, 1=on; setpoint 60-95

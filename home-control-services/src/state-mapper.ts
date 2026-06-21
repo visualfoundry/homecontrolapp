@@ -30,7 +30,8 @@ export type DeviceClass =
   | 'numeric-var'
   | 'pool-controller'
   | 'motion-battery'
-  | 'leak-battery';
+  | 'leak-battery'
+  | 'pool-valve';
 
 export interface DeviceEntry {
   /** 'device' = Insteon node; 'variable' = ISY integer/state variable */
@@ -104,6 +105,9 @@ export function nodeToState(
 
     case 'leak-sensor':
       return { wet: st > 0 };
+
+    case 'pool-valve':
+      return { value: st };
 
     case 'speaker':
       return { on: st > 0, vol: Math.round((st / 255) * 100) };
@@ -241,6 +245,13 @@ export function patchToNodeCommand(
 
     case 'lock':
       if ('locked' in patch) return { cmd: patch.locked ? 'DON' : 'DOF' };
+      return null;
+
+    case 'pool-valve':
+      if ('value' in patch) {
+        const v = patch.value as number;
+        return v > 0 ? { cmd: 'DON', value: v } : { cmd: 'DOF' };
+      }
       return null;
 
     case 'thermostat': {

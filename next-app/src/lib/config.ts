@@ -250,6 +250,17 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  // --- Pool valves: control type 'Pool Valve' (hardware address, open/close values) ---
+  const poolValves = controls
+    .filter(n => (n.controlFields?.controlType?.nodes[0]?.title ?? '') === 'Pool Valve')
+    .map(n => ({
+      id: toId(n),
+      name: n.title,
+      openValue:  Number(n.controlFields?.controlVariableHardwareValueOpen  ?? 0),
+      closeValue: Number(n.controlFields?.controlVariableHardwareValueClose ?? 0),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
   // --- Backyard controls: places Back Yard/Porch/Pergola + specific types --
   const BACKYARD_PLACES = new Set(['Back Yard', 'Porch', 'Pergola']);
   const BACKYARD_CT_TITLES = new Set(['Outdoors', 'Fan', 'TV']);
@@ -485,6 +496,7 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     irrigationZones,
     motionSensors,
     outdoorsPool,
+    poolValves,
     outdoorsBackyard,
     whoIsHome,
     settingsSecurity,

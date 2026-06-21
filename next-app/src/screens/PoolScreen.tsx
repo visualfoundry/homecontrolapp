@@ -8,10 +8,12 @@ import type { IconName } from '@/components/Icon';
 import { Card, SectionTitle } from '@/components/Card';
 import { Toggle } from '@/components/Toggle';
 import { Slider } from '@/components/Slider';
+import { Segmented } from '@/components/Segmented';
 import { Tile } from '@/components/Tile';
 import { LargeTitle } from '@/components/LargeTitle';
 import { poolStep } from '@/lib/styles';
-import type { PoolState, PoolNodeState, PumpScheduleItem, HeaterScheduleItem, OutdoorState } from '@/types/state';
+import type { PoolState, PoolNodeState, PumpScheduleItem, HeaterScheduleItem, OutdoorState, PoolValveState } from '@/types/state';
+import type { PoolValveDevice } from '@/types/config';
 
 const POOL_DEFAULT: PoolState = {
   pumpOn: false, pumpSpeed: 65,
@@ -445,6 +447,45 @@ export function PoolScreen() {
           })}
         </div>
       </div>
+
+      {/* Valves */}
+      {config.poolValves.length > 0 && (
+        <div style={{ marginTop: 22 }}>
+          <SectionTitle>Valves</SectionTitle>
+          <Card pad={false}>
+            {config.poolValves.map((valve, i) => {
+              const vs = st[valve.id] as PoolValveState | undefined;
+              const raw = vs?.value ?? 0;
+              const valvePos: 'Open' | 'Closed' | 'Off' =
+                raw === valve.openValue && raw !== 0 ? 'Open'
+                : raw === valve.closeValue && raw !== 0 ? 'Closed'
+                : 'Off';
+              return (
+                <div key={valve.id} style={{
+                  display: 'flex', alignItems: 'center', padding: '13px 16px', gap: 12,
+                  borderBottom: i < config.poolValves.length - 1 ? '0.5px solid var(--sep)' : 'none',
+                }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 16, fontWeight: 520, color: 'var(--text)' }}>{valve.name}</div>
+                    <div style={{ fontSize: 12, color: valvePos === 'Open' ? '#2bb3a3' : valvePos === 'Closed' ? 'var(--red)' : 'var(--text2)', marginTop: 2, fontWeight: 560 }}>
+                      {valvePos}
+                    </div>
+                  </div>
+                  <Segmented
+                    options={['Off', 'Closed', 'Open']}
+                    value={valvePos}
+                    onChange={(pos) => {
+                      if (pos === 'Open')   setD(valve.id, { value: valve.openValue });
+                      else if (pos === 'Closed') setD(valve.id, { value: valve.closeValue });
+                      else                  setD(valve.id, { value: 0 });
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </Card>
+        </div>
+      )}
 
       {/* Pump */}
       <div style={{ marginTop: 22 }}>

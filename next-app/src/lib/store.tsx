@@ -187,6 +187,7 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
     for (const r of config.lightSceneRooms) seed[r.id] = { on: false };
     for (const f of config.fans) seed[f.id] = { on: false, speed: 0 };
     for (const o of config.outdoorsPool) seed[o.id] = { on: false };
+    for (const v of config.poolValves) seed[v.id] = { value: 0 };
     for (const o of config.outdoorsBackyard) seed[o.id] = { on: false };
     seed['pool'] = {
       pumpOn: false, pumpSpeed: 65,

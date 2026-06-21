@@ -60,6 +60,10 @@ export interface MotionSensorState {
   lowBattery?: boolean;
 }
 
+export interface PoolValveState {
+  value: number; // raw ST from device; compare to PoolValveDevice.openValue / closeValue
+}
+
 export interface OutdoorState {
   on: boolean;
   level?: number; // only for dimmable outdoor (ob-pergola-l)
