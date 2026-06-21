@@ -13,15 +13,7 @@ export function SwRegistrar() {
     );
 
     if ('serviceWorker' in navigator) {
-      if (process.env.NODE_ENV === 'production') {
-        navigator.serviceWorker.register('/sw.js').catch(() => {});
-      } else {
-        // In development, unregister any previously installed SW so it stops
-        // intercepting requests and serving stale cached chunks.
-        navigator.serviceWorker.getRegistrations().then((regs) => {
-          regs.forEach((r) => r.unregister());
-        });
-      }
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
   }, []);
   return null;
