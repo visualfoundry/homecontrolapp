@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { Toggle } from '@/components/Toggle';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -30,18 +31,29 @@ async function subscribePush(): Promise<boolean> {
   return res.ok;
 }
 
+async function unsubscribePush(): Promise<void> {
+  if (!('serviceWorker' in navigator)) return;
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.getSubscription();
+  if (!sub) return;
+  await fetch('/api/push/subscribe', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ endpoint: sub.endpoint }),
+  });
+  await sub.unsubscribe();
+}
+
 /**
- * PushPermission — settings row for managing push notification permission.
+ * PushPermission — settings row with a Toggle for push notifications.
  *
- * Renders nothing if the browser doesn't support push notifications at all.
- * Otherwise always renders, showing the current permission status:
- *   default  → "Enable" button
- *   granted  → "Enabled" status label (re-syncs subscription silently)
- *   denied   → "Blocked — change in Settings" label
+ * Toggle is OFF by default. Turning it on requests browser permission
+ * (if not already granted) then subscribes. Turning it off unsubscribes.
+ * Renders nothing if the browser doesn't support push.
  */
 export function PushPermission() {
   const [status, setStatus] = useState<NotificationPermission | 'unsupported' | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
     if (!('Notification' in window) || !('PushManager' in window)) {
@@ -50,75 +62,50 @@ export function PushPermission() {
     }
     const p = Notification.permission;
     setStatus(p);
-    if (p === 'granted') void subscribePush();
+    if (p === 'granted') {
+      // Check if actively subscribed
+      navigator.serviceWorker.ready.then(reg =>
+        reg.pushManager.getSubscription().then(sub => {
+          if (sub) {
+            setEnabled(true);
+            void subscribePush(); // re-sync with server
+          }
+        })
+      );
+    }
   }, []);
 
-  // Not supported or still detecting
   if (!status || status === 'unsupported') return null;
 
-  async function handleEnable() {
-    setBusy(true);
-    const permission = await Notification.requestPermission();
-    setStatus(permission);
-    if (permission === 'granted') await subscribePush();
-    setBusy(false);
+  async function handleToggle(next: boolean) {
+    if (next) {
+      const permission = await Notification.requestPermission();
+      setStatus(permission);
+      if (permission === 'granted') {
+        const ok = await subscribePush();
+        setEnabled(ok);
+      }
+    } else {
+      await unsubscribePush();
+      setEnabled(false);
+    }
   }
 
-  const rowStyle: React.CSSProperties = {
-    display: 'flex', alignItems: 'center', padding: '13px 16px',
-  };
+  const denied = status === 'denied';
 
-  const labelStyle: React.CSSProperties = {
-    flex: 1, fontSize: 16, fontWeight: 520, color: 'var(--text)',
-  };
-
-  const subStyle: React.CSSProperties = {
-    fontSize: 13, color: 'var(--text2)', marginTop: 2,
-  };
-
-  if (status === 'granted') {
-    return (
-      <div style={rowStyle}>
-        <div style={{ flex: 1 }}>
-          <div style={labelStyle}>Low battery alerts</div>
-          <div style={subStyle}>Push notifications are enabled</div>
-        </div>
-        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--green)' }}>Enabled</span>
-      </div>
-    );
-  }
-
-  if (status === 'denied') {
-    return (
-      <div style={rowStyle}>
-        <div style={{ flex: 1 }}>
-          <div style={labelStyle}>Low battery alerts</div>
-          <div style={subStyle}>Blocked — enable in device Settings → Notifications</div>
-        </div>
-      </div>
-    );
-  }
-
-  // 'default' — not yet asked
   return (
-    <div style={rowStyle}>
+    <div style={{ display: 'flex', alignItems: 'center', padding: '13px 16px' }}>
       <div style={{ flex: 1 }}>
-        <div style={labelStyle}>Low battery alerts</div>
-        <div style={subStyle}>Get notified when a sensor battery is low</div>
+        <span style={{ fontSize: 16, fontWeight: 520, color: 'var(--text)' }}>
+          Low battery alerts
+        </span>
+        {denied && (
+          <div style={{ fontSize: 13, color: 'var(--text2)', marginTop: 2 }}>
+            Blocked — enable in device Settings → Notifications
+          </div>
+        )}
       </div>
-      <button
-        onClick={handleEnable}
-        disabled={busy}
-        style={{
-          padding: '7px 14px', borderRadius: 999, border: 'none',
-          background: 'var(--accent)', color: '#fff',
-          fontSize: 13, fontWeight: 600, cursor: busy ? 'default' : 'pointer',
-          opacity: busy ? 0.6 : 1,
-          WebkitTapHighlightColor: 'transparent',
-        }}
-      >
-        {busy ? 'Enabling…' : 'Enable'}
-      </button>
+      <Toggle on={enabled} onChange={denied ? undefined : handleToggle} size={0.85} />
     </div>
   );
 }
