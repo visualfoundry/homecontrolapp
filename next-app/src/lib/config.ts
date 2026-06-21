@@ -250,15 +250,24 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  // --- Pool valves: control type 'Pool Valve' (hardware address, open/close values) ---
+  // --- Pool valves: control type 'Pool Valve' (hardware address, open/close sub-nodes) ---
+  // openValue/closeValue are Insteon sub-node numbers (1, 2, 3…) on the base hardware address.
+  // Each sub-node is a separate EISY address: eisy{N}/{baseAddr} {subNode}.
   const poolValves = controls
     .filter(n => (n.controlFields?.controlType?.nodes[0]?.title ?? '') === 'Pool Valve')
-    .map(n => ({
-      id: toId(n),
-      name: n.title,
-      openValue:  Number(n.controlFields?.controlVariableHardwareValueOpen  ?? 0),
-      closeValue: Number(n.controlFields?.controlVariableHardwareValueClose ?? 0),
-    }))
+    .map(n => {
+      const cf = n.controlFields!;
+      const eisyIdx = cf.controlIsy?.[0] ?? '0';
+      const baseAddr = (cf.controlAddress ?? '').trim();
+      const openSub  = Number(cf.controlVariableHardwareValueOpen  ?? 0);
+      const closeSub = Number(cf.controlVariableHardwareValueClose ?? 0);
+      return {
+        id: toId(n),
+        name: n.title,
+        openStateId:  openSub  > 0 && baseAddr ? `eisy${eisyIdx}/${baseAddr} ${openSub}`  : '',
+        closeStateId: closeSub > 0 && baseAddr ? `eisy${eisyIdx}/${baseAddr} ${closeSub}` : '',
+      };
+    })
     .sort((a, b) => a.name.localeCompare(b.name));
 
   // --- Backyard controls: places Back Yard/Porch/Pergola + specific types --

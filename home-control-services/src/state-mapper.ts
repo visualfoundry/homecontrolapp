@@ -107,7 +107,7 @@ export function nodeToState(
       return { wet: st > 0 };
 
     case 'pool-valve':
-      return { value: st };
+      return { on: st > 0 };
 
     case 'speaker':
       return { on: st > 0, vol: Math.round((st / 255) * 100) };
@@ -248,10 +248,7 @@ export function patchToNodeCommand(
       return null;
 
     case 'pool-valve':
-      if ('value' in patch) {
-        const v = patch.value as number;
-        return v > 0 ? { cmd: 'DON', value: v } : { cmd: 'DOF' };
-      }
+      if ('on' in patch) return { cmd: patch.on ? 'DON' : 'DOF' };
       return null;
 
     case 'thermostat': {

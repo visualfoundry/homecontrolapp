@@ -41,6 +41,8 @@ const CONTROLS_QUERY = /* GraphQL */ `
           controlIsyControlType
           controlAddress
           controlVariableId
+          controlVariableHardwareValueOpen
+          controlVariableHardwareValueClose
           controlType {
             nodes {
               ... on ControlType {
@@ -62,6 +64,8 @@ interface ControlNode {
     controlIsyControlType: string | null;
     controlAddress: string | null;
     controlVariableId: number | null;
+    controlVariableHardwareValueOpen: number | null;
+    controlVariableHardwareValueClose: number | null;
     controlType: {
       nodes: Array<{ title: string }>;
     } | null;
@@ -168,16 +172,28 @@ function buildDevicesMap(controls: ControlNode[]): {
     const cls = titleToClass(ctTitle);
 
     if (cf.controlIsyControlType === 'Device' && cf.controlAddress) {
-      // WP stores the 3-byte Insteon base address; EISY REST API requires the
-      // full node address. All primary nodes are sub-node 1.
-      const address = `${cf.controlAddress} 1`;
-      const stateId = `eisy${eisyIdx}/${address}`;
-      devices[stateId] = {
-        type: 'device',
-        eisyIdx,
-        class: cls,
-        address,
-      };
+      if (cls === 'pool-valve') {
+        // Pool valves: each WP control has two sub-nodes (open and close relay).
+        // openValue/closeValue are the sub-node numbers on the base hardware address.
+        const baseAddr = cf.controlAddress.trim();
+        const openSub  = cf.controlVariableHardwareValueOpen;
+        const closeSub = cf.controlVariableHardwareValueClose;
+        for (const sub of [openSub, closeSub]) {
+          if (sub == null || sub === 0) continue;
+          const address = `${baseAddr} ${sub}`;
+          const stateId = `eisy${eisyIdx}/${address}`;
+          if (!devices[stateId]) {
+            devices[stateId] = { type: 'device', eisyIdx, class: 'pool-valve', address };
+          }
+        }
+      } else {
+        // Standard Insteon device: WP stores the 3-byte base address; primary node is sub-node 1.
+        // PG3/plugin nodes use a different format (e.g. "n003_bow1") — keep as-is.
+        const isInsteon = /^[0-9A-F]{2}( [0-9A-F]{2}){2}$/i.test(cf.controlAddress.trim());
+        const address = isInsteon ? `${cf.controlAddress} 1` : cf.controlAddress;
+        const stateId = `eisy${eisyIdx}/${address}`;
+        devices[stateId] = { type: 'device', eisyIdx, class: cls, address };
+      }
     } else if (cf.controlIsyControlType === 'Variable' && cf.controlVariableId != null) {
       const stateId = `eisy${eisyIdx}/var/${cf.controlVariableId}`;
       // varType determined by probing — placeholder for now

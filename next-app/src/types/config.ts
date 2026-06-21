@@ -205,7 +205,12 @@ export interface IrrigationProgram { id: string; name: string }
 export interface IrrigationZone    { id: string; name: string }
 export interface SensorDevice  { id: string; name: string }
 export interface OutdoorDevice { id: string; name: string; kind: 'toggle' | 'dimmer'; icon?: IconName }
-export interface PoolValveDevice { id: string; name: string; openValue: number; closeValue: number }
+export interface PoolValveDevice {
+  id: string;
+  name: string;
+  openStateId: string;  // EISY state ID for the relay sub-node that opens the valve
+  closeStateId: string; // EISY state ID for the relay sub-node that closes the valve
+}
 export interface SettingItem   { id: string; name: string }
 
 export type SceneRoomTypeKey = 'bedroom' | 'bath' | 'living' | 'utility' | 'hall';

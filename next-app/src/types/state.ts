@@ -60,9 +60,8 @@ export interface MotionSensorState {
   lowBattery?: boolean;
 }
 
-export interface PoolValveState {
-  value: number; // raw ST from device; compare to PoolValveDevice.openValue / closeValue
-}
+// Each pool valve sub-node (open/close relay) is a plain toggle device.
+export type PoolValveNodeState = { on: boolean };
 
 export interface OutdoorState {
   on: boolean;

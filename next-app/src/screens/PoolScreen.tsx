@@ -12,7 +12,7 @@ import { Segmented } from '@/components/Segmented';
 import { Tile } from '@/components/Tile';
 import { LargeTitle } from '@/components/LargeTitle';
 import { poolStep } from '@/lib/styles';
-import type { PoolState, PoolNodeState, PumpScheduleItem, HeaterScheduleItem, OutdoorState, PoolValveState } from '@/types/state';
+import type { PoolState, PoolNodeState, PumpScheduleItem, HeaterScheduleItem, OutdoorState } from '@/types/state';
 import type { PoolValveDevice } from '@/types/config';
 
 const POOL_DEFAULT: PoolState = {
@@ -454,12 +454,10 @@ export function PoolScreen() {
           <SectionTitle>Valves</SectionTitle>
           <Card pad={false}>
             {config.poolValves.map((valve, i) => {
-              const vs = st[valve.id] as PoolValveState | undefined;
-              const raw = vs?.value ?? 0;
+              const openOn  = !!(st[valve.openStateId]  as { on?: boolean } | undefined)?.on;
+              const closeOn = !!(st[valve.closeStateId] as { on?: boolean } | undefined)?.on;
               const valvePos: 'Open' | 'Closed' | 'Off' =
-                raw === valve.openValue && raw !== 0 ? 'Open'
-                : raw === valve.closeValue && raw !== 0 ? 'Closed'
-                : 'Off';
+                openOn ? 'Open' : closeOn ? 'Closed' : 'Off';
               return (
                 <div key={valve.id} style={{
                   display: 'flex', alignItems: 'center', padding: '13px 16px', gap: 12,
@@ -475,9 +473,16 @@ export function PoolScreen() {
                     options={['Closed', 'Off', 'Open']}
                     value={valvePos}
                     onChange={(pos) => {
-                      if (pos === 'Open')        setD(valve.id, { value: valve.openValue });
-                      else if (pos === 'Closed') setD(valve.id, { value: valve.closeValue });
-                      else                       setD(valve.id, { value: 0 });
+                      if (pos === 'Open') {
+                        if (valve.openStateId)  setD(valve.openStateId,  { on: true });
+                        if (valve.closeStateId) setD(valve.closeStateId, { on: false });
+                      } else if (pos === 'Closed') {
+                        if (valve.closeStateId) setD(valve.closeStateId, { on: true });
+                        if (valve.openStateId)  setD(valve.openStateId,  { on: false });
+                      } else {
+                        if (valve.openStateId)  setD(valve.openStateId,  { on: false });
+                        if (valve.closeStateId) setD(valve.closeStateId, { on: false });
+                      }
                     }}
                   />
                 </div>
