@@ -55,15 +55,7 @@ async function pollEisy(eisyIdx: number): Promise<void> {
     const stateId = `eisy${eisyIdx}/${address}`;
     const entry = devices[stateId];
     if (!entry) continue;
-    const state = nodeToState(entry.class, props);
-    // Insteon motion sensors: sub-node 2 (address ends " 1" → " 2") reports battery low.
-    if (entry.class === 'motion-sensor' && address.endsWith(' 1')) {
-      const battProps = nodeStatus.get(address.slice(0, -1) + '2');
-      if (battProps !== undefined) {
-        (state as Record<string, unknown>).lowBattery = (battProps.get('ST') ?? 0) > 0;
-      }
-    }
-    applyPatch(stateId, state);
+    applyPatch(stateId, nodeToState(entry.class, props));
   }
 
   // Integer variables (type 1) + state variables (type 2)
