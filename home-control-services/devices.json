@@ -2327,6 +2327,12 @@
     "class": "motion-sensor",
     "address": "37 A9 3D 1"
   },
+  "eisy4/37 A9 3D 2": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "motion-battery",
+    "address": "37 A9 3D 2"
+  },
   "eisy4/37 B3 DC 1": {
     "type": "device",
     "eisyIdx": 4,

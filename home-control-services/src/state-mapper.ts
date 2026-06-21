@@ -28,7 +28,8 @@ export type DeviceClass =
   | 'thermostat'
   | 'flag'
   | 'numeric-var'
-  | 'pool-controller';
+  | 'pool-controller'
+  | 'motion-battery';
 
 export interface DeviceEntry {
   /** 'device' = Insteon node; 'variable' = ISY integer/state variable */

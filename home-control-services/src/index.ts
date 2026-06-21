@@ -55,7 +55,17 @@ async function pollEisy(eisyIdx: number): Promise<void> {
     const stateId = `eisy${eisyIdx}/${address}`;
     const entry = devices[stateId];
     if (!entry) continue;
-    applyPatch(stateId, nodeToState(entry.class, props));
+    const state = nodeToState(entry.class, props);
+    // Opt-in battery: if a 'motion-battery' entry exists for the secondary node
+    // (address ending ' 1' → ' 2'), merge lowBattery into the primary state.
+    if (entry.class === 'motion-sensor' && address.endsWith(' 1')) {
+      const battAddr = address.slice(0, -1) + '2';
+      if (devices[`eisy${eisyIdx}/${battAddr}`]?.class === 'motion-battery') {
+        const battProps = nodeStatus.get(battAddr);
+        (state as Record<string, unknown>).lowBattery = (battProps?.get('ST') ?? 0) > 0;
+      }
+    }
+    applyPatch(stateId, state);
   }
 
   // Integer variables (type 1) + state variables (type 2)
