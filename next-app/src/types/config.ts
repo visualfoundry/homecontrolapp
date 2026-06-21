@@ -325,10 +325,10 @@ export interface NotificationPrefs {
 }
 
 export const DEFAULT_NOTIF_PREFS: NotificationPrefs = {
-  leak: true,
-  motion: true,
-  doors: true,
-  houseSecurity: true,
-  whoIsHome: true,
+  leak: false,
+  motion: false,
+  doors: false,
+  houseSecurity: false,
+  whoIsHome: false,
   houseMode: false,
 };
