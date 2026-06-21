@@ -146,6 +146,7 @@ function titleToClass(ctTitle: string): DeviceClass {
   if (t === 'pool pump')                          return 'numeric-var'; // 0=off, 35-100=speed%
   if (t === 'pool heater')                          return 'numeric-var'; // 0=off, 1=on; setpoint 60-95
   if (t === 'pool salinator')                       return 'flag';
+  if (t === 'pool indicator')                       return 'numeric-var'; // pH, ORP, salt, temp, pump power, etc.
   if (t === 'theatre-screen')                     return 'toggle';
 
   // Fallback: try to infer from ACF class field

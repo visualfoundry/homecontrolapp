@@ -50,49 +50,49 @@
   "eisy0/var/180": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "flag",
+    "class": "numeric-var",
     "varId": 180,
     "varType": 2
   },
   "eisy0/var/179": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "flag",
+    "class": "numeric-var",
     "varId": 179,
     "varType": 2
   },
   "eisy0/var/178": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "flag",
+    "class": "numeric-var",
     "varId": 178,
     "varType": 2
   },
   "eisy0/var/177": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "flag",
+    "class": "numeric-var",
     "varId": 177,
     "varType": 2
   },
   "eisy0/var/176": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "flag",
+    "class": "numeric-var",
     "varId": 176,
     "varType": 2
   },
   "eisy0/var/175": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "flag",
+    "class": "numeric-var",
     "varId": 175,
     "varType": 2
   },
   "eisy0/var/174": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "flag",
+    "class": "numeric-var",
     "varId": 174,
     "varType": 2
   },
@@ -106,7 +106,7 @@
   "eisy0/var/172": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "flag",
+    "class": "numeric-var",
     "varId": 172,
     "varType": 2
   },

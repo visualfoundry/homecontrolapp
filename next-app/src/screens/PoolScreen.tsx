@@ -300,17 +300,26 @@ export function PoolScreen() {
   // When the OmniLogic/PG3 adapter is live, poolNodeId will switch back to a PoolNodeState node
   // and the poolNode?.waterTemp branch will take over automatically.
   const varNode  = (id: string | null) => id ? (st[id] as Record<string, unknown> | undefined) : undefined;
-  const nodeOn   = (n: Record<string, unknown> | undefined) =>
-    (n as { pumpOn?: boolean })?.pumpOn ?? (n as { on?: boolean })?.on;
+  // nodeOn: handles both {on: bool} (flag class) and {value: N} (numeric-var class, e.g. Pool Indicator)
+  const nodeOn   = (n: Record<string, unknown> | undefined): boolean | undefined => {
+    if (n === undefined) return undefined;
+    const asFlag = (n as { on?: boolean });
+    if (asFlag.on !== undefined) return asFlag.on;
+    const asNum = (n as { value?: number });
+    if (asNum.value !== undefined) return asNum.value > 0;
+    const asPump = (n as { pumpOn?: boolean });
+    if (asPump.pumpOn !== undefined) return asPump.pumpOn;
+    return undefined;
+  };
   const varValue = (id: string | null): number | undefined => {
     const n = varNode(id);
     return (n as { value?: number } | undefined)?.value;
   };
 
-  const poolNode        = varNode(config.poolNodeId);        // WP 622 — eisy0/var/128, {value: °F}
-  const chlorinatorNode = varNode(config.poolChlorinatorId); // {value: 1=on}
-  const heaterNode      = varNode(config.poolHeaterId);      // WP 533 — eisy0/var/5, {value: 1=on}
-  const pumpNode        = varNode(config.poolPumpNodeId);    // WP 623 — eisy0/var/123, {value: 1=on}
+  const poolNode        = varNode(config.poolNodeId);
+  const chlorinatorNode = varNode(config.poolChlorinatorId);
+  const heaterNode      = varNode(config.poolHeaterId);
+  const pumpNode        = varNode(config.poolPumpNodeId);
 
   // Temperature: variable returns {value: N}, future PG3 node returns {waterTemp: N}
   const poolTemp = (poolNode as { waterTemp?: number } | undefined)?.waterTemp
@@ -319,11 +328,20 @@ export function PoolScreen() {
   const poolTempDisplay = poolTemp > 0 ? `${poolTemp}°` : 'N/A';
 
   // Chemistry — live values from EISY indicator variables; fall back to pool state defaults.
-  const rawPh     = varValue(config.poolPhId)          ?? (poolNode as { ph?: number } | undefined)?.ph;
-  const ph        = rawPh !== undefined ? (rawPh > 14 ? rawPh / 10 : rawPh) : p.ph;
-  const orp       = varValue(config.poolOrpId)         ?? (poolNode as { orp?: number } | undefined)?.orp          ?? p.orpNow;
-  const saltLevel = varValue(config.poolSaltLevelId)   ?? (poolNode as { saltLevel?: number } | undefined)?.saltLevel     ?? p.saltPPM;
-  const saltLevelAvg = varValue(config.poolSaltLevelAvgId) ?? (poolNode as { saltLevelAvg?: number } | undefined)?.saltLevelAvg ?? p.saltPPM;
+  // Treat 0 as "not yet available" (OmniLogic not connected) and use defaults in that case.
+  const rawPh = varValue(config.poolPhId);
+  const ph = rawPh != null && rawPh > 0
+    ? (rawPh > 14 ? rawPh / 10 : rawPh)
+    : (poolNode as { ph?: number } | undefined)?.ph ?? p.ph;
+  const rawOrp = varValue(config.poolOrpId);
+  const orp = (rawOrp != null && rawOrp > 0 ? rawOrp : null)
+    ?? (poolNode as { orp?: number } | undefined)?.orp ?? p.orpNow;
+  const rawSalt = varValue(config.poolSaltLevelId);
+  const saltLevel = (rawSalt != null && rawSalt > 0 ? rawSalt : null)
+    ?? (poolNode as { saltLevel?: number } | undefined)?.saltLevel ?? p.saltPPM;
+  const rawSaltAvg = varValue(config.poolSaltLevelAvgId);
+  const saltLevelAvg = (rawSaltAvg != null && rawSaltAvg > 0 ? rawSaltAvg : null)
+    ?? (poolNode as { saltLevelAvg?: number } | undefined)?.saltLevelAvg ?? p.saltPPM;
 
   // Pump: var/123 returns {value: 1} for on; speed comes from a separate var/124.
   const pumpOn    = ((pumpNode as { value?: number } | undefined)?.value ?? 0) > 0
