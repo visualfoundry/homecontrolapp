@@ -327,33 +327,46 @@ export function PoolScreen() {
     ?? p.poolTemp;
   const poolTempDisplay = poolTemp > 0 ? `${poolTemp}°` : 'N/A';
 
-  // Chemistry — live values from EISY indicator variables; fall back to pool state defaults.
-  // Treat 0 as "not yet available" (OmniLogic not connected) and use defaults in that case.
+  // Chemistry — live values from EISY indicator variables.
+  // 0 means "not yet available" (OmniLogic not connected); null means "show —" in the UI.
   const rawPh = varValue(config.poolPhId);
-  const ph = rawPh != null && rawPh > 0
+  const phLive = rawPh != null && rawPh > 0
     ? (rawPh > 14 ? rawPh / 10 : rawPh)
-    : (poolNode as { ph?: number } | undefined)?.ph ?? p.ph;
+    : (poolNode as { ph?: number } | undefined)?.ph ?? null;
   const rawOrp = varValue(config.poolOrpId);
-  const orp = (rawOrp != null && rawOrp > 0 ? rawOrp : null)
-    ?? (poolNode as { orp?: number } | undefined)?.orp ?? p.orpNow;
+  const orpLive: number | null = rawOrp != null && rawOrp > 0
+    ? rawOrp
+    : (poolNode as { orp?: number } | undefined)?.orp ?? null;
   const rawSalt = varValue(config.poolSaltLevelId);
-  const saltLevel = (rawSalt != null && rawSalt > 0 ? rawSalt : null)
-    ?? (poolNode as { saltLevel?: number } | undefined)?.saltLevel ?? p.saltPPM;
+  const saltLive: number | null = rawSalt != null && rawSalt > 0
+    ? rawSalt
+    : (poolNode as { saltLevel?: number } | undefined)?.saltLevel ?? null;
   const rawSaltAvg = varValue(config.poolSaltLevelAvgId);
-  const saltLevelAvg = (rawSaltAvg != null && rawSaltAvg > 0 ? rawSaltAvg : null)
-    ?? (poolNode as { saltLevelAvg?: number } | undefined)?.saltLevelAvg ?? p.saltPPM;
+  const saltAvgLive: number | null = rawSaltAvg != null && rawSaltAvg > 0
+    ? rawSaltAvg
+    : (poolNode as { saltLevelAvg?: number } | undefined)?.saltLevelAvg ?? null;
 
-  // Pump: var/123 returns {value: 1} for on; speed comes from a separate var/124.
+  // pH status — only meaningful when we have a live reading
+  const ph = phLive ?? p.ph;
+  const orp = orpLive ?? p.orpNow;
+  const saltLevel = saltLive ?? p.saltPPM;
+  const saltLevelAvg = saltAvgLive ?? p.saltPPM;
+
+  // Pump: variable returns {value: 1} for on; speed from a separate variable.
   const pumpOn    = ((pumpNode as { value?: number } | undefined)?.value ?? 0) > 0
     || (nodeOn(pumpNode) ?? false)
     || p.pumpOn;
-  const pumpSpeed = varValue(config.poolPumpSpeedId) ?? p.pumpSpeed;
+  // 0 means "not tracked in EISY" — fall back to last-known or default (never show 0% while running)
+  const rawSpeed = varValue(config.poolPumpSpeedId);
+  const pumpSpeed = (rawSpeed != null && rawSpeed > 0) ? rawSpeed : p.pumpSpeed;
 
-  // Heater: var/5 returns {value: 1=on}; setpoint comes from var/126.
+  // Heater: variable returns {value: 1=on}; setpoint from a separate variable.
   const heaterOn     = ((heaterNode as { value?: number } | undefined)?.value ?? 0) > 0
     || (nodeOn(heaterNode) ?? false)
     || p.heaterOn;
-  const heaterTarget = varValue(config.poolHeaterSetpointId) ?? p.heaterTarget;
+  // 0 means "not set in EISY" — fall back to last-known or default
+  const rawSetpoint = varValue(config.poolHeaterSetpointId);
+  const heaterTarget = (rawSetpoint != null && rawSetpoint > 0) ? rawSetpoint : p.heaterTarget;
 
   // Chlorinator: {value: 1=on}
   const salinatorOn = ((chlorinatorNode as { value?: number } | undefined)?.value ?? 0) > 0
@@ -384,8 +397,8 @@ export function PoolScreen() {
     ? heaterFiringKnown
     : (poolNode as { heaterFiring?: boolean } | undefined)?.heaterFiring
       ?? (heaterOn && poolTemp > 0 && poolTemp < heaterTarget);
-  const phStatus = ph < 7.2 ? 'Low' : ph > 7.8 ? 'High' : 'Ideal';
-  const phTint = phStatus === 'Ideal' ? 'var(--green)' : 'var(--red)';
+  const phStatus = phLive != null ? (ph < 7.2 ? 'Low' : ph > 7.8 ? 'High' : 'Ideal') : null;
+  const phTint = phStatus === 'Ideal' ? 'var(--green)' : phStatus != null ? 'var(--red)' : 'var(--text2)';
 
   const schedKey = (k: ScheduleKind) =>
     k === 'pump' ? ('pumpSchedules' as const) : ('heaterSchedules' as const);
@@ -440,10 +453,10 @@ export function PoolScreen() {
           status={heaterRunning ? 'Firing' : heaterOn ? 'Idle' : null} />
         <Reading icon="power"   label="Pump"        value={pumpOn ? 'On' : 'Off'}              tint="#2bb3a3"
           status={pumpOn ? 'Running' : null} />
-        <Reading icon="droplet" label="pH"          value={Number(ph).toFixed(1)}                      tint={phTint} status={phStatus} />
-        <Reading icon="power"   label="ORP"         value={Number(orp) + ' mV'}                        tint="#2bb3a3" />
-        <Reading icon="water"   label="Salt"        value={Number(saltLevel).toLocaleString()}          tint="#5a9bd4" />
-        <Reading icon="water"   label="Salt avg"    value={Number(saltLevelAvg).toLocaleString()}       tint="#5a9bd4" />
+        <Reading icon="droplet" label="pH"       value={phLive != null ? Number(ph).toFixed(1) : '—'}         tint={phTint} status={phStatus} />
+        <Reading icon="power"   label="ORP"      value={orpLive != null ? Number(orp) + ' mV' : '—'}          tint="#2bb3a3" />
+        <Reading icon="water"   label="Salt"     value={saltLive != null ? Number(saltLevel).toLocaleString() : '—'}    tint="#5a9bd4" />
+        <Reading icon="water"   label="Salt avg" value={saltAvgLive != null ? Number(saltLevelAvg).toLocaleString() : '—'} tint="#5a9bd4" />
       </div>
 
       {/* Lighting & Features */}
@@ -529,7 +542,7 @@ export function PoolScreen() {
             <div>
               <div style={{ fontSize: 17, fontWeight: 680, color: 'var(--text)' }}>Variable Speed</div>
               <div style={{ fontSize: 13, color: pumpOn ? 'var(--accent)' : 'var(--text2)', fontWeight: 560, marginTop: 1 }}>
-                {pumpOn ? `Running · ${pumpSpeed}%` : 'Off'}
+                {pumpOn ? (rawSpeed != null && rawSpeed > 0 ? `Running · ${pumpSpeed}%` : 'Running') : 'Off'}
               </div>
             </div>
             <Toggle on={pumpOn} onChange={(v) => setPump(v)} size={0.92} />
@@ -603,8 +616,8 @@ export function PoolScreen() {
               <div style={{ fontSize: 13, color: 'var(--text2)', fontWeight: 500, marginTop: 1 }}>Current reading</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-              <span style={{ fontSize: 30, fontWeight: 730, color: 'var(--text)', letterSpacing: -0.5 }}>{ph.toFixed(1)}</span>
-              <span style={{ fontSize: 12.5, fontWeight: 680, color: '#fff', background: phTint, borderRadius: 8, padding: '4px 9px' }}>{phStatus}</span>
+              <span style={{ fontSize: 30, fontWeight: 730, color: 'var(--text)', letterSpacing: -0.5 }}>{phLive != null ? ph.toFixed(1) : '—'}</span>
+              {phStatus != null && <span style={{ fontSize: 12.5, fontWeight: 680, color: '#fff', background: phTint, borderRadius: 8, padding: '4px 9px' }}>{phStatus}</span>}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -634,11 +647,11 @@ export function PoolScreen() {
           <Slider value={p.orpSet} onChange={(v) => setP({ orpSet: v })}
             min={600} max={800} step={5} height={40} fill="linear-gradient(90deg,#2bb3a3,#48cbbb)" />
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 7, fontSize: 12, color: 'var(--text3)', fontWeight: 560 }}>
-            <span>600 mV</span><span>Now {orp} mV</span><span>800 mV</span>
+            <span>600 mV</span><span>Now {orpLive != null ? `${orp} mV` : '—'}</span><span>800 mV</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, paddingTop: 14, borderTop: '0.5px solid var(--sep)' }}>
             <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>Average salt</span>
-            <span style={{ fontSize: 15, fontWeight: 680, color: 'var(--text)' }}>{saltLevelAvg.toLocaleString()} ppm</span>
+            <span style={{ fontSize: 15, fontWeight: 680, color: 'var(--text)' }}>{saltAvgLive != null ? `${saltLevelAvg.toLocaleString()} ppm` : '—'}</span>
           </div>
         </Card>
         <div style={{ height: 8 }} />
