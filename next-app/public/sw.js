@@ -98,6 +98,34 @@ async function cacheFirst(req) {
   return r;
 }
 
+// ---------------------------------------------------------------------------
+// Push notifications
+// ---------------------------------------------------------------------------
+
+self.addEventListener('push', (e) => {
+  const data = e.data?.json() ?? {};
+  e.waitUntil(
+    self.registration.showNotification(data.title ?? 'Home Control', {
+      body:  data.body  ?? '',
+      icon:  '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      data:  { url: data.url ?? '/' },
+    }),
+  );
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = e.notification.data?.url ?? '/';
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((cs) => {
+      const existing = cs.find(c => c.url.includes(url));
+      if (existing) return existing.focus();
+      return clients.openWindow(url);
+    }),
+  );
+});
+
 async function staleWhileRevalidate(req) {
   const c = await caches.open(CACHE);
   const cached = await c.match(req);

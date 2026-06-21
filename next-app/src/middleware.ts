@@ -33,5 +33,6 @@ export const config = {
     '/api/auth/check',
     '/api/auth/passkey/register-options',
     '/api/auth/passkey/register-verify',
+    '/api/push/subscribe',
   ],
 };

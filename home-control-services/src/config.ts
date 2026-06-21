@@ -24,3 +24,9 @@ export const PORT = parseInt(process.env.PORT ?? '8081', 10);
 
 /** WPGraphQL endpoint — used by the export-devices script only. */
 export const WP_GRAPHQL_URL = process.env.WP_GRAPHQL_URL ?? '';
+
+/** Next.js app base URL — used to call /api/push/notify on device alerts. */
+export const NEXT_APP_URL = process.env.NEXT_APP_URL ?? 'http://localhost:3000';
+
+/** Shared secret for internal server-to-server calls (same value as HCA_INTERNAL_KEY in Next.js). */
+export const HCA_INTERNAL_KEY = process.env.HCA_INTERNAL_KEY ?? '';

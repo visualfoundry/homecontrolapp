@@ -21,7 +21,7 @@ import cors from 'cors';
 import { createReadStream } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { PORT, EISY_URLS, POLL_MS } from './config.js';
+import { PORT, EISY_URLS, POLL_MS, NEXT_APP_URL, HCA_INTERNAL_KEY } from './config.js';
 import { getNodeStatus, getVariables, sendNodeCommand, setVariable } from './eisy-client.js';
 import { applyPatch, getSnapshot, subscribe } from './state-store.js';
 import { nodeToState, varToState, patchToNodeCommand, type DevicesMap } from './state-mapper.js';
@@ -40,6 +40,27 @@ try {
   console.log(`[devices] loaded ${Object.keys(devices).length} entries`);
 } catch {
   console.warn('[devices] devices.json not found or invalid — run: npm run export-devices');
+}
+
+// ---------------------------------------------------------------------------
+// Push notification helper
+// ---------------------------------------------------------------------------
+
+async function sendPushAlert(body: string): Promise<void> {
+  if (!HCA_INTERNAL_KEY || !NEXT_APP_URL) return;
+  try {
+    await fetch(`${NEXT_APP_URL}/api/push/notify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-HCA-Internal-Key': HCA_INTERNAL_KEY,
+      },
+      body: JSON.stringify({ title: 'Home Control', body, url: '/' }),
+      signal: AbortSignal.timeout(5_000),
+    });
+  } catch (err) {
+    console.warn('[push] notify failed:', err instanceof Error ? err.message : err);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -62,7 +83,13 @@ async function pollEisy(eisyIdx: number): Promise<void> {
       const battAddr = address.slice(0, -1) + '2';
       if (devices[`eisy${eisyIdx}/${battAddr}`]?.class === 'motion-battery') {
         const battProps = nodeStatus.get(battAddr);
-        (state as Record<string, unknown>).lowBattery = (battProps?.get('ST') ?? 0) > 0;
+        const isLow = (battProps?.get('ST') ?? 0) > 0;
+        (state as Record<string, unknown>).lowBattery = isLow;
+        // Fire push only on the low→ transition (not on every poll)
+        if (isLow) {
+          const prevLow = !!(getSnapshot()[stateId] as { lowBattery?: boolean } | undefined)?.lowBattery;
+          if (!prevLow) void sendPushAlert('A motion sensor is reporting low battery. Open the Motion screen to see which one.');
+        }
       }
     }
     applyPatch(stateId, state);

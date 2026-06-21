@@ -6,6 +6,7 @@ import { Icon } from '@/components/Icon';
 import { Card } from '@/components/Card';
 import { LargeTitle } from '@/components/LargeTitle';
 import { deviceTag } from '@/lib/debug';
+import { PushPermission } from '@/components/PushPermission';
 
 export function MotionScreen() {
   const { st, config } = useHC();
@@ -30,6 +31,8 @@ export function MotionScreen() {
           </div>
         </div>
       )}
+
+      <PushPermission />
 
       <Card pad={false}>
         {config.motionSensors.map((s, i) => {
