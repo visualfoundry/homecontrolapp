@@ -205,7 +205,11 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   // ---------------------------------------------------------------------------
 
   if (state === 'ok') return <>{children}</>;
-  if (state === 'pending') return null;
+  if (state === 'pending') return (
+    <div style={wrapStyle}>
+      <div style={spinnerStyle} />
+    </div>
+  );
 
   const loginContent = (
     <div style={{ width: '100%', maxWidth: 320 }}>
@@ -388,6 +392,15 @@ const inputStyle: React.CSSProperties = {
   outline: 'none',
   width: '100%',
   boxSizing: 'border-box',
+};
+
+const spinnerStyle: React.CSSProperties = {
+  width: 28,
+  height: 28,
+  borderRadius: '50%',
+  border: '2.5px solid var(--sep)',
+  borderTopColor: 'var(--accent)',
+  animation: 'spin 0.75s linear infinite',
 };
 
 const expiredOverlayStyle: React.CSSProperties = {

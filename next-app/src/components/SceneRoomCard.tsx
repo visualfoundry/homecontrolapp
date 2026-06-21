@@ -212,8 +212,11 @@ export function SceneRoomCard({ room, a, scene, compact }: {
   const sceneStep = room.steps
     ? (st[room.id] as { value?: number } | undefined)?.value
     : undefined;
-  const intensity = room.steps && sceneStep !== undefined
-    ? Math.round((sceneStep / stepIntervals) * 100)
+  // Stepped scenes: intensity is entirely driven by the EISY scene variable.
+  // Default to 0 (off) when state hasn't arrived yet, so the slider doesn't
+  // pre-fill to 100% from the seed intensity=50 rounding to step 1/1.
+  const intensity = room.steps
+    ? (sceneStep !== undefined ? Math.round((sceneStep / stepIntervals) * 100) : 0)
     : a.intensity;
   const ea: AutomationState = { ...a, automated, manual, nightDim, motion, intensity, doorOpen };
 
