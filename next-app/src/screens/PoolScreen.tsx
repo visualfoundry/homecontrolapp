@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import { useHC } from '@/lib/store';
+import { postCommand } from '@/lib/state-client';
 import { Icon } from '@/components/Icon';
 import type { IconName } from '@/components/Icon';
 import { Card, SectionTitle } from '@/components/Card';
@@ -284,6 +285,10 @@ function ScheduleEditor({ editor, setEditor, onSave, onDelete, portalTarget }: {
 
 export function PoolScreen() {
   const { st, setD, overlayRef, config } = useHC();
+  // Valve positions are tracked locally — the relay sub-nodes are momentary contacts
+  // (they pulse to move the actuator then return to off), so SSE state doesn't reflect
+  // valve position. We record the last commanded position instead.
+  const [valvePositions, setValvePositions] = useState<Record<string, 'Open' | 'Closed' | 'Off'>>({});
   const rawPool = st['pool'] as PoolState | undefined;
   const p: PoolState = {
     ...POOL_DEFAULT,
@@ -454,10 +459,7 @@ export function PoolScreen() {
           <SectionTitle>Valves</SectionTitle>
           <Card pad={false}>
             {config.poolValves.map((valve, i) => {
-              const openOn  = !!(st[valve.openStateId]  as { on?: boolean } | undefined)?.on;
-              const closeOn = !!(st[valve.closeStateId] as { on?: boolean } | undefined)?.on;
-              const valvePos: 'Open' | 'Closed' | 'Off' =
-                openOn ? 'Open' : closeOn ? 'Closed' : 'Off';
+              const valvePos = valvePositions[valve.id] ?? 'Off';
               return (
                 <div key={valve.id} style={{
                   display: 'flex', alignItems: 'center', padding: '13px 16px', gap: 12,
@@ -473,15 +475,16 @@ export function PoolScreen() {
                     options={['Closed', 'Off', 'Open']}
                     value={valvePos}
                     onChange={(pos) => {
+                      setValvePositions(prev => ({ ...prev, [valve.id]: pos as 'Open' | 'Closed' | 'Off' }));
                       if (pos === 'Open') {
-                        if (valve.openStateId)  setD(valve.openStateId,  { on: true });
-                        if (valve.closeStateId) setD(valve.closeStateId, { on: false });
+                        if (valve.openStateId)  postCommand(valve.openStateId,  { on: true });
+                        if (valve.closeStateId) postCommand(valve.closeStateId, { on: false });
                       } else if (pos === 'Closed') {
-                        if (valve.closeStateId) setD(valve.closeStateId, { on: true });
-                        if (valve.openStateId)  setD(valve.openStateId,  { on: false });
+                        if (valve.closeStateId) postCommand(valve.closeStateId, { on: true });
+                        if (valve.openStateId)  postCommand(valve.openStateId,  { on: false });
                       } else {
-                        if (valve.openStateId)  setD(valve.openStateId,  { on: false });
-                        if (valve.closeStateId) setD(valve.closeStateId, { on: false });
+                        if (valve.openStateId)  postCommand(valve.openStateId,  { on: false });
+                        if (valve.closeStateId) postCommand(valve.closeStateId, { on: false });
                       }
                     }}
                   />
