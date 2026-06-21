@@ -472,12 +472,12 @@ export function PoolScreen() {
                     </div>
                   </div>
                   <Segmented
-                    options={['Off', 'Closed', 'Open']}
+                    options={['Closed', 'Off', 'Open']}
                     value={valvePos}
                     onChange={(pos) => {
-                      if (pos === 'Open')   setD(valve.id, { value: valve.openValue });
+                      if (pos === 'Open')        setD(valve.id, { value: valve.openValue });
                       else if (pos === 'Closed') setD(valve.id, { value: valve.closeValue });
-                      else                  setD(valve.id, { value: 0 });
+                      else                       setD(valve.id, { value: 0 });
                     }}
                   />
                 </div>
