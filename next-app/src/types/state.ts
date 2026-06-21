@@ -172,7 +172,7 @@ export interface TextVariableState {
 
 /** Commanded position for a pool valve — stored under auto:valve:<id>, never sent to hardware. */
 export interface ValvePosState {
-  position: 'Open' | 'Closed' | 'Off';
+  position: 'Open' | 'Close' | 'Off';
 }
 
 // ---------------------------------------------------------------------------

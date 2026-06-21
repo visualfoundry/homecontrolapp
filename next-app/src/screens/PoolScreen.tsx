@@ -494,7 +494,7 @@ export function PoolScreen() {
               const localPos = (st[posKey] as ValvePosState | undefined)?.position;
               // Relay sub-node state from EISY is authoritative when available.
               // localPos is the optimistic fallback during transitions (or for momentary relays).
-              const valvePos = openNode?.on ? 'Open' : closeNode?.on ? 'Closed' : localPos ?? 'Off';
+              const valvePos = openNode?.on ? 'Open' : closeNode?.on ? 'Close' : localPos ?? 'Off';
               return (
                 <div key={valve.id} style={{
                   display: 'flex', alignItems: 'center', padding: '13px 16px', gap: 12,
@@ -502,12 +502,12 @@ export function PoolScreen() {
                 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 16, fontWeight: 520, color: 'var(--text)' }}>{valve.name}</div>
-                    <div style={{ fontSize: 12, color: valvePos === 'Open' ? '#2bb3a3' : valvePos === 'Closed' ? 'var(--red)' : 'var(--text2)', marginTop: 2, fontWeight: 560 }}>
+                    <div style={{ fontSize: 12, color: valvePos === 'Open' ? '#2bb3a3' : valvePos === 'Close' ? 'var(--red)' : 'var(--text2)', marginTop: 2, fontWeight: 560 }}>
                       {valvePos}
                     </div>
                   </div>
                   <Segmented
-                    options={['Closed', 'Off', 'Open']}
+                    options={['Close', 'Off', 'Open']}
                     value={valvePos}
                     onChange={(pos) => {
                       setD(posKey, { position: pos as ValvePosState['position'] });
@@ -516,7 +516,7 @@ export function PoolScreen() {
                         for (const other of config.poolValves) {
                           if (other.id !== valve.id) setD(`auto:valve:${other.id}`, { position: 'Off' as ValvePosState['position'] });
                         }
-                      } else if (pos === 'Closed' && valve.closeStateId) {
+                      } else if (pos === 'Close' && valve.closeStateId) {
                         postCommand(valve.closeStateId, { on: true });
                         for (const other of config.poolValves) {
                           if (other.id !== valve.id) setD(`auto:valve:${other.id}`, { position: 'Off' as ValvePosState['position'] });
