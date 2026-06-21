@@ -8,6 +8,7 @@ import { Card, SectionTitle } from '@/components/Card';
 import { Toggle } from '@/components/Toggle';
 import { Segmented } from '@/components/Segmented';
 import { LargeTitle } from '@/components/LargeTitle';
+import { PushPermission } from '@/components/PushPermission';
 import type { FlagState } from '@/types/state';
 import type { SettingItem, UserPrefs } from '@/types/config';
 
@@ -177,6 +178,13 @@ export function SettingsScreen() {
       <div style={{ marginTop: 22 }}>
         <SectionTitle>Schedules</SectionTitle>
         <ToggleList items={config.settingsSchedules} />
+      </div>
+
+      <div style={{ marginTop: 22 }}>
+        <SectionTitle>Notifications</SectionTitle>
+        <Card pad={false}>
+          <PushPermission />
+        </Card>
       </div>
 
       <div style={{ marginTop: 22 }}>
