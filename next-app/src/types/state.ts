@@ -52,6 +52,7 @@ export interface IrrigationZoneState {
 
 export interface LeakSensorState {
   wet: boolean;
+  lowBattery?: boolean;
 }
 
 export interface MotionSensorState {

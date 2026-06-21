@@ -29,7 +29,8 @@ export type DeviceClass =
   | 'flag'
   | 'numeric-var'
   | 'pool-controller'
-  | 'motion-battery';
+  | 'motion-battery'
+  | 'leak-battery';
 
 export interface DeviceEntry {
   /** 'device' = Insteon node; 'variable' = ISY integer/state variable */

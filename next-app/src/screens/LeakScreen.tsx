@@ -51,6 +51,11 @@ export function LeakScreen() {
                 <Icon name="droplet" size={19} fill={isWet ? 'currentColor' : 'none'} />
               </div>
               <span style={{ flex: 1, fontSize: 16, fontWeight: 560, color: 'var(--text)' }}>{s.name}</span>
+              {state?.lowBattery && (
+                <span style={{ color: 'var(--amber)', marginRight: 12, display: 'flex' }} title="Low battery">
+                  <Icon name="battery" size={19} />
+                </span>
+              )}
               <span style={{ fontSize: 13.5, fontWeight: 640, color: isWet ? 'var(--red)' : 'var(--green)' }}>
                 {isWet ? 'Leak!' : 'Dry'}
               </span>

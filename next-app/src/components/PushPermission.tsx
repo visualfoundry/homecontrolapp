@@ -101,7 +101,7 @@ export function PushPermission({ last }: { last?: boolean }) {
         <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 2 }}>
           {denied
             ? 'Blocked — enable in device Settings → Notifications'
-            : 'Get notified when a sensor battery is low'}
+            : 'Get notified when a motion or water leak sensor battery is low'}
         </div>
       </div>
       <Toggle on={enabled} onChange={denied ? undefined : handleToggle} size={0.85} />
