@@ -47,6 +47,13 @@
     "class": "pool-valve",
     "address": "23 8A BA 6"
   },
+  "eisy0/var/181": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "numeric-var",
+    "varId": 181,
+    "varType": 2
+  },
   "eisy0/var/180": {
     "type": "variable",
     "eisyIdx": 0,
