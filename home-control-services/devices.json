@@ -50,7 +50,7 @@
   "eisy0/var/181": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "numeric-var",
+    "class": "flag",
     "varId": 181,
     "varType": 2
   },
