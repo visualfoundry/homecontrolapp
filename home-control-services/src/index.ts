@@ -77,21 +77,34 @@ async function pollEisy(eisyIdx: number): Promise<void> {
     const entry = devices[stateId];
     if (!entry) continue;
     const state = nodeToState(entry.class, props);
-    // Battery: if a secondary battery node (' 2') exists for a sensor,
-    // merge lowBattery into the primary state and fire a push on false→true transition.
-    if ((entry.class === 'motion-sensor' || entry.class === 'leak-sensor') && address.endsWith(' 1')) {
-      const battAddr = address.slice(0, -1) + '2';
-      const battClass = entry.class === 'motion-sensor' ? 'motion-battery' : 'leak-battery';
-      if (devices[`eisy${eisyIdx}/${battAddr}`]?.class === battClass) {
+    // Leak sensors: node 1 = Dry indicator, node 2 = Wet indicator, node 3 = Battery.
+    // Read wet state from node 2 (overriding the dry-node value) and battery from node 3.
+    // State is emitted under the node-1 key so the WP controlStateIds mapping stays valid.
+    if (entry.class === 'leak-sensor' && address.endsWith(' 1')) {
+      const wetAddr  = address.slice(0, -1) + '2';
+      const battAddr = address.slice(0, -1) + '3';
+      const wetProps  = nodeStatus.get(wetAddr);
+      (state as Record<string, unknown>).wet = (wetProps?.get('ST') ?? 0) > 0;
+      if (devices[`eisy${eisyIdx}/${battAddr}`]?.class === 'leak-battery') {
         const battProps = nodeStatus.get(battAddr);
         const isLow = (battProps?.get('ST') ?? 0) > 0;
         (state as Record<string, unknown>).lowBattery = isLow;
         if (isLow) {
           const prevLow = !!(getSnapshot()[stateId] as { lowBattery?: boolean } | undefined)?.lowBattery;
-          if (!prevLow) {
-            const label = entry.class === 'motion-sensor' ? 'motion sensor' : 'water leak sensor';
-            void sendPushAlert(`A ${label} is reporting low battery. Open the app to see which one.`);
-          }
+          if (!prevLow) void sendPushAlert(`A water leak sensor is reporting low battery. Open the app to see which one.`);
+        }
+      }
+    }
+    // Motion sensors: node 1 = motion, node 2 = battery.
+    if (entry.class === 'motion-sensor' && address.endsWith(' 1')) {
+      const battAddr = address.slice(0, -1) + '2';
+      if (devices[`eisy${eisyIdx}/${battAddr}`]?.class === 'motion-battery') {
+        const battProps = nodeStatus.get(battAddr);
+        const isLow = (battProps?.get('ST') ?? 0) > 0;
+        (state as Record<string, unknown>).lowBattery = isLow;
+        if (isLow) {
+          const prevLow = !!(getSnapshot()[stateId] as { lowBattery?: boolean } | undefined)?.lowBattery;
+          if (!prevLow) void sendPushAlert(`A motion sensor is reporting low battery. Open the app to see which one.`);
         }
       }
     }

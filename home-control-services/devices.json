@@ -2550,70 +2550,70 @@
     "class": "motion-sensor",
     "address": "37 BF E7 1"
   },
-  "eisy4/37 86 69 2": {
+  "eisy4/37 86 69 3": {
     "type": "device",
     "eisyIdx": 4,
     "class": "leak-battery",
-    "address": "37 86 69 2"
+    "address": "37 86 69 3"
   },
-  "eisy4/37 83 D8 2": {
+  "eisy4/37 83 D8 3": {
     "type": "device",
     "eisyIdx": 4,
     "class": "leak-battery",
-    "address": "37 83 D8 2"
+    "address": "37 83 D8 3"
   },
-  "eisy4/37 85 74 2": {
+  "eisy4/37 85 74 3": {
     "type": "device",
     "eisyIdx": 4,
     "class": "leak-battery",
-    "address": "37 85 74 2"
+    "address": "37 85 74 3"
   },
-  "eisy4/37 84 4A 2": {
+  "eisy4/37 84 4A 3": {
     "type": "device",
     "eisyIdx": 4,
     "class": "leak-battery",
-    "address": "37 84 4A 2"
+    "address": "37 84 4A 3"
   },
-  "eisy4/37 6F E8 2": {
+  "eisy4/37 6F E8 3": {
     "type": "device",
     "eisyIdx": 4,
     "class": "leak-battery",
-    "address": "37 6F E8 2"
+    "address": "37 6F E8 3"
   },
-  "eisy4/54 9C 23 2": {
+  "eisy4/54 9C 23 3": {
     "type": "device",
     "eisyIdx": 4,
     "class": "leak-battery",
-    "address": "54 9C 23 2"
+    "address": "54 9C 23 3"
   },
-  "eisy4/4E 19 F2 2": {
+  "eisy4/4E 19 F2 3": {
     "type": "device",
     "eisyIdx": 4,
     "class": "leak-battery",
-    "address": "4E 19 F2 2"
+    "address": "4E 19 F2 3"
   },
-  "eisy4/4E 2B 66 2": {
+  "eisy4/4E 2B 66 3": {
     "type": "device",
     "eisyIdx": 4,
     "class": "leak-battery",
-    "address": "4E 2B 66 2"
+    "address": "4E 2B 66 3"
   },
-  "eisy4/47 B3 16 2": {
+  "eisy4/47 B3 16 3": {
     "type": "device",
     "eisyIdx": 4,
     "class": "leak-battery",
-    "address": "47 B3 16 2"
+    "address": "47 B3 16 3"
   },
-  "eisy4/37 8B A6 2": {
+  "eisy4/37 8B A6 3": {
     "type": "device",
     "eisyIdx": 4,
     "class": "leak-battery",
-    "address": "37 8B A6 2"
+    "address": "37 8B A6 3"
   },
-  "eisy4/37 83 B0 2": {
+  "eisy4/37 83 B0 3": {
     "type": "device",
     "eisyIdx": 4,
     "class": "leak-battery",
-    "address": "37 83 B0 2"
+    "address": "37 83 B0 3"
   }
 }
