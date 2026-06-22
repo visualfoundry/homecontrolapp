@@ -12,11 +12,13 @@ import type { SceneConfig } from '@/types/config';
 
 function envIcon(name: string): { icon: IconName; tint: string } {
   const n = name.toLowerCase();
-  if (n.includes('temp'))     return { icon: 'thermo',   tint: '#E07B53' };
-  if (n.includes('humid'))    return { icon: 'droplet',  tint: '#5B7FE0' };
-  if (n.includes('holiday'))  return { icon: 'calendar', tint: '#9B6AB0' };
-  if (n.includes('security')) return { icon: 'shield',   tint: '#E0483D' };
-  if (n.includes('away'))     return { icon: 'away',     tint: '#F0A500' };
+  if (n.includes('temp'))       return { icon: 'thermo',     tint: '#E07B53' };
+  if (n.includes('humid'))      return { icon: 'droplet',    tint: '#5B7FE0' };
+  if (n.includes('holiday'))    return { icon: 'calendar',   tint: '#9B6AB0' };
+  if (n.includes('security'))   return { icon: 'shield',     tint: '#E0483D' };
+  if (n.includes('away'))       return { icon: 'away',       tint: '#F0A500' };
+  if (n.includes('movie'))      return { icon: 'film',       tint: '#6C5CE7' };
+  if (n.includes('pool party')) return { icon: 'poolParty',  tint: '#00AAFF' };
   return { icon: 'bolt', tint: '#2bb3a3' };
 }
 
