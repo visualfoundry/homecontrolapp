@@ -35,9 +35,14 @@ export function EditScenesScreen() {
   const setIds = (next: string[]) => setD('_scenes', { ids: next });
   const remove = (id: string) => setIds(ids.filter(x => x !== id));
   const add = (id: string) => setIds([...ids, id]);
-  const move = (i: number, dir: -1 | 1) => {
-    const j = i + dir;
-    if (j < 0 || j >= ids.length) return;
+  const move = (id: string, dir: -1 | 1) => {
+    const visibleIds = activeItems.map(a => a.id);
+    const ai = visibleIds.indexOf(id);
+    const targetAi = ai + dir;
+    if (targetAi < 0 || targetAi >= visibleIds.length) return;
+    const i = ids.indexOf(id);
+    const j = ids.indexOf(visibleIds[targetAi]);
+    if (i < 0 || j < 0) return;
     const next = [...ids];
     [next[i], next[j]] = [next[j], next[i]];
     setIds(next);
@@ -100,11 +105,11 @@ export function EditScenesScreen() {
               {it.chip}
               <span style={{ flex: 1, fontSize: 16, fontWeight: 540, color: 'var(--text)' }}>{it.label}</span>
               <div style={{ display: 'flex', gap: 6 }}>
-                <button onClick={() => move(i, -1)} disabled={i === 0}
+                <button onClick={() => move(it.id, -1)} disabled={i === 0}
                   style={{ ...reorderBtn, opacity: i === 0 ? 0.3 : 1, cursor: i === 0 ? 'default' : 'pointer' }}>
                   <Icon name="chevDown" size={18} style={{ transform: 'rotate(180deg)' }} />
                 </button>
-                <button onClick={() => move(i, 1)} disabled={i === activeItems.length - 1}
+                <button onClick={() => move(it.id, 1)} disabled={i === activeItems.length - 1}
                   style={{ ...reorderBtn, opacity: i === activeItems.length - 1 ? 0.3 : 1, cursor: i === activeItems.length - 1 ? 'default' : 'pointer' }}>
                   <Icon name="chevDown" size={18} />
                 </button>
