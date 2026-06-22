@@ -2340,6 +2340,12 @@
     "class": "leak-sensor",
     "address": "37 6F E8 1"
   },
+  "eisy4/54 9A 61 1": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "leak-sensor",
+    "address": "54 9A 61 1"
+  },
   "eisy4/54 9C 23 1": {
     "type": "device",
     "eisyIdx": 4,
@@ -2579,6 +2585,12 @@
     "eisyIdx": 4,
     "class": "leak-battery",
     "address": "37 6F E8 4"
+  },
+  "eisy4/54 9A 61 4": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "leak-battery",
+    "address": "54 9A 61 4"
   },
   "eisy4/54 9C 23 4": {
     "type": "device",
