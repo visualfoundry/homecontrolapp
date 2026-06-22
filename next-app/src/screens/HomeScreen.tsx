@@ -699,7 +699,7 @@ export function HomeScreen() {
                   if (n.includes('security')) return { icon: 'shield',   tint: '#E0483D' };
                   if (n.includes('away'))     return { icon: 'away',     tint: '#F0A500' };
                   if (n.includes('movie'))    return { icon: 'film',       tint: '#6C5CE7' };
-                  if (n.includes('pool party')) return { icon: 'waterSpout', tint: '#00AAFF' };
+                  if (n.includes('pool party')) return { icon: 'poolParty',  tint: '#00AAFF' };
                   return { icon: 'bolt', tint: '#2bb3a3' };
                 })();
                 const s = st[ctrl.id] as FlagState | undefined;
