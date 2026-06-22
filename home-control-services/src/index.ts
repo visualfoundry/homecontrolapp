@@ -89,6 +89,7 @@ async function pollEisy(eisyIdx: number): Promise<void> {
       if (devices[`eisy${eisyIdx}/${battAddr}`]?.class === 'leak-battery') {
         const battProps = nodeStatus.get(battAddr);
         const isLow = (battProps?.get('ST') ?? 0) === 0; // no heartbeat = low battery
+        (state as Record<string, unknown>).lowBattery = isLow;
         if (isLow) {
           const prevLow = !!(getSnapshot()[stateId] as { lowBattery?: boolean } | undefined)?.lowBattery;
           if (!prevLow) void sendPushAlert(`A water leak sensor is reporting low battery. Open the app to see which one.`);
