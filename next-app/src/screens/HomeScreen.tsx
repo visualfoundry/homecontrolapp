@@ -697,6 +697,7 @@ export function HomeScreen() {
                   if (n.includes('holiday'))  return { icon: 'calendar', tint: '#9B6AB0' };
                   if (n.includes('security')) return { icon: 'shield',   tint: '#E0483D' };
                   if (n.includes('away'))     return { icon: 'away',     tint: '#F0A500' };
+                  if (n.includes('movie'))    return { icon: 'film',     tint: '#6C5CE7' };
                   return { icon: 'bolt', tint: '#2bb3a3' };
                 })();
                 const s = st[ctrl.id] as FlagState | undefined;
