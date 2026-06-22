@@ -573,11 +573,12 @@ export function HomeScreen() {
   const favIds   = (st['_favs']   as FavsState).ids;
 
   // Auto-seed: any env control not yet in sceneIds gets appended once.
+  // sceneIds is a dependency so this re-runs if /api/prefs overwrites _scenes with a stale list.
   React.useEffect(() => {
     const missing = config.environmentalControls.filter(e => !sceneIds.includes(e.id));
     if (missing.length > 0) setD('_scenes', { ids: [...sceneIds, ...missing.map(e => e.id)] });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config.environmentalControls.map(e => e.id).join(',')]);
+  }, [config.environmentalControls.map(e => e.id).join(','), sceneIds.join(',')]);
   const sceneById = Object.fromEntries(config.scenes.map(s => [s.id, s]));
   const envById   = Object.fromEntries(config.environmentalControls.map(e => [e.id, e]));
   const favLookup = Object.fromEntries(config.favCatalog.flatMap(g => g.items.map(it => [it.id, it])));
