@@ -439,6 +439,19 @@ export function PoolScreen() {
     setEditor(null);
   };
 
+  // First valve that is not Off — shown as status on the waterfall tile.
+  const activeValveStatus = (() => {
+    for (const valve of config.poolValves) {
+      const posKey = `auto:valve:${valve.id}`;
+      const openNode = st[valve.openStateId] as PoolValveNodeState | undefined;
+      const closeNode = st[valve.closeStateId] as PoolValveNodeState | undefined;
+      const localPos = (st[posKey] as ValvePosState | undefined)?.position;
+      const pos = openNode?.on ? 'Open' : closeNode?.on ? 'Close' : localPos ?? 'Off';
+      if (pos !== 'Off') return `${valve.name} ${pos === 'Open' ? 'Opening' : 'Closing'}`;
+    }
+    return null;
+  })();
+
   return (
     <div>
       <LargeTitle title="Pool"
@@ -470,7 +483,7 @@ export function PoolScreen() {
             const color = isLight ? 'var(--amber)' : '#2bb3a3';
             return (
               <Tile key={o.id} icon={isLight ? 'bulb' : 'waterfall'} name={o.name}
-                status={s.on ? 'On' : 'Off'} active={s.on}
+                status={!isLight && activeValveStatus ? activeValveStatus : s.on ? 'On' : 'Off'} active={s.on}
                 activeColor={color} glow={isLight}
                 onTap={() => setD(o.id, { on: !s.on })}
                 control={<Toggle on={s.on} onChange={(v) => setD(o.id, { on: v })} accent="rgba(255,255,255,0.45)" size={0.78} />}
