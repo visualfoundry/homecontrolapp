@@ -52,7 +52,6 @@ type AuthState =
  *   1. Check session → 200 → render app immediately (no flash)
  */
 export function AuthGate({ children }: { children: React.ReactNode }) {
-  const [mounted, setMounted] = useState(false);
   const [state, setState] = useState<AuthState>('pending');
   const [error, setError] = useState('');
   const [sessionExpired, setSessionExpired] = useState(false);
@@ -60,12 +59,11 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   // Lazy-init so it only runs in the browser (avoids SSR mismatch)
   const [passkeyLabel] = useState(() => getPasskeyLabel());
 
-  // Render nothing during SSR and initial hydration — the auth check is a
-  // client-only fetch, so there's nothing to show until the browser takes over.
-  useEffect(() => { setMounted(true); }, []);
-
   useEffect(() => {
-    fetch('/api/auth/check').then(async r => {
+    // 6 s timeout: if the server is unreachable (e.g. phone just unlocked, WiFi
+    // not yet re-established) the fetch aborts and falls through to the catch,
+    // showing the login form rather than hanging on a white/spinner screen.
+    fetch('/api/auth/check', { signal: AbortSignal.timeout(6_000) }).then(async r => {
       if (r.ok) {
         setState('ok');
         return;
@@ -99,6 +97,18 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (state === 'form') usernameRef.current?.focus();
+  }, [state]);
+
+  // Auto-trigger Face ID when the passkey screen first appears (e.g. app resume
+  // after device lock). After a failure the user must tap the button — the ref
+  // prevents re-firing on subsequent 'passkey' state re-entries.
+  const passkeyAutoFired = useRef(false);
+  useEffect(() => {
+    if (state === 'passkey' && !passkeyAutoFired.current) {
+      passkeyAutoFired.current = true;
+      void handlePasskeySignIn();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
   // ---------------------------------------------------------------------------
@@ -209,7 +219,6 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   // Render
   // ---------------------------------------------------------------------------
 
-  if (!mounted) return null;
   if (state === 'ok') return <>{children}</>;
   if (state === 'pending') return (
     <div style={wrapStyle}>
