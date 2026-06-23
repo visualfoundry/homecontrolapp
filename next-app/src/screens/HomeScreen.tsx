@@ -471,6 +471,168 @@ function PersonAvatar({ id, name, present, onToggle }: {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Env tile — illustrated background scenes (one per environment type)
+// ---------------------------------------------------------------------------
+
+function MovieNightScene() {
+  return (
+    <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+      {/* Cinema screen */}
+      <rect x="4" y="4" width="72" height="42" rx="6" fill="currentColor" />
+      {/* Screen inner (dimmer) */}
+      <rect x="9" y="9" width="62" height="32" rx="4" fill="currentColor" opacity="0.4" />
+      {/* Projector light cone */}
+      <path d="M40 50 L10 46 L70 46Z" fill="currentColor" opacity="0.45" />
+      {/* Projector box */}
+      <rect x="33" y="50" width="14" height="10" rx="3" fill="currentColor" />
+      {/* Seat row */}
+      <path d="M4 70 Q4 62 12 62 Q20 62 20 70" fill="currentColor" opacity="0.75" />
+      <path d="M24 70 Q24 62 32 62 Q40 62 40 70" fill="currentColor" opacity="0.75" />
+      <path d="M44 70 Q44 62 52 62 Q60 62 60 70" fill="currentColor" opacity="0.75" />
+    </svg>
+  );
+}
+
+function PoolPartyScene() {
+  return (
+    <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+      {/* Sun */}
+      <circle cx="64" cy="16" r="11" fill="currentColor" />
+      {/* Sun rays */}
+      <path d="M64 1V6M64 26V31M79 16H74M49 16H54M74.5 5.5L71 9M53.5 5.5L57 9M74.5 26.5L71 23M53.5 26.5L57 23" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" opacity="0.7" />
+      {/* Pool float ring */}
+      <ellipse cx="32" cy="50" rx="22" ry="10" stroke="currentColor" strokeWidth="4" opacity="0.9" />
+      <ellipse cx="32" cy="50" rx="13" ry="5.5" stroke="currentColor" strokeWidth="2" opacity="0.5" />
+      {/* Water waves */}
+      <path d="M2 64 Q12 59 22 64 Q32 69 42 64 Q52 59 78 64" stroke="currentColor" strokeWidth="3" strokeLinecap="round" opacity="0.8" />
+      <path d="M2 73 Q12 68 22 73 Q32 78 42 73 Q52 68 78 73" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
+    </svg>
+  );
+}
+
+function HolidayScene() {
+  return (
+    <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+      {/* Tree (three tiers) */}
+      <path d="M40 10 L22 34 L30 34 L16 54 L26 54 L14 74 L66 74 L54 54 L64 54 L50 34 L58 34 Z" fill="currentColor" opacity="0.9" />
+      {/* Trunk */}
+      <rect x="35" y="72" width="10" height="8" fill="currentColor" />
+      {/* Star at top */}
+      <path d="M40 2 L42 8 L48 8.5 L43 12 L45 18 L40 14.5 L35 18 L37 12 L32 8.5 L38 8 Z" fill="currentColor" />
+      {/* Ornaments */}
+      <circle cx="30" cy="48" r="4" fill="currentColor" opacity="0.65" />
+      <circle cx="50" cy="44" r="4" fill="currentColor" opacity="0.6" />
+      <circle cx="40" cy="60" r="4" fill="currentColor" opacity="0.7" />
+      <circle cx="24" cy="62" r="3" fill="currentColor" opacity="0.5" />
+      <circle cx="56" cy="60" r="3" fill="currentColor" opacity="0.5" />
+    </svg>
+  );
+}
+
+function SecurityScene() {
+  return (
+    <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+      {/* House body */}
+      <path d="M10 74 L10 40 L40 18 L70 40 L70 74 Z" fill="currentColor" opacity="0.5" />
+      {/* Roof ridge */}
+      <path d="M4 42 L40 14 L76 42" stroke="currentColor" strokeWidth="3.5" strokeLinejoin="round" opacity="0.85" />
+      {/* Door */}
+      <rect x="32" y="56" width="16" height="18" rx="2" fill="currentColor" opacity="0.8" />
+      {/* Windows */}
+      <rect x="14" y="46" width="12" height="10" rx="2" fill="currentColor" opacity="0.7" />
+      <rect x="54" y="46" width="12" height="10" rx="2" fill="currentColor" opacity="0.7" />
+      {/* Shield */}
+      <path d="M40 26 L28 32 L28 44 C28 53 33.5 58 40 61 C46.5 58 52 53 52 44 L52 32 Z" fill="currentColor" />
+      {/* Checkmark in shield */}
+      <path d="M33 43 L38 49 L48 37" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.35" />
+    </svg>
+  );
+}
+
+function AwayScene() {
+  return (
+    <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+      {/* Stars */}
+      <circle cx="10" cy="10" r="2.5" fill="currentColor" />
+      <circle cx="30" cy="6" r="1.5" fill="currentColor" opacity="0.75" />
+      <circle cx="52" cy="12" r="2" fill="currentColor" opacity="0.85" />
+      <circle cx="68" cy="6" r="3" fill="currentColor" />
+      <circle cx="22" cy="22" r="1" fill="currentColor" opacity="0.6" />
+      <circle cx="72" cy="20" r="1.5" fill="currentColor" opacity="0.65" />
+      {/* Suitcase body */}
+      <rect x="18" y="44" width="44" height="30" rx="5" fill="currentColor" opacity="0.85" />
+      {/* Centre seam */}
+      <path d="M18 59 L62 59" stroke="currentColor" strokeWidth="1.5" opacity="0.3" />
+      <rect x="36" y="44" width="8" height="30" fill="currentColor" opacity="0.15" />
+      {/* Handle */}
+      <path d="M28 44 Q28 36 40 36 Q52 36 52 44" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.9" />
+      {/* Wheels */}
+      <circle cx="26" cy="74" r="3" fill="currentColor" opacity="0.7" />
+      <circle cx="54" cy="74" r="3" fill="currentColor" opacity="0.7" />
+    </svg>
+  );
+}
+
+function TempScene() {
+  return (
+    <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+      {/* Sun */}
+      <circle cx="40" cy="28" r="18" fill="currentColor" />
+      {/* Rays */}
+      <path d="M40 4V9M40 47V52M16 28H11M64 28H69M22 12L18 8M58 12L62 8M22 44L18 48M58 44L62 48" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" opacity="0.8" />
+      {/* Heat waves */}
+      <path d="M10 62 Q20 57 30 62 Q40 67 50 62 Q60 57 70 62" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" opacity="0.75" />
+      <path d="M6 72 Q18 67 28 72 Q40 77 50 72 Q62 67 74 72" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
+    </svg>
+  );
+}
+
+function HumidScene() {
+  return (
+    <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+      {/* Cloud (overlapping circles + ellipse base) */}
+      <circle cx="28" cy="28" r="14" fill="currentColor" opacity="0.85" />
+      <circle cx="48" cy="24" r="16" fill="currentColor" opacity="0.85" />
+      <ellipse cx="36" cy="34" rx="24" ry="14" fill="currentColor" opacity="0.85" />
+      {/* Rain lines */}
+      <path d="M16 52 L10 66" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M30 54 L24 70" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" opacity="0.9" />
+      <path d="M44 52 L38 68" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M58 54 L52 70" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.8" />
+      {/* Teardrop tips */}
+      <path d="M10 66 Q10 72 12.5 72 Q15 72 15 66" fill="currentColor" opacity="0.75" />
+      <path d="M24 70 Q24 76 26.5 76 Q29 76 29 70" fill="currentColor" opacity="0.7" />
+      <path d="M38 68 Q38 74 40.5 74 Q43 74 43 68" fill="currentColor" opacity="0.75" />
+    </svg>
+  );
+}
+
+function DefaultScene() {
+  return (
+    <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+      {/* Concentric rings */}
+      <circle cx="40" cy="40" r="36" stroke="currentColor" strokeWidth="1" opacity="0.4" />
+      <circle cx="40" cy="40" r="25" stroke="currentColor" strokeWidth="1.5" opacity="0.55" />
+      <circle cx="40" cy="40" r="14" fill="currentColor" opacity="0.65" />
+      {/* Lightning bolt */}
+      <path d="M45 18 L31 44 L41 44 L35 62 L55 36 L43 36 Z" fill="currentColor" opacity="0.9" />
+    </svg>
+  );
+}
+
+function EnvScene({ name }: { name: string }) {
+  const n = name.toLowerCase();
+  if (n.includes('movie'))      return <MovieNightScene />;
+  if (n.includes('pool party')) return <PoolPartyScene />;
+  if (n.includes('holiday'))    return <HolidayScene />;
+  if (n.includes('security'))   return <SecurityScene />;
+  if (n.includes('away'))       return <AwayScene />;
+  if (n.includes('temp'))       return <TempScene />;
+  if (n.includes('humid'))      return <HumidScene />;
+  return <DefaultScene />;
+}
+
 export function HomeScreen() {
   const { st, setD, go, config } = useHC();
   const global = st['_global'] as GlobalState;
@@ -725,13 +887,14 @@ export function HomeScreen() {
                       transition: 'background 0.2s, box-shadow 0.2s, border-color 0.2s',
                     }}
                   >
-                    {/* Watermark — large faded icon fills the background */}
+                    {/* Watermark — illustrated scene fills the background */}
                     <div style={{
                       position: 'absolute', right: -10, bottom: -6, zIndex: 0,
-                      color: on ? 'rgba(255,255,255,0.13)' : `${tint}28`,
+                      opacity: on ? 0.14 : 0.20,
+                      color: on ? '#ffffff' : tint,
                       pointerEvents: 'none',
                     }}>
-                      <Icon name={icon} size={72} strokeWidth={1.1} />
+                      <EnvScene name={ctrl.name} />
                     </div>
 
                     {/* Icon chip */}
