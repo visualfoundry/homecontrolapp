@@ -705,10 +705,65 @@ export function HomeScreen() {
                 const s = st[ctrl.id] as FlagState | undefined;
                 const on = s?.on ?? false;
                 return (
-                  <StatTile key={ctrl.id} icon={icon} label={ctrl.name} value="" tint={tint}
-                    compact active={on}
+                  <div
+                    key={ctrl.id}
+                    role="button"
+                    tabIndex={0}
                     data-control={deviceTag(ctrl.name, ctrl.id, config.controlStateIds)}
-                    onTap={() => setD(ctrl.id, { on: !on })} />
+                    onClick={() => setD(ctrl.id, { on: !on })}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setD(ctrl.id, { on: !on }); } }}
+                    style={{
+                      position: 'relative', flex: '0 0 auto', width: 108,
+                      borderRadius: 18, overflow: 'hidden', cursor: 'pointer',
+                      WebkitTapHighlightColor: 'transparent',
+                      display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+                      padding: '14px 14px 13px', minHeight: 124,
+                      background: on ? tint : `linear-gradient(160deg,${tint}20 0%,${tint}0a 100%)`,
+                      boxShadow: on ? `0 0 22px ${tint}55, var(--shadow)` : 'var(--shadow)',
+                      border: on ? 'none' : `1.5px solid ${tint}30`,
+                      outline: 'none',
+                      transition: 'background 0.2s, box-shadow 0.2s, border-color 0.2s',
+                    }}
+                  >
+                    {/* Watermark — large faded icon fills the background */}
+                    <div style={{
+                      position: 'absolute', right: -10, bottom: -6, zIndex: 0,
+                      color: on ? 'rgba(255,255,255,0.13)' : `${tint}28`,
+                      pointerEvents: 'none',
+                    }}>
+                      <Icon name={icon} size={72} strokeWidth={1.1} />
+                    </div>
+
+                    {/* Icon chip */}
+                    <div style={{
+                      position: 'relative', zIndex: 1,
+                      width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: on ? 'rgba(255,255,255,0.22)' : `${tint}28`,
+                      color: on ? '#fff' : tint,
+                    }}>
+                      <Icon name={icon} size={22} strokeWidth={1.9} />
+                    </div>
+
+                    {/* Name + on/off dot */}
+                    <div style={{ position: 'relative', zIndex: 1 }}>
+                      <div style={{
+                        fontSize: 13.5, fontWeight: 640, letterSpacing: -0.2, lineHeight: 1.2,
+                        color: on ? '#fff' : 'var(--text)',
+                      }}>{ctrl.name}</div>
+                      <div style={{
+                        marginTop: 5, display: 'flex', alignItems: 'center', gap: 5,
+                        fontSize: 11.5, fontWeight: 600,
+                        color: on ? 'rgba(255,255,255,0.8)' : tint,
+                      }}>
+                        <span style={{
+                          width: 6, height: 6, borderRadius: 3, flexShrink: 0,
+                          background: on ? 'rgba(255,255,255,0.85)' : `${tint}70`,
+                        }} />
+                        {on ? 'On' : 'Off'}
+                      </div>
+                    </div>
+                  </div>
                 );
               }
               return null;
