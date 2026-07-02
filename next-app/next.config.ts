@@ -2,6 +2,8 @@ import type { NextConfig } from 'next';
 import path from 'path';
 
 const nextConfig: NextConfig = {
+  // web-push uses Node.js built-ins (http/https/net) — keep it out of webpack.
+  serverExternalPackages: ['web-push'],
   outputFileTracingRoot: path.join(__dirname),
   async headers() {
     return [
