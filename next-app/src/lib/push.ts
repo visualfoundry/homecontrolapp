@@ -137,7 +137,7 @@ export function clearActiveAlert(key: string): void {
 }
 
 /** Re-send any alert that hasn't been sent within the resend window. */
-async function checkAndResendAlerts(): Promise<void> {
+export async function checkAndResendAlerts(): Promise<void> {
   if (!vapidPublicKey || !vapidPrivateKey) return;
   const now = Date.now();
   const alerts = readAlerts();
@@ -153,12 +153,10 @@ async function checkAndResendAlerts(): Promise<void> {
   if (changed) writeAlerts(alerts);
 }
 
-/**
- * Start the hourly alert scheduler. Uses a globalThis guard so hot-reloads
- * don't register duplicate intervals. Called from instrumentation.ts on boot.
- */
-export function startAlertScheduler(): void {
-  if (global._hcaAlertInterval) return;
+// Auto-start the hourly scheduler when this module is first loaded.
+// globalThis guard prevents duplicate intervals on hot-reloads.
+// Also callable on-demand via POST /api/push/alerts/check (for cron jobs).
+if (!global._hcaAlertInterval) {
   global._hcaAlertInterval = setInterval(() => { void checkAndResendAlerts(); }, 60 * 60 * 1000);
   console.log(`[push] alert scheduler started — resend window: ${RESEND_MS / 3_600_000}h`);
 }
