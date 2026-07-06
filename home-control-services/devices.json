@@ -817,7 +817,7 @@
   "eisy0/var/3": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "flag",
+    "class": "numeric-var",
     "varId": 3,
     "varType": 2
   },

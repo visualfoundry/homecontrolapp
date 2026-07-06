@@ -129,7 +129,7 @@ function titleToClass(ctTitle: string): DeviceClass {
   if (t === 'override switch')                    return 'toggle';
   if (t === 'auto switch')                        return 'toggle';
   if (t === 'onoffswitch-climate')                return 'toggle';
-  if (t === 'house-status' || t === 'house status' || t === 'button house status') return 'numeric-var';
+  if (t === 'house-status' || t === 'house status' || t === 'button house status' || t === 'house climate') return 'numeric-var';
   if (t.startsWith('geolocation'))                return 'flag';
   if (t === 'security')                           return 'flag';
   if (t === 'schedule')                           return 'flag';
