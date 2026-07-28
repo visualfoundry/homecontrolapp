@@ -802,12 +802,6 @@
     "class": "thermostat",
     "address": "34 53 6C 1"
   },
-  "eisy1/34 55 5D 1": {
-    "type": "device",
-    "eisyIdx": 1,
-    "class": "thermostat",
-    "address": "34 55 5D 1"
-  },
   "eisy1/34 52 DD 1": {
     "type": "device",
     "eisyIdx": 1,
@@ -2634,5 +2628,11 @@
     "eisyIdx": 4,
     "class": "leak-battery",
     "address": "37 83 B0 4"
+  },
+  "eisy1/3D 68 4F 1": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "thermostat",
+    "address": "3D 68 4F 1"
   }
 }
