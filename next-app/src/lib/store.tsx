@@ -201,9 +201,11 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
     };
     return seed;
   });
-  // Grace period map: device id → timestamp after which SSE patches are accepted again.
-  // Prevents stale poll values from overwriting optimistic updates mid-flight.
-  const pendingUntil = useRef<Map<string, number>>(new Map());
+  // Command-lock map: device id → { target patch, deadline }.
+  // SSE patches for a locked device are suppressed until the stream confirms the
+  // commanded fields have reached their target values (value-based settlement),
+  // or until the deadline passes (safety fallback for failed/lost commands).
+  const pendingUntil = useRef<Map<string, { target: Record<string, unknown>; deadline: number }>>(new Map());
 
   const [stack, setStack] = useState<string[]>(['home']);
   // Initialize with DEFAULT_PREFS so server and client render identically.
@@ -355,14 +357,30 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
     reseed();
 
     const cleanup = connectSSE(
-      // onPatch — apply incoming deltas, skipping devices with a pending command
-      // to avoid the optimistic-update flicker caused by a stale poll arriving
-      // before EISY has processed the command.
+      // onPatch — value-based command lock.
+      // After setD sends a command, the device is locked to the optimistic value
+      // until the stream confirms ALL commanded fields have reached their targets.
+      // This prevents intermediate EISY ramp/execution values from triggering
+      // re-commands (the feedback oscillation problem with variable-backed controls).
+      // A 10 s deadline releases the lock if the EISY never confirms (lost command).
       (id, patch) => {
-        const expiry = pendingUntil.current.get(id);
-        if (expiry) {
-          if (Date.now() < expiry) return;
-          pendingUntil.current.delete(id);
+        const pending = pendingUntil.current.get(id);
+        if (pending) {
+          if (Date.now() > pending.deadline) {
+            // Safety timeout — release lock regardless of value.
+            pendingUntil.current.delete(id);
+          } else {
+            // Check whether every commanded field has reached its target value.
+            const settled = Object.entries(pending.target).every(
+              ([k, v]) => patch[k] !== undefined && patch[k] === v,
+            );
+            if (settled) {
+              pendingUntil.current.delete(id);
+              // Fall through — apply the confirmed patch below.
+            } else {
+              return; // Suppress intermediate value — keep optimistic state.
+            }
+          }
         }
         setSt((prev) => ({
           ...prev,
@@ -403,9 +421,14 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
       !id.startsWith('auto:');
     if (isDeviceControl) {
       postCommand(id, patch as Record<string, unknown>);
-      // Suppress stale SSE patches for this device for 3 s — long enough to
-      // cover 2–3 poll cycles while EISY processes the command.
-      pendingUntil.current.set(id, Date.now() + 3_000);
+      // Lock this device until the stream confirms the commanded values have
+      // settled, or 10 s elapses (safety fallback for lost/failed commands).
+      // Each new setD call overwrites the previous target so rapid re-commands
+      // always track the latest intent.
+      pendingUntil.current.set(id, {
+        target: patch as Record<string, unknown>,
+        deadline: Date.now() + 10_000,
+      });
     }
   }, [schedulePrefsSync]);
 
