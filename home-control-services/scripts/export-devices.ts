@@ -194,6 +194,17 @@ function buildDevicesMap(controls: ControlNode[]): {
         const address = isInsteon ? `${cf.controlAddress} 1` : cf.controlAddress;
         const stateId = `eisy${eisyIdx}/${address}`;
         devices[stateId] = { type: 'device', eisyIdx, class: cls, address };
+
+        // Motion sensors: add battery sub-node (' 2') alongside primary (' 1').
+        // Leak sensors: add heartbeat/battery sub-node (' 4') — absence = low battery.
+        if (cls === 'motion-sensor' && address.endsWith(' 1')) {
+          const battAddr = address.slice(0, -1) + '2';
+          devices[`eisy${eisyIdx}/${battAddr}`] = { type: 'device', eisyIdx, class: 'motion-battery', address: battAddr };
+        }
+        if (cls === 'leak-sensor' && address.endsWith(' 1')) {
+          const battAddr = address.slice(0, -1) + '4';
+          devices[`eisy${eisyIdx}/${battAddr}`] = { type: 'device', eisyIdx, class: 'leak-battery', address: battAddr };
+        }
       }
     } else if (cf.controlIsyControlType === 'Variable' && cf.controlVariableId != null) {
       const stateId = `eisy${eisyIdx}/var/${cf.controlVariableId}`;
