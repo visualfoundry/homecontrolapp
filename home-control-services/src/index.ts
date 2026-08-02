@@ -94,9 +94,12 @@ const BATTERY_TYPES = [
 async function checkBatteryAlerts(): Promise<void> {
   const snap = getSnapshot() as Record<string, Record<string, unknown>>;
   for (const bt of BATTERY_TYPES) {
-    const lowCount = Object.entries(snap).filter(
-      ([id, s]) => devices[id]?.class === bt.class && s.lowBattery === true,
-    ).length;
+    // All device IDs of this class across all EISYs (from devices.json).
+    const knownIds = Object.keys(devices).filter(id => devices[id]?.class === bt.class);
+    if (knownIds.length === 0) continue;
+
+    const lowCount = knownIds.filter(id => snap[id]?.lowBattery === true).length;
+
     if (lowCount > 0) {
       const noun = bt.label + (lowCount > 1 ? 's' : '');
       const verb = lowCount > 1 ? 'have' : 'has';
@@ -106,7 +109,13 @@ async function checkBatteryAlerts(): Promise<void> {
         `/?screen=${bt.screen}`,
       );
     } else {
-      void clearPushAlert(bt.alertKey);
+      // Only clear when EVERY expected device has confirmed state in the snapshot.
+      // If any are missing (their EISY timed out this poll cycle), skip the clear
+      // so we don't prematurely resolve an alert due to a transient network failure.
+      const confirmedCount = knownIds.filter(id => snap[id] !== undefined).length;
+      if (confirmedCount === knownIds.length) {
+        void clearPushAlert(bt.alertKey);
+      }
     }
   }
 }
