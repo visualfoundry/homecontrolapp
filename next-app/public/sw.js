@@ -104,23 +104,35 @@ async function cacheFirst(req) {
 
 self.addEventListener('push', (e) => {
   const data = e.data?.json() ?? {};
+  const url = data.url ?? '/';
+  // Extract screen id from /?screen=X so the click handler can navigate without a reload.
+  let screen = null;
+  try { screen = new URL(url, self.location.origin).searchParams.get('screen'); } catch {}
   e.waitUntil(
     self.registration.showNotification(data.title ?? 'Home Control', {
       body:  data.body  ?? '',
       icon:  '/icons/icon-192.png',
       badge: '/icons/icon-192.png',
-      data:  { url: data.url ?? '/' },
+      data:  { url, screen },
     }),
   );
 });
 
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
-  const url = e.notification.data?.url ?? '/';
+  const { url = '/', screen } = e.notification.data ?? {};
   e.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((cs) => {
-      const existing = cs.find(c => c.url.includes(url));
-      if (existing) return existing.focus();
+      // Find any existing HCA window at this origin rather than matching the exact URL
+      // (the PWA is a SPA — its URL is always "/" regardless of which screen is shown).
+      const existing = cs.find(c => {
+        try { return new URL(c.url).origin === self.location.origin; } catch { return false; }
+      });
+      if (existing) {
+        // Tell the running app to navigate directly without a reload.
+        if (screen) existing.postMessage({ type: 'hca-navigate', screen });
+        return existing.focus();
+      }
       return clients.openWindow(url);
     }),
   );

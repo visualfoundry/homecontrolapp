@@ -46,7 +46,7 @@ try {
 // Push notification helper
 // ---------------------------------------------------------------------------
 
-async function sendPushAlert(body: string): Promise<void> {
+async function sendPushAlert(body: string, alertKey?: string, url = '/'): Promise<void> {
   if (!HCA_INTERNAL_KEY || !NEXT_APP_URL) return;
   try {
     await fetch(`${NEXT_APP_URL}/api/push/notify`, {
@@ -55,11 +55,59 @@ async function sendPushAlert(body: string): Promise<void> {
         'Content-Type': 'application/json',
         'X-HCA-Internal-Key': HCA_INTERNAL_KEY,
       },
-      body: JSON.stringify({ title: 'Home Control', body, url: '/' }),
+      body: JSON.stringify({
+        title: 'Home Control', body, url,
+        ...(alertKey ? { alertKey } : {}),
+      }),
       signal: AbortSignal.timeout(5_000),
     });
   } catch (err) {
     console.warn('[push] notify failed:', err instanceof Error ? err.message : err);
+  }
+}
+
+async function clearPushAlert(alertKey: string): Promise<void> {
+  if (!HCA_INTERNAL_KEY || !NEXT_APP_URL) return;
+  try {
+    await fetch(`${NEXT_APP_URL}/api/push/notify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-HCA-Internal-Key': HCA_INTERNAL_KEY,
+      },
+      body: JSON.stringify({ alertKey, clear: true }),
+      signal: AbortSignal.timeout(5_000),
+    });
+  } catch (err) {
+    console.warn('[push] clear failed:', err instanceof Error ? err.message : err);
+  }
+}
+
+// One consolidated alert per sensor type, sent after each poll cycle.
+// Rate-limiting in the notify endpoint ensures we only push once per 24h.
+const BATTERY_TYPES = [
+  { class: 'motion-sensor',  alertKey: 'low-battery:motion', screen: 'motion', label: 'motion sensor' },
+  { class: 'leak-sensor',    alertKey: 'low-battery:leak',   screen: 'leak',   label: 'water leak sensor' },
+  { class: 'contact-sensor', alertKey: 'low-battery:door',   screen: 'doors',  label: 'door sensor' },
+] as const;
+
+async function checkBatteryAlerts(): Promise<void> {
+  const snap = getSnapshot() as Record<string, Record<string, unknown>>;
+  for (const bt of BATTERY_TYPES) {
+    const lowCount = Object.entries(snap).filter(
+      ([id, s]) => devices[id]?.class === bt.class && s.lowBattery === true,
+    ).length;
+    if (lowCount > 0) {
+      const noun = bt.label + (lowCount > 1 ? 's' : '');
+      const verb = lowCount > 1 ? 'have' : 'has';
+      void sendPushAlert(
+        `${lowCount} ${noun} ${verb} low battery`,
+        bt.alertKey,
+        `/?screen=${bt.screen}`,
+      );
+    } else {
+      void clearPushAlert(bt.alertKey);
+    }
   }
 }
 
@@ -90,10 +138,6 @@ async function pollEisy(eisyIdx: number): Promise<void> {
         const battProps = nodeStatus.get(battAddr);
         const isLow = (battProps?.get('ST') ?? 0) === 0; // no heartbeat = low battery
         (state as Record<string, unknown>).lowBattery = isLow;
-        if (isLow) {
-          const prevLow = !!(getSnapshot()[stateId] as { lowBattery?: boolean } | undefined)?.lowBattery;
-          if (!prevLow) void sendPushAlert(`A water leak sensor is reporting low battery. Open the app to see which one.`);
-        }
       }
     }
     // Motion sensors: node 1 = motion, node 2 = dawn/dusk, node 3 = battery.
@@ -103,10 +147,6 @@ async function pollEisy(eisyIdx: number): Promise<void> {
         const battProps = nodeStatus.get(battAddr);
         const isLow = (battProps?.get('ST') ?? 0) > 0;
         (state as Record<string, unknown>).lowBattery = isLow;
-        if (isLow) {
-          const prevLow = !!(getSnapshot()[stateId] as { lowBattery?: boolean } | undefined)?.lowBattery;
-          if (!prevLow) void sendPushAlert(`A motion sensor is reporting low battery. Open the app to see which one.`);
-        }
       }
     }
     applyPatch(stateId, state);
@@ -143,6 +183,7 @@ async function pollAll(): Promise<void> {
   while (true) {
     const t0 = Date.now();
     await pollAll();
+    void checkBatteryAlerts();
     const wait = Math.max(0, POLL_MS - (Date.now() - t0));
     if (wait > 0) await new Promise<void>(r => setTimeout(r, wait));
   }

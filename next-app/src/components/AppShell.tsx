@@ -166,6 +166,23 @@ function Shell() {
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
   }, [current]);
 
+  // Deep-link: read ?screen= on initial load (e.g. opened from a push notification).
+  useEffect(() => {
+    const screen = new URLSearchParams(window.location.search).get('screen');
+    if (screen) go(screen);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // SW postMessage navigation: handles taps on notifications when the app is already open.
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === 'hca-navigate' && typeof e.data.screen === 'string') {
+        go(e.data.screen as string);
+      }
+    };
+    navigator.serviceWorker?.addEventListener('message', handler);
+    return () => navigator.serviceWorker?.removeEventListener('message', handler);
+  }, [go]);
+
   return (
     <div className="hca-shell">
       {/* Sidebar — hidden on phone, visible on tablet via CSS */}
