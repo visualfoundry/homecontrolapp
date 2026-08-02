@@ -111,6 +111,16 @@ export async function getVariables(
 // ---------------------------------------------------------------------------
 
 /**
+ * Issue an ISY-level query to a node — equivalent to the "Query" button in the
+ * EISY admin. Forces the ISY to request current status from the physical device
+ * and update its database. Use this to re-read battery or sensor state.
+ */
+export async function queryNode(baseUrl: string, address: string): Promise<void> {
+  const encoded = encodeURIComponent(address);
+  await eisyGet(`${baseUrl}/rest/nodes/${encoded}/query`);
+}
+
+/**
  * Send a command to an Insteon node.
  * cmd examples: DON, DOF, DFON, DFOF, CLIMD, CLISPH, CLISPC
  * value: 0–255 for DON (level), or mode/setpoint for thermostat cmds
