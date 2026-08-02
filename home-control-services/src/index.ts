@@ -22,7 +22,7 @@ import { createReadStream } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { PORT, EISY_URLS, POLL_MS, NEXT_APP_URL, HCA_INTERNAL_KEY } from './config.js';
-import { getNodeStatus, getVariables, sendNodeCommand, setVariable, queryNode } from './eisy-client.js';
+import { getNodeStatus, getVariables, sendNodeCommand, setVariable } from './eisy-client.js';
 import { applyPatch, getSnapshot, subscribe } from './state-store.js';
 import { nodeToState, varToState, patchToNodeCommand, type DevicesMap } from './state-mapper.js';
 import { readFileSync } from 'node:fs';
@@ -225,11 +225,11 @@ app.post('/command', (req: Request, res: Response) => {
       if (body.action === 'query' && entry.type === 'device' && entry.address) {
         // Force the EISY to re-read the physical device via ST command.
         // Useful for motion sensors: clears stale lowBattery state without a manual reboot.
-        console.log(`[command] query ${body.target} → ${baseUrl}`);
-        await queryNode(baseUrl, entry.address);
+        console.log(`[command] query ${body.target} → ${baseUrl} ST`);
+        await sendNodeCommand(baseUrl, entry.address, 'ST');
         if (entry.class === 'motion-sensor' && entry.address.endsWith(' 1')) {
           const battAddr = entry.address.slice(0, -1) + '3';
-          await queryNode(baseUrl, battAddr);
+          await sendNodeCommand(baseUrl, battAddr, 'ST');
         }
         console.log(`[command] query ${body.target} ✓`);
       } else if (entry.type === 'device' && entry.address) {
