@@ -222,7 +222,17 @@ app.post('/command', (req: Request, res: Response) => {
   const baseUrl = EISY_URLS[entry.eisyIdx];
   void (async () => {
     try {
-      if (entry.type === 'device' && entry.address) {
+      if (body.action === 'query' && entry.type === 'device' && entry.address) {
+        // Force the EISY to re-read the physical device via ST command.
+        // Useful for motion sensors: clears stale lowBattery state without a manual reboot.
+        console.log(`[command] query ${body.target} → ${baseUrl} ST`);
+        await sendNodeCommand(baseUrl, entry.address, 'ST');
+        if (entry.class === 'motion-sensor' && entry.address.endsWith(' 1')) {
+          const battAddr = entry.address.slice(0, -1) + '2';
+          await sendNodeCommand(baseUrl, battAddr, 'ST');
+        }
+        console.log(`[command] query ${body.target} ✓`);
+      } else if (entry.type === 'device' && entry.address) {
         const nodeCmd = patchToNodeCommand(entry.class, body.patch ?? {}, body.action);
         if (nodeCmd) {
           console.log(`[command] node ${body.target} → ${baseUrl} ${nodeCmd.cmd}${nodeCmd.value !== undefined ? '/' + nodeCmd.value : ''}`);
