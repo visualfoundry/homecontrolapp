@@ -115,19 +115,29 @@ function writeAlerts(alerts: ActiveAlert[]): void {
   }
 }
 
-/** Record or update a persistent alert. Call after sending the first notification. */
-export function setActiveAlert(key: string, payload: PushPayload): void {
+/**
+ * Returns true if an alert with this key was already sent within the resend window.
+ * Use this to skip sendToAll when the state service re-fires on restart.
+ */
+export function isAlertRateLimited(key: string): boolean {
+  const existing = readAlerts().find(a => a.key === key);
+  return !!existing && Date.now() - existing.lastSent < RESEND_MS;
+}
+
+/** Record or update a persistent alert. Pass didSend=false to update the record
+ *  without resetting the lastSent timestamp (used when the send was skipped). */
+export function setActiveAlert(key: string, payload: PushPayload, didSend = true): void {
   const now = Date.now();
   const alerts = readAlerts();
   const existing = alerts.find(a => a.key === key);
   if (existing) {
     existing.payload = payload;
-    existing.lastSent = now;
+    if (didSend) existing.lastSent = now;
   } else {
-    alerts.push({ key, payload, firstSent: now, lastSent: now });
+    alerts.push({ key, payload, firstSent: now, lastSent: didSend ? now : 0 });
   }
   writeAlerts(alerts);
-  console.log(`[push] active alert set: ${key}`);
+  console.log(`[push] active alert ${didSend ? 'sent' : 'recorded (rate-limited)'}: ${key}`);
 }
 
 /** Remove a persistent alert — called when the condition is resolved. */

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendToAll, setActiveAlert, clearActiveAlert, type PushPayload } from '@/lib/push';
+import { sendToAll, setActiveAlert, clearActiveAlert, isAlertRateLimited, type PushPayload } from '@/lib/push';
 
 /**
  * POST /api/push/notify
@@ -51,11 +51,18 @@ export async function POST(req: NextRequest) {
     url:   data.url  ?? '/',
   };
 
+  // If this is a persistent alert that was already sent within the resend window,
+  // record the condition without re-sending. Prevents alert spam on service restart
+  // (state resets to fresh in-memory, so every low-battery sensor fires again).
+  if (data.alertKey && isAlertRateLimited(data.alertKey)) {
+    setActiveAlert(data.alertKey, payload, false);
+    return NextResponse.json({ ok: true, action: 'rate-limited' });
+  }
+
   await sendToAll(payload);
 
-  // If an alertKey is supplied, persist for daily re-notification.
   if (data.alertKey) {
-    setActiveAlert(data.alertKey, payload);
+    setActiveAlert(data.alertKey, payload, true);
   }
 
   return NextResponse.json({ ok: true });
