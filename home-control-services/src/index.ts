@@ -147,6 +147,9 @@ async function pollEisy(eisyIdx: number): Promise<void> {
         const battProps = nodeStatus.get(battAddr);
         const isLow = (battProps?.get('ST') ?? 0) === 0; // no heartbeat = low battery
         (state as Record<string, unknown>).lowBattery = isLow;
+      } else {
+        // Explicitly clear so stale values from previous runs don't persist.
+        (state as Record<string, unknown>).lowBattery = false;
       }
     }
     // Motion sensors: node 1 = motion, node 2 = dawn/dusk, node 3 = battery.
@@ -156,6 +159,8 @@ async function pollEisy(eisyIdx: number): Promise<void> {
         const battProps = nodeStatus.get(battAddr);
         const isLow = (battProps?.get('ST') ?? 0) > 0;
         (state as Record<string, unknown>).lowBattery = isLow;
+      } else {
+        (state as Record<string, unknown>).lowBattery = false;
       }
     }
     applyPatch(stateId, state);
