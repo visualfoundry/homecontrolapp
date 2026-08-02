@@ -196,10 +196,10 @@ function buildDevicesMap(controls: ControlNode[]): {
         devices[stateId] = { type: 'device', eisyIdx, class: cls, address };
 
         // Leak sensors: add heartbeat/battery sub-node (' 4') — absence = low battery.
-        // Motion sensor battery sub-nodes (' 2') are added manually to devices.json after
-        // confirming via EISY admin that the sensor is genuinely reporting low battery.
-        // Do not auto-generate them here — the EISY caches stale ST=255 values
-        // that look like low battery but are not.
+        // Motion sensor sub-nodes: ' 1' = motion, ' 2' = dawn/dusk, ' 3' = battery.
+        // Battery sub-nodes (' 3') are added manually to devices.json after confirming
+        // via EISY admin that the sensor is genuinely reporting low battery.
+        // Do not auto-generate them — the EISY caches stale ST=255 values.
         if (cls === 'leak-sensor' && address.endsWith(' 1')) {
           const battAddr = address.slice(0, -1) + '4';
           devices[`eisy${eisyIdx}/${battAddr}`] = { type: 'device', eisyIdx, class: 'leak-battery', address: battAddr };

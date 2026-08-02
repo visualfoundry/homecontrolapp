@@ -96,9 +96,9 @@ async function pollEisy(eisyIdx: number): Promise<void> {
         }
       }
     }
-    // Motion sensors: node 1 = motion, node 2 = battery.
+    // Motion sensors: node 1 = motion, node 2 = dawn/dusk, node 3 = battery.
     if (entry.class === 'motion-sensor' && address.endsWith(' 1')) {
-      const battAddr = address.slice(0, -1) + '2';
+      const battAddr = address.slice(0, -1) + '3';
       if (devices[`eisy${eisyIdx}/${battAddr}`]?.class === 'motion-battery') {
         const battProps = nodeStatus.get(battAddr);
         const isLow = (battProps?.get('ST') ?? 0) > 0;
@@ -228,7 +228,7 @@ app.post('/command', (req: Request, res: Response) => {
         console.log(`[command] query ${body.target} → ${baseUrl} ST`);
         await sendNodeCommand(baseUrl, entry.address, 'ST');
         if (entry.class === 'motion-sensor' && entry.address.endsWith(' 1')) {
-          const battAddr = entry.address.slice(0, -1) + '2';
+          const battAddr = entry.address.slice(0, -1) + '3';
           await sendNodeCommand(baseUrl, battAddr, 'ST');
         }
         console.log(`[command] query ${body.target} ✓`);
