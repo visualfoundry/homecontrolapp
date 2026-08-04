@@ -31,7 +31,11 @@ function authHeader(): string {
 
 async function eisyGet(url: string, timeoutMs = 5_000): Promise<string> {
   const res = await fetch(url, {
-    headers: { Authorization: authHeader(), Accept: 'text/xml, application/xml' },
+    headers: {
+      Authorization: authHeader(),
+      Accept: 'text/xml, application/xml',
+      Connection: 'close',
+    },
     signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res.ok) throw new Error(`EISY GET ${url}: HTTP ${res.status}`);
