@@ -109,10 +109,11 @@ async function checkBatteryAlerts(): Promise<void> {
         `/?screen=${bt.screen}`,
       );
     } else {
-      // Only clear when EVERY expected device has confirmed state in the snapshot.
-      // If any are missing (their EISY timed out this poll cycle), skip the clear
-      // so we don't prematurely resolve an alert due to a transient network failure.
-      const confirmedCount = knownIds.filter(id => snap[id] !== undefined).length;
+      // Only clear when EVERY expected device has confirmed battery state in the snapshot.
+      // Checking lowBattery !== undefined (not just state !== undefined) ensures we don't
+      // clear the alert for contact-sensors whose open/close state is read from a
+      // different poll path (variables) than the battery state (node status).
+      const confirmedCount = knownIds.filter(id => snap[id]?.lowBattery !== undefined).length;
       if (confirmedCount === knownIds.length) {
         void clearPushAlert(bt.alertKey);
       }
