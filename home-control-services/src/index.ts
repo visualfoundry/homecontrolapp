@@ -84,15 +84,21 @@ async function clearPushAlert(alertKey: string): Promise<void> {
 }
 
 // One consolidated alert per sensor type, sent after each poll cycle.
-// Rate-limiting in the notify endpoint ensures we only push once per 24h.
 const BATTERY_TYPES = [
   { class: 'motion-sensor',  alertKey: 'low-battery:motion', screen: 'motion', label: 'motion sensor' },
   { class: 'leak-sensor',    alertKey: 'low-battery:leak',   screen: 'leak',   label: 'water leak sensor' },
   { class: 'contact-sensor', alertKey: 'low-battery:door',   screen: 'doors',  label: 'door sensor' },
 ] as const;
 
+// In-memory map: alertKey → timestamp of last sendPushAlert call.
+// Prevents hammering the notify endpoint every poll cycle.
+// The notify endpoint's file-based record is the safety net on restart.
+const alertSentAt = new Map<string, number>();
+const ALERT_RESEND_MS = 24 * 60 * 60 * 1000;
+
 async function checkBatteryAlerts(): Promise<void> {
   const snap = getSnapshot() as Record<string, Record<string, unknown>>;
+  const now = Date.now();
   for (const bt of BATTERY_TYPES) {
     // All device IDs of this class across all EISYs (from devices.json).
     const knownIds = Object.keys(devices).filter(id => devices[id]?.class === bt.class);
@@ -101,20 +107,26 @@ async function checkBatteryAlerts(): Promise<void> {
     const lowCount = knownIds.filter(id => snap[id]?.lowBattery === true).length;
 
     if (lowCount > 0) {
-      const noun = bt.label + (lowCount > 1 ? 's' : '');
-      const verb = lowCount > 1 ? 'have' : 'has';
-      void sendPushAlert(
-        `${lowCount} ${noun} ${verb} low battery`,
-        bt.alertKey,
-        `/?screen=${bt.screen}`,
-      );
+      // Only call the API on first detection or after 24h — not every poll cycle.
+      const lastSent = alertSentAt.get(bt.alertKey);
+      if (lastSent === undefined || now - lastSent >= ALERT_RESEND_MS) {
+        alertSentAt.set(bt.alertKey, now);
+        const noun = bt.label + (lowCount > 1 ? 's' : '');
+        const verb = lowCount > 1 ? 'have' : 'has';
+        void sendPushAlert(
+          `${lowCount} ${noun} ${verb} low battery`,
+          bt.alertKey,
+          `/?screen=${bt.screen}`,
+        );
+      }
     } else {
       // Only clear when EVERY expected device has confirmed battery state in the snapshot.
       // Checking lowBattery !== undefined (not just state !== undefined) ensures we don't
       // clear the alert for contact-sensors whose open/close state is read from a
       // different poll path (variables) than the battery state (node status).
       const confirmedCount = knownIds.filter(id => snap[id]?.lowBattery !== undefined).length;
-      if (confirmedCount === knownIds.length) {
+      if (confirmedCount === knownIds.length && alertSentAt.has(bt.alertKey)) {
+        alertSentAt.delete(bt.alertKey);
         void clearPushAlert(bt.alertKey);
       }
     }
