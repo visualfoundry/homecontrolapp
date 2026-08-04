@@ -29,10 +29,10 @@ function authHeader(): string {
   return 'Basic ' + Buffer.from(`${EISY_USER}:${EISY_PASS}`).toString('base64');
 }
 
-async function eisyGet(url: string): Promise<string> {
+async function eisyGet(url: string, timeoutMs = 5_000): Promise<string> {
   const res = await fetch(url, {
     headers: { Authorization: authHeader(), Accept: 'text/xml, application/xml' },
-    signal: AbortSignal.timeout(5_000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res.ok) throw new Error(`EISY GET ${url}: HTTP ${res.status}`);
   return res.text();
@@ -53,7 +53,7 @@ export type NodeProps = Map<string, number>;
  * Thermostats have ST + CLISPH + CLISPC + CLIMD.
  */
 export async function getNodeStatus(baseUrl: string): Promise<Map<string, NodeProps>> {
-  const xml = await eisyGet(`${baseUrl}/rest/status`);
+  const xml = await eisyGet(`${baseUrl}/rest/status`, 15_000);
   const parsed = parser.parse(xml) as {
     nodes?: {
       node?: Array<{
