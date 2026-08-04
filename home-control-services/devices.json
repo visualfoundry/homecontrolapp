@@ -2688,5 +2688,61 @@
     "eisyIdx": 2,
     "class": "motion-battery",
     "address": "37 B1 86 3"
+  },
+  "eisy2/32 A0 5C 4": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "contact-battery",
+    "address": "32 A0 5C 4",
+    "linkedStateId": "eisy2/var/53"
+  },
+  "eisy2/32 A2 39 4": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "contact-battery",
+    "address": "32 A2 39 4",
+    "linkedStateId": "eisy2/var/68"
+  },
+  "eisy2/3B 1A 98 4": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "contact-battery",
+    "address": "3B 1A 98 4",
+    "linkedStateId": "eisy2/var/71"
+  },
+  "eisy2/4D DB 9A 4": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "contact-battery",
+    "address": "4D DB 9A 4",
+    "linkedStateId": "eisy2/var/86"
+  },
+  "eisy2/55 8E 8A 4": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "contact-battery",
+    "address": "55 8E 8A 4",
+    "linkedStateId": "eisy2/var/89"
+  },
+  "eisy2/54 5F 5D 4": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "contact-battery",
+    "address": "54 5F 5D 4",
+    "linkedStateId": "eisy2/var/98"
+  },
+  "eisy2/3B 1A 13 4": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "contact-battery",
+    "address": "3B 1A 13 4",
+    "linkedStateId": "eisy2/var/119"
+  },
+  "eisy2/55 AB F1 4": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "contact-battery",
+    "address": "55 AB F1 4",
+    "linkedStateId": "eisy2/var/122"
   }
 }

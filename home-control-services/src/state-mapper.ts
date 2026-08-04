@@ -31,6 +31,7 @@ export type DeviceClass =
   | 'pool-controller'
   | 'motion-battery'
   | 'leak-battery'
+  | 'contact-battery'
   | 'pool-valve';
 
 export interface DeviceEntry {
@@ -43,6 +44,8 @@ export interface DeviceEntry {
   // Variable fields (set by export-devices script after probing EISYs)
   varType?: 1 | 2;
   varId?: number;
+  // contact-battery: stateId of the contact-sensor variable to patch with lowBattery
+  linkedStateId?: string;
 }
 
 export type DevicesMap = Record<string, DeviceEntry>;

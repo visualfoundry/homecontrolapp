@@ -133,6 +133,14 @@ async function pollEisy(eisyIdx: number): Promise<void> {
     const stateId = `eisy${eisyIdx}/${address}`;
     const entry = devices[stateId];
     if (!entry) continue;
+    // Contact sensor battery (2845-222 sub-node 4): ST > 0 = low battery.
+    // Patch lowBattery directly onto the linked variable state (the contact-sensor's stateId).
+    if (entry.class === 'contact-battery') {
+      const isLow = (props.get('ST') ?? 0) > 0;
+      if (entry.linkedStateId) applyPatch(entry.linkedStateId, { lowBattery: isLow });
+      continue;
+    }
+
     const state = nodeToState(entry.class, props);
     // Leak sensors: node 1 = Dry, node 2 = Wet, node 4 = Heartbeat.
     // Read wet state from node 2 (overriding the dry-node value).
