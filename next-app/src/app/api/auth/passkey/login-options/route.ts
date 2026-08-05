@@ -12,16 +12,27 @@ export const dynamic = 'force-dynamic';
  * Returns WebAuthn authentication options (discoverable credential flow:
  * no userId needed; the device selects the matching passkey).
  */
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   const { rpId } = getRpConfig();
 
-  // Fetch all stored credentials so the authenticator can auto-select.
+  // The client sends its enrolled credential ID so we can pin to that one device's
+  // credential — iOS then goes straight to Face ID without showing the passkey picker.
+  let credentialId: string | undefined;
+  try {
+    const body = await req.json() as { credentialId?: string };
+    credentialId = typeof body.credentialId === 'string' ? body.credentialId : undefined;
+  } catch { /* empty / non-JSON body is fine */ }
+
   const all = await getAllCredentials();
+
+  // Filter to the device's own credential; fall back to all if the hint is missing or stale.
+  const hinted = credentialId ? all.filter(c => c.id === credentialId) : [];
+  const allowed = hinted.length > 0 ? hinted : all;
 
   const options = await generateAuthenticationOptions({
     rpID: rpId,
     userVerification: 'preferred',
-    allowCredentials: all.map(c => ({
+    allowCredentials: allowed.map(c => ({
       id: c.id,
       transports: c.transports,
     })),

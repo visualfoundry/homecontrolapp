@@ -8,6 +8,7 @@ import {
 } from '@simplewebauthn/browser';
 
 const PASSKEY_KEY = 'hca:passkey_enrolled';
+const CREDENTIAL_ID_KEY = 'hca:credential_id';
 
 function getPasskeyLabel(): string {
   if (typeof navigator === 'undefined') return 'Passkey';
@@ -156,7 +157,12 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     setState('passkey-submitting');
     setError('');
     try {
-      const optRes = await fetch('/api/auth/passkey/login-options', { method: 'POST' });
+      const credentialId = localStorage.getItem(CREDENTIAL_ID_KEY) ?? undefined;
+      const optRes = await fetch('/api/auth/passkey/login-options', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credentialId }),
+      });
       if (!optRes.ok) throw new Error('Could not get options');
       const options = await optRes.json();
 
@@ -205,6 +211,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       });
       if (verRes.ok) {
         localStorage.setItem(PASSKEY_KEY, '1');
+        localStorage.setItem(CREDENTIAL_ID_KEY, credential.id);
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
