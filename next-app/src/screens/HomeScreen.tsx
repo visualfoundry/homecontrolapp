@@ -754,7 +754,7 @@ export function HomeScreen() {
                : h >= 12 && h < 17 ? 'Good afternoon'
                : h >= 17 && h < 21 ? 'Good evening'
                : 'Good night';
-    return firstName ? `${base}, ${firstName}` : base;
+    return firstName ? `${base} ${firstName}` : base;
   })();
   // Scale font size down for longer greetings so the text stays on one line.
   // "Good morning" (12) = 33px baseline; each char over 12 shaves ~0.9px, floor at 22px.
