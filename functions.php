@@ -540,6 +540,17 @@ add_action( 'rest_api_init', function () {
 		)
 	);
 
+	// User info — returns first name for the personalized greeting
+	register_rest_route(
+		'hca/v1',
+		'/user-info',
+		array(
+			'methods'             => 'GET',
+			'callback'            => 'homecontrolapp_rest_user_info',
+			'permission_callback' => '__return_true',
+		)
+	);
+
 	// WebAuthn credential storage (called server-side from Next.js, never by browser)
 	register_rest_route(
 		'hca/v1',
@@ -603,6 +614,19 @@ function homecontrolapp_rest_login( WP_REST_Request $req ) {
 	}
 
 	return new WP_REST_Response( array( 'userId' => $user->ID ), 200 );
+}
+
+/** GET /wp-json/hca/v1/user-info?userId=X — returns { firstName } */
+function homecontrolapp_rest_user_info( WP_REST_Request $req ) {
+	if ( ! homecontrolapp_webauthn_check_key( $req ) ) {
+		return new WP_REST_Response( array( 'error' => 'Forbidden' ), 403 );
+	}
+	$user = get_userdata( (int) $req->get_param( 'userId' ) );
+	if ( ! $user ) {
+		return new WP_REST_Response( array( 'error' => 'Not found' ), 404 );
+	}
+	$first = ! empty( $user->first_name ) ? $user->first_name : $user->display_name;
+	return new WP_REST_Response( array( 'firstName' => $first ), 200 );
 }
 
 // -------------------------------------------------------------------------

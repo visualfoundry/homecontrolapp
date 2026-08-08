@@ -66,6 +66,10 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     // showing the login form rather than hanging on a white/spinner screen.
     fetch('/api/auth/check', { signal: AbortSignal.timeout(6_000) }).then(async r => {
       if (r.ok) {
+        try {
+          const data = await r.json() as { ok: boolean; firstName?: string };
+          if (data.firstName) localStorage.setItem('hca:first_name', data.firstName);
+        } catch { /* ignore */ }
         setState('ok');
         return;
       }

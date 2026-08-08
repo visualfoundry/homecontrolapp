@@ -747,17 +747,22 @@ export function HomeScreen() {
   const lightSceneIds = new Set(config.lightSceneRooms.map(r => r.id));
   const carDoorIds = new Set(config.garageCarDoors.map(d => d.id));
 
+  const firstName = typeof window !== 'undefined' ? (localStorage.getItem('hca:first_name') ?? '') : '';
   const greeting = (() => {
     const h = new Date().getHours();
-    if (h >= 5  && h < 12) return 'Good morning';
-    if (h >= 12 && h < 17) return 'Good afternoon';
-    if (h >= 17 && h < 21) return 'Good evening';
-    return 'Good night';
+    const base = h >= 5  && h < 12 ? 'Good morning'
+               : h >= 12 && h < 17 ? 'Good afternoon'
+               : h >= 17 && h < 21 ? 'Good evening'
+               : 'Good night';
+    return firstName ? `${base}, ${firstName}` : base;
   })();
+  // Scale font size down for longer greetings so the text stays on one line.
+  // "Good morning" (12) = 33px baseline; each char over 12 shaves ~0.9px, floor at 22px.
+  const greetingSize = Math.max(22, 33 - Math.max(0, greeting.length - 12) * 0.9);
 
   return (
     <div>
-      <LargeTitle title={greeting} sub="The House"
+      <LargeTitle title={greeting} titleSize={greetingSize} sub="The House"
         right={
           <button onClick={() => go('settings')} style={iconBtn}>
             <Icon name="gear" size={22} />

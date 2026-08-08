@@ -22,9 +22,11 @@ interface LargeTitleProps {
   right?: React.ReactNode;
   /** Render as the first item in a padded scroll area — adds top spacing */
   first?: boolean;
+  /** Override the title font size (px). Defaults to 33. */
+  titleSize?: number;
 }
 
-export function LargeTitle({ title, sub, action, onAction, right, first = true }: LargeTitleProps) {
+export function LargeTitle({ title, sub, action, onAction, right, first = true, titleSize = 33 }: LargeTitleProps) {
   return (
     <div
       style={{
@@ -40,7 +42,7 @@ export function LargeTitle({ title, sub, action, onAction, right, first = true }
         <h1
           style={{
             margin: 0,
-            fontSize: 33,
+            fontSize: titleSize,
             fontWeight: 720,
             letterSpacing: -0.9,
             lineHeight: 1.1,
