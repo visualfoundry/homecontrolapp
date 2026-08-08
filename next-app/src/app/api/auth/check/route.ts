@@ -16,19 +16,24 @@ export async function GET(req: NextRequest) {
   try {
     const session = req.cookies.get('hca_session')?.value ?? '';
     const userId = await verifySession(session);
+    console.log('[check] userId:', userId, 'session length:', session.length);
     if (userId) {
       const wpBase = (process.env.NEXT_PUBLIC_WP_GRAPHQL_URL ?? '').replace(/\/graphql$/, '');
       const internalKey = process.env.HCA_INTERNAL_KEY ?? '';
-      const r = await fetch(`${wpBase}/wp-json/hca/v1/user-info?userId=${userId}`, {
+      const url = `${wpBase}/wp-json/hca/v1/user-info?userId=${userId}`;
+      console.log('[check] fetching:', url, 'key set:', !!internalKey);
+      const r = await fetch(url, {
         headers: { 'X-HCA-Internal-Key': internalKey },
         signal: AbortSignal.timeout(3_000),
       });
+      console.log('[check] wp status:', r.status);
       if (r.ok) {
         const data = await r.json() as { firstName?: string };
         firstName = data.firstName ?? '';
+        console.log('[check] firstName:', firstName);
       }
     }
-  } catch { /* non-fatal — greeting degrades gracefully without name */ }
+  } catch (err) { console.error('[check] error:', err); }
 
   return NextResponse.json({ ok: true, firstName });
 }
