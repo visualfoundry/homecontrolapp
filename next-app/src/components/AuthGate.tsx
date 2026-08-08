@@ -174,6 +174,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         body: JSON.stringify(assertion),
       });
       if (verRes.ok) {
+        // Pin this device's credential ID so future logins skip the picker.
+        localStorage.setItem(CREDENTIAL_ID_KEY, assertion.id);
         setSessionExpired(false);
         setState('ok');
       } else {
