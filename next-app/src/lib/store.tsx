@@ -206,6 +206,9 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
   // commanded fields have reached their target values (value-based settlement),
   // or until the deadline passes (safety fallback for failed/lost commands).
   const pendingUntil = useRef<Map<string, { target: Record<string, unknown>; deadline: number }>>(new Map());
+  // Mirror of current st — updated synchronously so the SSE onPatch handler can
+  // read the current store state without triggering a re-render.
+  const stRef = useRef<StateMap>({} as StateMap);
 
   const [stack, setStack] = useState<string[]>(['home']);
   // Initialize with DEFAULT_PREFS so server and client render identically.
@@ -228,6 +231,9 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
       }).catch(() => {});
     }, 1500);
   }, []);
+
+  // Keep stRef in sync so SSE onPatch can read current state without closure staleness.
+  useEffect(() => { stRef.current = st; }, [st]);
 
   // Load saved prefs after hydration (must not run on server)
   useEffect(() => { setPrefsState(loadPrefs()); }, []);
@@ -344,6 +350,16 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
           const deviceState = Object.fromEntries(
             Object.entries(live).filter(([k]) => !k.startsWith('_') && !k.startsWith('auto:')),
           );
+          // Overlay pending optimistic values so a reconnect-triggered reseed doesn't
+          // revert in-flight commands before the EISY has confirmed them.
+          for (const [lockedId, { target }] of pendingUntil.current) {
+            if (lockedId in deviceState) {
+              deviceState[lockedId] = {
+                ...(deviceState[lockedId] as Record<string, unknown>),
+                ...target,
+              };
+            }
+          }
           // Pool state is managed by OmniLogic (not the ISY state service).
           // Always carry forward from prev — placed AFTER deviceState so it wins the spread.
           const poolState = prev['pool'];
@@ -371,8 +387,12 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
             pendingUntil.current.delete(id);
           } else {
             // Check whether every commanded field has reached its target value.
-            const settled = Object.entries(pending.target).every(
-              ([k, v]) => patch[k] !== undefined && patch[k] === v,
+            // A field can settle either by appearing in this patch with the right value,
+            // OR by already being at the target in the current store state (i.e. it was
+            // already there before the command so the EISY delta won't include it).
+            const current = stRef.current[id] as Record<string, unknown> | undefined;
+            const settled = Object.entries(pending.target).every(([k, v]) =>
+              patch[k] !== undefined ? patch[k] === v : current?.[k] === v,
             );
             if (settled) {
               pendingUntil.current.delete(id);
