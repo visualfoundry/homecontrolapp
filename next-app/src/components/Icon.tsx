@@ -16,7 +16,7 @@ export type IconName =
   | 'play' | 'pause' | 'next' | 'prev' | 'waterfall' | 'plus' | 'minus'
   | 'chevron' | 'chevDown' | 'check' | 'bell' | 'bolt' | 'water' | 'refresh'
   | 'calendar' | 'pool' | 'cloud' | 'rain' | 'snow' | 'pergola' | 'layers'
-  | 'shades' | 'tv' | 'camera' | 'doorOpen' | 'waterSpout' | 'close' | 'stop' | 'poolParty';
+  | 'shades' | 'tv' | 'camera' | 'doorOpen' | 'waterSpout' | 'close' | 'stop' | 'poolParty' | 'trash';
 
 const ICON_PATHS: Record<IconName, React.ReactNode> = {
   home:      <><path d="M4 11.5 12 5l8 6.5" /><path d="M6 10.3V20h12v-9.7" /></>,
@@ -75,6 +75,7 @@ const ICON_PATHS: Record<IconName, React.ReactNode> = {
   close:     <path d="M18 6 6 18M6 6l12 12" />,
   stop:      <rect x="5" y="5" width="14" height="14" rx="2" fill="currentColor" stroke="none" />,
   poolParty: <><circle cx="12" cy="8.5" r="5"/><circle cx="12" cy="8.5" r="2.5"/><path d="M3 16.5c2-1.5 3-1.5 5 0s3 1.5 5 0 3-1.5 5 0"/><path d="M3 20c2-1.5 3-1.5 5 0s3 1.5 5 0 3-1.5 5 0"/></>,
+  trash:     <><path d="M3 7h18M8 7V4.5A1.5 1.5 0 0 1 9.5 3h5A1.5 1.5 0 0 1 16 4.5V7M19 7l-1.2 13.5A1.5 1.5 0 0 1 16.3 22H7.7a1.5 1.5 0 0 1-1.5-1.5L5 7" /></>,
 };
 
 interface IconProps {

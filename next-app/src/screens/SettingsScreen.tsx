@@ -2,14 +2,15 @@
 
 import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { useHC } from '@/lib/store';
+import { useHC, loadNotifPrefs, saveNotifPrefs } from '@/lib/store';
 import { Icon } from '@/components/Icon';
 import { Card, SectionTitle } from '@/components/Card';
 import { Toggle } from '@/components/Toggle';
 import { Segmented } from '@/components/Segmented';
 import { LargeTitle } from '@/components/LargeTitle';
+import { PushPermission } from '@/components/PushPermission';
 import type { FlagState } from '@/types/state';
-import type { SettingItem, UserPrefs } from '@/types/config';
+import type { SettingItem, UserPrefs, NotificationPrefs } from '@/types/config';
 
 const THEME_OPTIONS = ['Light', 'Dark', 'System'] as const;
 const THEME_TO_LABEL: Record<UserPrefs['theme'], string> = {
@@ -18,6 +19,33 @@ const THEME_TO_LABEL: Record<UserPrefs['theme'], string> = {
 const LABEL_TO_THEME: Record<string, UserPrefs['theme']> = {
   Light: 'light', Dark: 'dark', System: 'system',
 };
+
+function NotifRow({
+  label,
+  description,
+  on,
+  onChange,
+  last,
+}: {
+  label: string;
+  description: string;
+  on: boolean;
+  onChange: (v: boolean) => void;
+  last?: boolean;
+}) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', padding: '13px 16px', gap: 12,
+      borderBottom: last ? 'none' : '0.5px solid var(--sep)',
+    }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 16, fontWeight: 520, color: 'var(--text)' }}>{label}</div>
+        <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 2 }}>{description}</div>
+      </div>
+      <Toggle on={on} onChange={onChange} size={0.85} />
+    </div>
+  );
+}
 
 function ToggleList({ items }: { items: SettingItem[] }) {
   const { st, setD } = useHC();
@@ -156,6 +184,29 @@ function CertInstallCard() {
 
 export function SettingsScreen() {
   const { prefs, setPrefs, config } = useHC();
+  const [notifPrefs, setNotifPrefsState] = React.useState<NotificationPrefs>(loadNotifPrefs);
+
+  function setNotifPref<K extends keyof NotificationPrefs>(key: K, value: boolean) {
+    const updated = { ...notifPrefs, [key]: value };
+    setNotifPrefsState(updated);
+    saveNotifPrefs(updated);
+  }
+
+  const hasLeak   = config.leakSensors.length > 0;
+  const hasMotion = config.motionSensors.length > 0;
+  const hasDoors  = config.doorsExterior.length > 0 || config.doorsInterior.length > 0;
+
+  const safetyRows = [
+    hasLeak   && { key: 'leak'   as const, label: 'Water Leaks',     desc: 'Alert when a sensor detects water' },
+    hasMotion && { key: 'motion' as const, label: 'Motion Detected',  desc: 'Alert when a motion sensor activates' },
+    hasDoors  && { key: 'doors'  as const, label: 'Doors & Locks',    desc: 'Alert when a door opens, closes, or lock state changes' },
+  ].filter(Boolean) as { key: keyof NotificationPrefs; label: string; desc: string }[];
+
+  const statusRows: { key: keyof NotificationPrefs; label: string; desc: string }[] = [
+    { key: 'houseSecurity', label: 'House Security', desc: 'Alert when House Security is armed or disarmed' },
+    { key: 'whoIsHome',     label: "Who's Home",     desc: "Alert when someone's presence status changes" },
+    { key: 'houseMode',     label: 'House Mode',     desc: 'Alert when the time-of-day mode changes (Morning, Day, Evening, Night)' },
+  ];
 
   return (
     <div>
@@ -177,6 +228,47 @@ export function SettingsScreen() {
       <div style={{ marginTop: 22 }}>
         <SectionTitle>Schedules</SectionTitle>
         <ToggleList items={config.settingsSchedules} />
+      </div>
+
+      {safetyRows.length > 0 && (
+        <div style={{ marginTop: 22 }}>
+          <SectionTitle>Notifications — Safety</SectionTitle>
+          <Card pad={false}>
+            {safetyRows.map((row, i) => (
+              <NotifRow
+                key={row.key}
+                label={row.label}
+                description={row.desc}
+                on={notifPrefs[row.key]}
+                onChange={(v) => setNotifPref(row.key, v)}
+                last={i === safetyRows.length - 1}
+              />
+            ))}
+          </Card>
+        </div>
+      )}
+
+      <div style={{ marginTop: 22 }}>
+        <SectionTitle>Notifications — Status &amp; Presence</SectionTitle>
+        <Card pad={false}>
+          {statusRows.map((row, i) => (
+            <NotifRow
+              key={row.key}
+              label={row.label}
+              description={row.desc}
+              on={notifPrefs[row.key]}
+              onChange={(v) => setNotifPref(row.key, v)}
+              last={i === statusRows.length - 1}
+            />
+          ))}
+        </Card>
+      </div>
+
+      <div style={{ marginTop: 22 }}>
+        <SectionTitle>Notifications — Device Alerts</SectionTitle>
+        <Card pad={false}>
+          <PushPermission last />
+        </Card>
       </div>
 
       <div style={{ marginTop: 22 }}>

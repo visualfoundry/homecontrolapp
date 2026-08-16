@@ -341,3 +341,16 @@ export const DEFAULT_NOTIF_PREFS: NotificationPrefs = {
   whoIsHome: false,
   houseMode: false,
 };
+
+// ---------------------------------------------------------------------------
+// In-app notification inbox
+// ---------------------------------------------------------------------------
+
+export interface InAppNotification {
+  id: string;
+  title: string;
+  body: string;
+  timestamp: number;
+  read: boolean;
+  category?: 'leak' | 'motion' | 'doors' | 'houseSecurity' | 'whoIsHome' | 'houseMode' | 'push' | 'other';
+}

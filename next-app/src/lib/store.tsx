@@ -139,6 +139,7 @@ export function saveNotifPrefs(prefs: NotificationPrefs): void {
   }
 }
 
+
 function saveFavs(ids: string[]): void {
   try {
     localStorage.setItem(FAVS_KEY, JSON.stringify(ids));
