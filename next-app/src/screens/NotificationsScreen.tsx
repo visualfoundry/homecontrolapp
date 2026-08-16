@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { LargeTitle } from '@/components/LargeTitle';
 import { Icon } from '@/components/Icon';
 import { useHC } from '@/lib/store';
-import type { InAppNotification } from '@/types/config';
+import { CATEGORY_SCREEN, type InAppNotification } from '@/types/config';
 
 const DELETE_W = 72;
 
@@ -16,12 +16,19 @@ function relativeTime(ts: number): string {
   return new Date(ts).toLocaleDateString();
 }
 
+/** Destination screen for a notification, or undefined if it isn't actionable. */
+function destinationOf(n: InAppNotification): string | undefined {
+  return n.screen ?? (n.category ? CATEGORY_SCREEN[n.category] : undefined);
+}
+
 function SwipeRow({
   notif,
   onDelete,
+  onOpen,
 }: {
   notif: InAppNotification;
   onDelete: () => void;
+  onOpen?: () => void;
 }) {
   const [offset, setOffset] = useState(0);
   const [animating, setAnimating] = useState(false);
@@ -57,6 +64,13 @@ function SwipeRow({
     const d = drag.current;
     if (!d.active) return;
     d.active = false;
+    // No axis locked in = the pointer barely moved, so treat it as a tap.
+    // A tap on a row that's swiped open just closes it.
+    if (!d.dir) {
+      if (d.base !== 0) settle(0);
+      else onOpen?.();
+      return;
+    }
     if (d.dir !== 'h') return;
     const dx = e.clientX - d.startX;
     settle(d.base + dx < -DELETE_W * 0.4 ? -DELETE_W : 0);
@@ -97,6 +111,7 @@ function SwipeRow({
           touchAction: 'pan-y',
           WebkitTapHighlightColor: 'transparent',
           userSelect: 'none',
+          cursor: onOpen ? 'pointer' : 'default',
         }}
       >
         {/* Unread dot */}
@@ -107,35 +122,46 @@ function SwipeRow({
           }} />
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
-          <span style={{
-            fontSize: 15,
-            fontWeight: notif.read ? 500 : 660,
-            color: 'var(--text)',
-            flex: 1, minWidth: 0,
-          }}>
-            {notif.title}
-          </span>
-          <span style={{ fontSize: 12, color: 'var(--text3)', flexShrink: 0 }}>
-            {relativeTime(notif.timestamp)}
-          </span>
-        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+              <span style={{
+                fontSize: 15,
+                fontWeight: notif.read ? 500 : 660,
+                color: 'var(--text)',
+                flex: 1, minWidth: 0,
+              }}>
+                {notif.title}
+              </span>
+              <span style={{ fontSize: 12, color: 'var(--text3)', flexShrink: 0 }}>
+                {relativeTime(notif.timestamp)}
+              </span>
+            </div>
 
-        <p style={{
-          margin: '2px 0 0',
-          fontSize: 13.5, lineHeight: 1.4,
-          color: 'var(--text2)',
-          fontWeight: notif.read ? 400 : 480,
-        }}>
-          {notif.body}
-        </p>
+            <p style={{
+              margin: '2px 0 0',
+              fontSize: 13.5, lineHeight: 1.4,
+              color: 'var(--text2)',
+              fontWeight: notif.read ? 400 : 480,
+            }}>
+              {notif.body}
+            </p>
+          </div>
+
+          {/* Affordance for rows that navigate somewhere */}
+          {onOpen && (
+            <span style={{ color: 'var(--text3)', flexShrink: 0, display: 'inline-flex' }}>
+              <Icon name="chevron" size={16} strokeWidth={2} />
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
 export function NotificationsScreen() {
-  const { notifications, deleteNotification, markAllRead, unreadCount } = useHC();
+  const { notifications, deleteNotification, markRead, markAllRead, unreadCount, go } = useHC();
 
   // Mark all as read when the user navigates away.
   const markAllReadRef = useRef(markAllRead);
@@ -162,12 +188,19 @@ export function NotificationsScreen() {
         </div>
       ) : (
         <div style={{ borderRadius: 'var(--radius)', overflow: 'hidden', boxShadow: 'var(--shadow)' }}>
-          {sorted.map((n, i) => (
-            <React.Fragment key={n.id}>
-              {i > 0 && <div style={{ height: '0.5px', background: 'var(--sep)', marginLeft: 22 }} />}
-              <SwipeRow notif={n} onDelete={() => deleteNotification(n.id)} />
-            </React.Fragment>
-          ))}
+          {sorted.map((n, i) => {
+            const dest = destinationOf(n);
+            return (
+              <React.Fragment key={n.id}>
+                {i > 0 && <div style={{ height: '0.5px', background: 'var(--sep)', marginLeft: 22 }} />}
+                <SwipeRow
+                  notif={n}
+                  onDelete={() => deleteNotification(n.id)}
+                  onOpen={dest ? () => { markRead(n.id); go(dest); } : undefined}
+                />
+              </React.Fragment>
+            );
+          })}
         </div>
       )}
     </div>

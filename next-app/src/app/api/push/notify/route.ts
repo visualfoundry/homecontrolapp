@@ -10,10 +10,15 @@ import { sendToAll, setActiveAlert, clearActiveAlert, isAlertRateLimited, type P
  * Body: {
  *   title?:    string      // defaults to "Home Control"
  *   body:      string      // notification text (required unless clear)
- *   url?:      string      // tap destination (defaults to "/")
+ *   url?:      string      // tap destination, e.g. "/?screen=leak" (defaults to "/")
+ *   category?: string      // inbox grouping, e.g. "leak" | "motion" | "doors"
  *   alertKey?: string      // e.g. "low-battery:42", "leak:sensor-15"
  *   clear?:    boolean     // true = resolve the alert (stop daily repeats)
  * }
+ *
+ * Copy rule: bodies must read correctly both as a system banner and as a row in
+ * the in-app inbox — no "open the app to…" phrasing. Send a `url` with ?screen=
+ * instead; the notification and the inbox row both become tappable.
  *
  * Persistent alerts (alertKey without clear):
  *   — sent immediately AND recorded in push-alerts.json.
@@ -49,6 +54,7 @@ export async function POST(req: NextRequest) {
     title: data.title ?? 'Home Control',
     body:  data.body,
     url:   data.url  ?? '/',
+    ...(data.category ? { category: data.category } : {}),
   };
 
   // If this is a persistent alert that was already sent within the resend window,

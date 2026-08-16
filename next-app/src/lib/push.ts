@@ -73,7 +73,10 @@ export function removeSubscription(endpoint: string): void {
 export interface PushPayload {
   title: string;
   body: string;
+  /** Tap destination, e.g. "/?screen=leak". The SW turns ?screen= into in-app navigation. */
   url?: string;
+  /** Inbox grouping hint — mirrors InAppNotification['category']. */
+  category?: string;
 }
 
 // ---------------------------------------------------------------------------

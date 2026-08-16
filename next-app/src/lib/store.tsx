@@ -68,7 +68,7 @@ export interface HCContextValue {
   /** Number of unread notifications. */
   unreadCount: number;
   /** Add a new notification to the inbox. */
-  addNotification: (n: Pick<InAppNotification, 'title' | 'body' | 'category'>) => void;
+  addNotification: (n: Pick<InAppNotification, 'title' | 'body' | 'category' | 'screen'>) => void;
   /** Delete a notification by id. */
   deleteNotification: (id: string) => void;
   /** Mark a single notification as read. */
@@ -530,7 +530,7 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
     else nav.clearAppBadge().catch(() => {});
   }, [unreadCount]);
 
-  const addNotification = useCallback((n: Pick<InAppNotification, 'title' | 'body' | 'category'>) => {
+  const addNotification = useCallback((n: Pick<InAppNotification, 'title' | 'body' | 'category' | 'screen'>) => {
     const notif: InAppNotification = { id: makeNotifId(), ...n, timestamp: Date.now(), read: false };
     setNotifications(prev => { const next = [notif, ...prev]; saveNotifications(next); return next; });
   }, []);

@@ -46,7 +46,21 @@ try {
 // Push notification helper
 // ---------------------------------------------------------------------------
 
-async function sendPushAlert(body: string, alertKey?: string, url = '/'): Promise<void> {
+/**
+ * Fire a push notification.
+ *
+ * Copy rule: `title` and `body` must read correctly in two places — as a system
+ * banner AND as a row in the app's notification inbox. Never write "open the
+ * app to see…"; the reader may already be in the app. Pass a `url` with
+ * ?screen=<id> instead, which makes both the banner and the inbox row tappable.
+ */
+async function sendPushAlert(
+  title: string,
+  body: string,
+  alertKey?: string,
+  url = '/',
+  category?: string,
+): Promise<void> {
   if (!HCA_INTERNAL_KEY || !NEXT_APP_URL) return;
   try {
     await fetch(`${NEXT_APP_URL}/api/push/notify`, {
@@ -56,7 +70,8 @@ async function sendPushAlert(body: string, alertKey?: string, url = '/'): Promis
         'X-HCA-Internal-Key': HCA_INTERNAL_KEY,
       },
       body: JSON.stringify({
-        title: 'Home Control', body, url,
+        title, body, url,
+        ...(category ? { category } : {}),
         ...(alertKey ? { alertKey } : {}),
       }),
       signal: AbortSignal.timeout(5_000),
@@ -85,9 +100,9 @@ async function clearPushAlert(alertKey: string): Promise<void> {
 
 // One consolidated alert per sensor type, sent after each poll cycle.
 const BATTERY_TYPES = [
-  { class: 'motion-sensor',  alertKey: 'low-battery:motion', screen: 'motion', label: 'motion sensor' },
-  { class: 'leak-sensor',    alertKey: 'low-battery:leak',   screen: 'leak',   label: 'water leak sensor' },
-  { class: 'contact-sensor', alertKey: 'low-battery:door',   screen: 'doors',  label: 'door sensor' },
+  { class: 'motion-sensor',  alertKey: 'low-battery:motion', screen: 'motion', category: 'motion', label: 'motion sensor' },
+  { class: 'leak-sensor',    alertKey: 'low-battery:leak',   screen: 'leak',   category: 'leak',   label: 'water leak sensor' },
+  { class: 'contact-sensor', alertKey: 'low-battery:door',   screen: 'doors',  category: 'doors',  label: 'door sensor' },
 ] as const;
 
 // In-memory map: alertKey → timestamp of last sendPushAlert call.
@@ -112,11 +127,13 @@ async function checkBatteryAlerts(): Promise<void> {
       if (lastSent === undefined || now - lastSent >= ALERT_RESEND_MS) {
         alertSentAt.set(bt.alertKey, now);
         const noun = bt.label + (lowCount > 1 ? 's' : '');
-        const verb = lowCount > 1 ? 'have' : 'has';
+        const verb = lowCount > 1 ? 'need' : 'needs';
         void sendPushAlert(
-          `${lowCount} ${noun} ${verb} low battery`,
+          'Low Battery',
+          `${lowCount} ${noun} ${verb} a new battery.`,
           bt.alertKey,
           `/?screen=${bt.screen}`,
+          bt.category,
         );
       }
     } else {

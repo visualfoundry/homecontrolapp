@@ -137,6 +137,8 @@ self.addEventListener('push', (e) => {
   try { screen = new URL(url, self.location.origin).searchParams.get('screen'); } catch {}
 
   // Build an inbox entry that mirrors InAppNotification in the app.
+  // `screen` is carried through so tapping the inbox row navigates to the same
+  // place tapping the system notification would.
   const notif = {
     id:        `n${Date.now().toString(36)}`,
     title:     data.title    ?? 'Home Control',
@@ -144,6 +146,7 @@ self.addEventListener('push', (e) => {
     timestamp: Date.now(),
     read:      false,
     category:  data.category ?? 'push',
+    ...(screen ? { screen } : {}),
   };
 
   e.waitUntil(

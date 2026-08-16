@@ -353,4 +353,19 @@ export interface InAppNotification {
   timestamp: number;
   read: boolean;
   category?: 'leak' | 'motion' | 'doors' | 'houseSecurity' | 'whoIsHome' | 'houseMode' | 'push' | 'other';
+  /** Screen id to open when the row is tapped (e.g. "leak", "doors", "room:Kitchen").
+   *  Set from the push payload's ?screen= param; falls back to the category map. */
+  screen?: string;
 }
+
+/** Fallback destination for notifications that carry no explicit `screen`. */
+export const CATEGORY_SCREEN: Record<NonNullable<InAppNotification['category']>, string | undefined> = {
+  leak:          'leak',
+  motion:        'motion',
+  doors:         'doors',
+  houseSecurity: 'doors',
+  whoIsHome:     'whoshome',
+  houseMode:     'home',
+  push:          undefined,
+  other:         undefined,
+};
