@@ -109,12 +109,19 @@ self.addEventListener('push', (e) => {
   let screen = null;
   try { screen = new URL(url, self.location.origin).searchParams.get('screen'); } catch {}
   e.waitUntil(
-    self.registration.showNotification(data.title ?? 'Home Control', {
-      body:  data.body  ?? '',
-      icon:  '/icons/icon-192.png',
-      badge: '/icons/icon-192.png',
-      data:  { url, screen },
-    }),
+    (async () => {
+      await self.registration.showNotification(data.title ?? 'Home Control', {
+        body:  data.body  ?? '',
+        icon:  '/icons/icon-192.png',
+        badge: '/icons/icon-192.png',
+        data:  { url, screen },
+      });
+      // Update the app icon badge with the total number of pending notifications.
+      if ('setAppBadge' in navigator) {
+        const notifs = await self.registration.getNotifications();
+        navigator.setAppBadge(notifs.length).catch(() => {});
+      }
+    })()
   );
 });
 
@@ -122,9 +129,16 @@ self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   const { url = '/', screen } = e.notification.data ?? {};
   e.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((cs) => {
+    (async () => {
+      // Recalculate badge after this notification is dismissed.
+      if ('setAppBadge' in navigator) {
+        const remaining = await self.registration.getNotifications();
+        if (remaining.length > 0) navigator.setAppBadge(remaining.length).catch(() => {});
+        else navigator.clearAppBadge().catch(() => {});
+      }
       // Find any existing HCA window at this origin rather than matching the exact URL
       // (the PWA is a SPA — its URL is always "/" regardless of which screen is shown).
+      const cs = await clients.matchAll({ type: 'window', includeUncontrolled: true });
       const existing = cs.find(c => {
         try { return new URL(c.url).origin === self.location.origin; } catch { return false; }
       });
@@ -134,7 +148,7 @@ self.addEventListener('notificationclick', (e) => {
         return existing.focus();
       }
       return clients.openWindow(url);
-    }),
+    })()
   );
 });
 
