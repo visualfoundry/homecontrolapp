@@ -33,7 +33,7 @@ import React, {
 import { SECTIONS, MAX_TABS, isTabSlot } from '@/lib/sections';
 import type { SectionDef } from '@/lib/sections';
 import type { StateMap, StatePatch } from '@/types/state';
-import { type UserPrefs, DEFAULT_PREFS, type AppConfig, type NotificationPrefs, DEFAULT_NOTIF_PREFS } from '@/types/config';
+import { type UserPrefs, DEFAULT_PREFS, type AppConfig, type NotificationPrefs, DEFAULT_NOTIF_PREFS, type InAppNotification } from '@/types/config';
 import { fetchState, postCommand, connectSSE } from '@/lib/state-client';
 
 // ---------------------------------------------------------------------------
@@ -63,6 +63,18 @@ export interface HCContextValue {
   overlayRef: React.RefObject<HTMLDivElement>;
   /** App catalog config (devices, scenes, rooms, etc.). */
   config: AppConfig;
+  /** In-app notification inbox. */
+  notifications: InAppNotification[];
+  /** Number of unread notifications. */
+  unreadCount: number;
+  /** Add a new notification to the inbox. */
+  addNotification: (n: Pick<InAppNotification, 'title' | 'body' | 'category'>) => void;
+  /** Delete a notification by id. */
+  deleteNotification: (id: string) => void;
+  /** Mark a single notification as read. */
+  markRead: (id: string) => void;
+  /** Mark all notifications as read. */
+  markAllRead: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -137,6 +149,42 @@ export function saveNotifPrefs(prefs: NotificationPrefs): void {
   } catch {
     // storage quota exceeded — ignore
   }
+}
+
+// ---------------------------------------------------------------------------
+// In-app notification inbox — localStorage persistence
+// ---------------------------------------------------------------------------
+
+const INBOX_KEY = 'hca:inbox';
+const INBOX_SEEDED_KEY = 'hca:inbox-seeded';
+
+function makeNotifId(): string {
+  return `n${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+}
+
+function saveNotifications(list: InAppNotification[]): void {
+  try { localStorage.setItem(INBOX_KEY, JSON.stringify(list)); } catch { /* quota */ }
+}
+
+function loadNotifications(): InAppNotification[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(INBOX_KEY);
+    if (raw) return JSON.parse(raw) as InAppNotification[];
+    // Seed a few example notifications on first load.
+    if (!localStorage.getItem(INBOX_SEEDED_KEY)) {
+      const now = Date.now();
+      const seeds: InAppNotification[] = [
+        { id: makeNotifId(), title: 'Front Door Unlocked', body: 'The front door was unlocked at 8:32 AM.', timestamp: now - 3_600_000, read: false, category: 'doors' },
+        { id: makeNotifId(), title: 'Motion Detected', body: 'Motion detected in the Backyard at 7:15 AM.', timestamp: now - 7_200_000, read: true, category: 'motion' },
+        { id: makeNotifId(), title: 'House Mode Changed', body: 'House transitioned to Morning mode.', timestamp: now - 14_400_000, read: true, category: 'houseMode' },
+      ];
+      localStorage.setItem(INBOX_SEEDED_KEY, '1');
+      saveNotifications(seeds);
+      return seeds;
+    }
+    return [];
+  } catch { return []; }
 }
 
 
@@ -215,6 +263,7 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
   // Initialize with DEFAULT_PREFS so server and client render identically.
   // Hydrate from localStorage after mount to avoid SSR/client mismatch.
   const [prefs, setPrefsState] = useState<UserPrefs>(DEFAULT_PREFS);
+  const [notifications, setNotifications] = useState<InAppNotification[]>(loadNotifications);
   const overlayRef = useRef<HTMLDivElement>(null);
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -419,6 +468,35 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // intentionally run once on mount
 
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const addNotification = useCallback((n: Pick<InAppNotification, 'title' | 'body' | 'category'>) => {
+    const notif: InAppNotification = { id: makeNotifId(), ...n, timestamp: Date.now(), read: false };
+    setNotifications(prev => { const next = [notif, ...prev]; saveNotifications(next); return next; });
+  }, []);
+
+  const deleteNotification = useCallback((id: string) => {
+    setNotifications(prev => { const next = prev.filter(n => n.id !== id); saveNotifications(next); return next; });
+  }, []);
+
+  const markRead = useCallback((id: string) => {
+    setNotifications(prev => {
+      if (prev.find(n => n.id === id)?.read) return prev;
+      const next = prev.map(n => n.id === id ? { ...n, read: true } : n);
+      saveNotifications(next);
+      return next;
+    });
+  }, []);
+
+  const markAllRead = useCallback(() => {
+    setNotifications(prev => {
+      if (prev.every(n => n.read)) return prev;
+      const next = prev.map(n => ({ ...n, read: true }));
+      saveNotifications(next);
+      return next;
+    });
+  }, []);
+
   /**
    * Optimistically apply a patch to local state and POST it to /command
    * for device-control keys (everything except _*, person:*, auto:* which
@@ -490,6 +568,12 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
     maxTabs: MAX_TABS,
     overlayRef,
     config,
+    notifications,
+    unreadCount,
+    addNotification,
+    deleteNotification,
+    markRead,
+    markAllRead,
   };
 
   return <HCtx.Provider value={value}>{children}</HCtx.Provider>;
