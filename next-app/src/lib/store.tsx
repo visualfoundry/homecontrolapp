@@ -470,6 +470,14 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  // Update PWA home-screen badge whenever unread count changes.
+  useEffect(() => {
+    if (!('setAppBadge' in navigator)) return;
+    const nav = navigator as Navigator & { setAppBadge(n?: number): Promise<void>; clearAppBadge(): Promise<void> };
+    if (unreadCount > 0) nav.setAppBadge(unreadCount).catch(() => {});
+    else nav.clearAppBadge().catch(() => {});
+  }, [unreadCount]);
+
   const addNotification = useCallback((n: Pick<InAppNotification, 'title' | 'body' | 'category'>) => {
     const notif: InAppNotification = { id: makeNotifId(), ...n, timestamp: Date.now(), read: false };
     setNotifications(prev => { const next = [notif, ...prev]; saveNotifications(next); return next; });

@@ -634,7 +634,7 @@ function EnvScene({ name }: { name: string }) {
 }
 
 export function HomeScreen() {
-  const { st, setD, go, config } = useHC();
+  const { st, setD, go, config, unreadCount } = useHC();
   const global = st['_global'] as GlobalState;
 
   // Derive tod from the House Status variable (1=Morning, 2=Day, 3=Evening, 4=Night).
@@ -764,9 +764,22 @@ export function HomeScreen() {
     <div>
       <LargeTitle title={greeting} titleSize={greetingSize} sub="The House"
         right={
-          <button onClick={() => go('settings')} style={iconBtn}>
-            <Icon name="gear" size={22} />
-          </button>
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            <button onClick={() => go('notifications')} style={{ ...iconBtn, position: 'relative' }}>
+              <Icon name="bell" size={21} />
+              {unreadCount > 0 && (
+                <span style={{
+                  position: 'absolute', top: 7, right: 7,
+                  width: 8, height: 8, borderRadius: 4,
+                  background: 'var(--red)',
+                  border: '1.5px solid var(--card)',
+                }} />
+              )}
+            </button>
+            <button onClick={() => go('settings')} style={iconBtn}>
+              <Icon name="gear" size={22} />
+            </button>
+          </div>
         } />
 
       {/* Weather card */}
