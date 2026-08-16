@@ -99,27 +99,74 @@ async function cacheFirst(req) {
 }
 
 // ---------------------------------------------------------------------------
+// IndexedDB helpers — bridge between SW (no localStorage) and the app inbox
+// ---------------------------------------------------------------------------
+
+const IDB_NAME  = 'hca-sw';
+const IDB_STORE = 'inbox';
+
+function openIdb() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE, { keyPath: 'id' });
+    req.onsuccess  = () => resolve(req.result);
+    req.onerror    = () => reject(req.error);
+  });
+}
+
+async function swStoreNotif(notif) {
+  const db = await openIdb();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(notif);
+    tx.oncomplete = resolve;
+    tx.onerror    = () => reject(tx.error);
+  });
+  db.close();
+}
+
+// ---------------------------------------------------------------------------
 // Push notifications
 // ---------------------------------------------------------------------------
 
 self.addEventListener('push', (e) => {
   const data = e.data?.json() ?? {};
-  const url = data.url ?? '/';
+  const url  = data.url ?? '/';
   // Extract screen id from /?screen=X so the click handler can navigate without a reload.
   let screen = null;
   try { screen = new URL(url, self.location.origin).searchParams.get('screen'); } catch {}
+
+  // Build an inbox entry that mirrors InAppNotification in the app.
+  const notif = {
+    id:        `n${Date.now().toString(36)}`,
+    title:     data.title    ?? 'Home Control',
+    body:      data.body     ?? '',
+    timestamp: Date.now(),
+    read:      false,
+    category:  data.category ?? 'push',
+  };
+
   e.waitUntil(
     (async () => {
-      await self.registration.showNotification(data.title ?? 'Home Control', {
-        body:  data.body  ?? '',
+      // Show the system notification.
+      await self.registration.showNotification(notif.title, {
+        body:  notif.body,
         icon:  '/icons/icon-192.png',
         badge: '/icons/icon-192.png',
         data:  { url, screen },
       });
-      // Update the app icon badge with the total number of pending notifications.
+
+      // Persist to IndexedDB so the app picks it up when it next opens.
+      await swStoreNotif(notif);
+
+      // If the app is already open, deliver it immediately via postMessage.
+      const cs = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+      cs.forEach(c => c.postMessage({ type: 'hca-push-notif', notif }));
+
+      // Update the home-screen icon badge.
       if ('setAppBadge' in navigator) {
-        const notifs = await self.registration.getNotifications();
-        navigator.setAppBadge(notifs.length).catch(() => {});
+        const systemNotifs = await self.registration.getNotifications();
+        navigator.setAppBadge(systemNotifs.length).catch(() => {});
       }
     })()
   );

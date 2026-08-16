@@ -166,6 +166,28 @@ function saveNotifications(list: InAppNotification[]): void {
   try { localStorage.setItem(INBOX_KEY, JSON.stringify(list)); } catch { /* quota */ }
 }
 
+// Reads and clears any push notifications the SW stored in IndexedDB while the app was closed.
+async function drainSwInbox(): Promise<InAppNotification[]> {
+  if (typeof window === 'undefined' || !('indexedDB' in window)) return [];
+  return new Promise((resolve) => {
+    const open = indexedDB.open('hca-sw', 1);
+    open.onupgradeneeded = () => open.result.createObjectStore('inbox', { keyPath: 'id' });
+    open.onsuccess = () => {
+      const db = open.result;
+      const items: InAppNotification[] = [];
+      const tx = db.transaction('inbox', 'readwrite');
+      const req = tx.objectStore('inbox').openCursor();
+      req.onsuccess = (e) => {
+        const cursor = (e.target as IDBRequest<IDBCursorWithValue | null>).result;
+        if (cursor) { items.push(cursor.value as InAppNotification); cursor.delete(); cursor.continue(); }
+      };
+      tx.oncomplete = () => { db.close(); resolve(items); };
+      tx.onerror    = () => { db.close(); resolve([]); };
+    };
+    open.onerror = () => resolve([]);
+  });
+}
+
 function loadNotifications(): InAppNotification[] {
   if (typeof window === 'undefined') return [];
   try {
@@ -467,6 +489,36 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // intentionally run once on mount
+
+  // Sync push notifications into the inbox:
+  // 1. On mount, drain any notifications the SW stored in IndexedDB while the app was closed.
+  // 2. While the app is open, listen for real-time postMessage from the SW.
+  useEffect(() => {
+    drainSwInbox().then(pending => {
+      if (!pending.length) return;
+      setNotifications(prev => {
+        const ids = new Set(prev.map(n => n.id));
+        const fresh = pending.filter(n => !ids.has(n.id));
+        if (!fresh.length) return prev;
+        const next = [...fresh, ...prev];
+        saveNotifications(next);
+        return next;
+      });
+    });
+
+    const onSwMessage = (e: MessageEvent) => {
+      if (e.data?.type !== 'hca-push-notif') return;
+      const notif = e.data.notif as InAppNotification;
+      setNotifications(prev => {
+        if (prev.find(n => n.id === notif.id)) return prev;
+        const next = [notif, ...prev];
+        saveNotifications(next);
+        return next;
+      });
+    };
+    navigator.serviceWorker?.addEventListener('message', onSwMessage);
+    return () => navigator.serviceWorker?.removeEventListener('message', onSwMessage);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
