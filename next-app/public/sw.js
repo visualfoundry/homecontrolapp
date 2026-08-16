@@ -102,16 +102,45 @@ async function cacheFirst(req) {
 // IndexedDB helpers — bridge between SW (no localStorage) and the app inbox
 // ---------------------------------------------------------------------------
 
-const IDB_NAME  = 'hca-sw';
-const IDB_STORE = 'inbox';
+const IDB_NAME    = 'hca-sw';
+const IDB_VERSION = 2;
+const IDB_STORE   = 'inbox';  // queue of pushes the app hasn't drained yet
+const IDB_META    = 'meta';   // shared scalars — currently just the unread count
 
 function openIdb() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(IDB_NAME, 1);
-    req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE, { keyPath: 'id' });
+    const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE, { keyPath: 'id' });
+      if (!db.objectStoreNames.contains(IDB_META))  db.createObjectStore(IDB_META,  { keyPath: 'k' });
+    };
     req.onsuccess  = () => resolve(req.result);
     req.onerror    = () => reject(req.error);
   });
+}
+
+// The app-icon badge mirrors the inbox's UNREAD COUNT — not the number of
+// banners sitting in the OS tray. Those two diverge badly: the tray accumulates
+// every banner the user never swiped away, while the inbox empties as they read.
+// The app writes the authoritative count here whenever it changes; the SW only
+// increments it, for pushes that land while the app is closed.
+async function swBumpUnread() {
+  const db = await openIdb();
+  const next = await new Promise((resolve, reject) => {
+    const tx    = db.transaction(IDB_META, 'readwrite');
+    const store = tx.objectStore(IDB_META);
+    const get   = store.get('unread');
+    let value = 1;
+    get.onsuccess = () => {
+      value = (Number(get.result?.v) || 0) + 1;
+      store.put({ k: 'unread', v: value });
+    };
+    tx.oncomplete = () => resolve(value);
+    tx.onerror    = () => reject(tx.error);
+  });
+  db.close();
+  return next;
 }
 
 async function swStoreNotif(notif) {
@@ -166,10 +195,10 @@ self.addEventListener('push', (e) => {
       const cs = await clients.matchAll({ type: 'window', includeUncontrolled: true });
       cs.forEach(c => c.postMessage({ type: 'hca-push-notif', notif }));
 
-      // Update the home-screen icon badge.
+      // Update the home-screen icon badge from the unread count.
       if ('setAppBadge' in navigator) {
-        const systemNotifs = await self.registration.getNotifications();
-        navigator.setAppBadge(systemNotifs.length).catch(() => {});
+        const unread = await swBumpUnread().catch(() => 0);
+        if (unread > 0) navigator.setAppBadge(unread).catch(() => {});
       }
     })()
   );
@@ -180,12 +209,10 @@ self.addEventListener('notificationclick', (e) => {
   const { url = '/', screen } = e.notification.data ?? {};
   e.waitUntil(
     (async () => {
-      // Recalculate badge after this notification is dismissed.
-      if ('setAppBadge' in navigator) {
-        const remaining = await self.registration.getNotifications();
-        if (remaining.length > 0) navigator.setAppBadge(remaining.length).catch(() => {});
-        else navigator.clearAppBadge().catch(() => {});
-      }
+      // Deliberately no badge update here. Dismissing a banner doesn't read the
+      // inbox entry, and this click always focuses or opens the app — which then
+      // writes the badge from its own unread count.
+
       // Find any existing HCA window at this origin rather than matching the exact URL
       // (the PWA is a SPA — its URL is always "/" regardless of which screen is shown).
       const cs = await clients.matchAll({ type: 'window', includeUncontrolled: true });

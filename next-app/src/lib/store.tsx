@@ -166,12 +166,42 @@ function saveNotifications(list: InAppNotification[]): void {
   try { localStorage.setItem(INBOX_KEY, JSON.stringify(list)); } catch { /* quota */ }
 }
 
+// Shared with the service worker — keep the version and store names in sync with sw.js.
+const SW_IDB_NAME = 'hca-sw';
+const SW_IDB_VERSION = 2;
+
+function openSwIdb(): IDBOpenDBRequest {
+  const open = indexedDB.open(SW_IDB_NAME, SW_IDB_VERSION);
+  open.onupgradeneeded = () => {
+    const db = open.result;
+    if (!db.objectStoreNames.contains('inbox')) db.createObjectStore('inbox', { keyPath: 'id' });
+    if (!db.objectStoreNames.contains('meta'))  db.createObjectStore('meta',  { keyPath: 'k' });
+  };
+  return open;
+}
+
+/** Publish the authoritative unread count to the SW, which increments it for
+ *  pushes that arrive while the app is closed. Without this the SW would count
+ *  undismissed OS banners instead, and the two badges would disagree. */
+function saveSwUnread(n: number): void {
+  if (typeof window === 'undefined' || !('indexedDB' in window)) return;
+  try {
+    const open = openSwIdb();
+    open.onsuccess = () => {
+      const db = open.result;
+      const tx = db.transaction('meta', 'readwrite');
+      tx.objectStore('meta').put({ k: 'unread', v: n });
+      tx.oncomplete = () => db.close();
+      tx.onerror    = () => db.close();
+    };
+  } catch { /* private mode / blocked */ }
+}
+
 // Reads and clears any push notifications the SW stored in IndexedDB while the app was closed.
 async function drainSwInbox(): Promise<InAppNotification[]> {
   if (typeof window === 'undefined' || !('indexedDB' in window)) return [];
   return new Promise((resolve) => {
-    const open = indexedDB.open('hca-sw', 1);
-    open.onupgradeneeded = () => open.result.createObjectStore('inbox', { keyPath: 'id' });
+    const open = openSwIdb();
     open.onsuccess = () => {
       const db = open.result;
       const items: InAppNotification[] = [];
@@ -522,8 +552,11 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  // Update PWA home-screen badge whenever unread count changes.
+  // Update PWA home-screen badge whenever unread count changes. The inbox is the
+  // single source of truth for the badge — mirror it to the SW so a push arriving
+  // while the app is closed increments from the correct base.
   useEffect(() => {
+    saveSwUnread(unreadCount);
     if (!('setAppBadge' in navigator)) return;
     const nav = navigator as Navigator & { setAppBadge(n?: number): Promise<void>; clearAppBadge(): Promise<void> };
     if (unreadCount > 0) nav.setAppBadge(unreadCount).catch(() => {});
