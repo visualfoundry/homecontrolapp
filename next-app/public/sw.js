@@ -169,7 +169,10 @@ self.addEventListener('push', (e) => {
   // `screen` is carried through so tapping the inbox row navigates to the same
   // place tapping the system notification would.
   const notif = {
-    id:        `n${Date.now().toString(36)}`,
+    // Random suffix, same shape as makeNotifId in the app: the store is keyed by
+    // id, so two pushes landing in the same millisecond would otherwise collapse
+    // into one inbox entry while the badge counted both.
+    id:        `n${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`,
     title:     data.title    ?? 'Home Control',
     body:      data.body     ?? '',
     timestamp: Date.now(),

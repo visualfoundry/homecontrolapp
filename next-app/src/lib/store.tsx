@@ -197,6 +197,17 @@ function saveSwUnread(n: number): void {
   } catch { /* private mode / blocked */ }
 }
 
+/** Write the inbox's unread count to both the SW's shared counter and the
+ *  home-screen icon badge. The inbox is the single source of truth for both, so
+ *  they always move together. */
+function applyBadge(unread: number): void {
+  saveSwUnread(unread);
+  if (typeof navigator === 'undefined' || !('setAppBadge' in navigator)) return;
+  const nav = navigator as Navigator & { setAppBadge(n?: number): Promise<void>; clearAppBadge(): Promise<void> };
+  if (unread > 0) nav.setAppBadge(unread).catch(() => {});
+  else nav.clearAppBadge().catch(() => {});
+}
+
 // Reads and clears any push notifications the SW stored in IndexedDB while the app was closed.
 async function drainSwInbox(): Promise<InAppNotification[]> {
   if (typeof window === 'undefined' || !('indexedDB' in window)) return [];
@@ -520,21 +531,44 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // intentionally run once on mount
 
-  // Sync push notifications into the inbox:
-  // 1. On mount, drain any notifications the SW stored in IndexedDB while the app was closed.
-  // 2. While the app is open, listen for real-time postMessage from the SW.
-  useEffect(() => {
-    drainSwInbox().then(pending => {
-      if (!pending.length) return;
+  // Mirror of the inbox, readable from event handlers that must not re-subscribe
+  // every time a notification arrives.
+  const notifsRef = useRef<InAppNotification[]>(notifications);
+  useEffect(() => { notifsRef.current = notifications; }, [notifications]);
+
+  // Pull anything the SW parked in IndexedDB into the inbox, and reconcile the
+  // badge if there was nothing new to pull.
+  const syncSwInbox = useCallback(async () => {
+    const pending = await drainSwInbox();
+    const ids = new Set(notifsRef.current.map(n => n.id));
+    const fresh = pending.filter(n => !ids.has(n.id));
+    if (fresh.length) {
+      // The badge follows from the unread count changing — see the effect below.
       setNotifications(prev => {
-        const ids = new Set(prev.map(n => n.id));
-        const fresh = pending.filter(n => !ids.has(n.id));
-        if (!fresh.length) return prev;
-        const next = [...fresh, ...prev];
+        const seen = new Set(prev.map(n => n.id));
+        const next = [...fresh.filter(n => !seen.has(n.id)), ...prev];
         saveNotifications(next);
         return next;
       });
-    });
+      return;
+    }
+    // Nothing new. The badge can still be stale — the SW increments its own
+    // counter for every push, so a push whose entry we already hold (or that we
+    // read and then dismissed) leaves the icon showing a count the inbox
+    // disagrees with. Re-assert the inbox's count as the truth.
+    applyBadge(notifsRef.current.filter(n => !n.read).length);
+  }, []);
+
+  // Sync push notifications into the inbox:
+  // 1. Drain any notifications the SW stored in IndexedDB while the app was away.
+  // 2. While the app is open, listen for real-time postMessage from the SW.
+  //
+  // The drain has to run on every foreground, not just on mount. An installed
+  // PWA is resumed rather than remounted, and a postMessage aimed at a frozen or
+  // discarded client is dropped on the floor — so a mount-only drain strands the
+  // entry in IndexedDB with the badge already counting it.
+  useEffect(() => {
+    syncSwInbox();
 
     const onSwMessage = (e: MessageEvent) => {
       if (e.data?.type !== 'hca-push-notif') return;
@@ -546,22 +580,24 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
         return next;
       });
     };
+    const onForeground = () => { if (document.visibilityState === 'visible') syncSwInbox(); };
+
     navigator.serviceWorker?.addEventListener('message', onSwMessage);
-    return () => navigator.serviceWorker?.removeEventListener('message', onSwMessage);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    document.addEventListener('visibilitychange', onForeground);
+    window.addEventListener('pageshow', onForeground);
+    return () => {
+      navigator.serviceWorker?.removeEventListener('message', onSwMessage);
+      document.removeEventListener('visibilitychange', onForeground);
+      window.removeEventListener('pageshow', onForeground);
+    };
+  }, [syncSwInbox]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
   // Update PWA home-screen badge whenever unread count changes. The inbox is the
   // single source of truth for the badge — mirror it to the SW so a push arriving
   // while the app is closed increments from the correct base.
-  useEffect(() => {
-    saveSwUnread(unreadCount);
-    if (!('setAppBadge' in navigator)) return;
-    const nav = navigator as Navigator & { setAppBadge(n?: number): Promise<void>; clearAppBadge(): Promise<void> };
-    if (unreadCount > 0) nav.setAppBadge(unreadCount).catch(() => {});
-    else nav.clearAppBadge().catch(() => {});
-  }, [unreadCount]);
+  useEffect(() => { applyBadge(unreadCount); }, [unreadCount]);
 
   const addNotification = useCallback((n: Pick<InAppNotification, 'title' | 'body' | 'category' | 'screen'>) => {
     const notif: InAppNotification = { id: makeNotifId(), ...n, timestamp: Date.now(), read: false };
