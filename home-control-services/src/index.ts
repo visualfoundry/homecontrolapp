@@ -308,8 +308,12 @@ app.post('/command', (req: Request, res: Response) => {
   // Respond 202 immediately (optimistic model — stream confirms)
   res.status(202).end();
 
-  // Apply patch optimistically to the local state so the SSE stream fans it out
-  if (body.patch) applyPatch(body.target, body.patch);
+  // NOTE: We deliberately do NOT apply the patch optimistically here.
+  // The client already applied it locally (optimistic UI) and holds a command lock
+  // that suppresses intermediate SSE values. Fanning the optimistic patch out on SSE
+  // prematurely releases the client lock — before the EISY has confirmed — letting
+  // the next poll (with the old device value) overwrite the UI. The confirmed state
+  // arrives on its own within the next poll cycle.
 
   // Forward to EISY asynchronously
   const baseUrl = EISY_URLS[entry.eisyIdx];
