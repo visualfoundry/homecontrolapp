@@ -142,6 +142,17 @@ button {
 
 /* Fan usage: animation: spin calc(1.4s - var(--speed) * 0.3s) linear infinite */
 
+/* Water-leak banner — a slow breathing glow. Enough to pull the eye on an
+   otherwise calm screen without the strobe of a true alarm. */
+@keyframes leak-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.45); }
+  50%      { box-shadow: 0 0 0 7px rgba(255, 59, 48, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [style*="leak-pulse"] { animation: none !important; }
+}
+
 @keyframes rainfall {
   from  { transform: translateY(-14px); opacity: 0; }
   12%   { opacity: 1; }

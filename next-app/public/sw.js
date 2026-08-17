@@ -179,16 +179,28 @@ self.addEventListener('push', (e) => {
     read:      false,
     category:  data.category ?? 'push',
     ...(screen ? { screen } : {}),
+    // Carried into the inbox so a repeating alert (a leak re-firing every 30 min)
+    // refreshes one row instead of filling the list with copies of itself.
+    ...(data.tag ? { tag: data.tag } : {}),
+    ...(data.urgent ? { urgent: true } : {}),
   };
 
   e.waitUntil(
     (async () => {
-      // Show the system notification.
+      // Show the system notification. Urgent alerts (leaks) stay on screen until
+      // the user acts on them and buzz on arrival; a repeat of the same alert
+      // replaces its own banner via `tag` rather than stacking, but `renotify`
+      // makes the phone alert again so a repeat isn't silent.
       await self.registration.showNotification(notif.title, {
         body:  notif.body,
         icon:  '/icons/icon-192.png',
         badge: '/icons/icon-192.png',
         data:  { url, screen },
+        ...(data.tag ? { tag: data.tag, renotify: true } : {}),
+        ...(data.urgent ? {
+          requireInteraction: true,
+          vibrate: [300, 120, 300, 120, 300],
+        } : {}),
       });
 
       // Persist to IndexedDB so the app picks it up when it next opens.

@@ -356,6 +356,11 @@ export interface InAppNotification {
   /** Screen id to open when the row is tapped (e.g. "leak", "doors", "room:Kitchen").
    *  Set from the push payload's ?screen= param; falls back to the category map. */
   screen?: string;
+  /** Collapse key from the push payload (its alertKey). A repeating alert keeps
+   *  one row, refreshed in place, instead of one row per repeat. */
+  tag?: string;
+  /** Condition serious enough to keep alerting about — currently leaks only. */
+  urgent?: boolean;
 }
 
 /** Fallback destination for notifications that carry no explicit `screen`. */

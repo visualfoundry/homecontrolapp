@@ -11,6 +11,7 @@ import { Segmented } from '@/components/Segmented';
 import { Avatar } from '@/components/Avatar';
 import { getAvatarPhoto, setAvatarPhoto } from '@/lib/avatar-photos';
 import { LargeTitle } from '@/components/LargeTitle';
+import { LeakAlertBanner } from '@/components/LeakAlertBanner';
 import { iconBtn, pillBtn, stepBtn } from '@/lib/styles';
 import { Slider } from '@/components/Slider';
 import { SceneRoomCard } from '@/components/SceneRoomCard';
@@ -762,6 +763,9 @@ export function HomeScreen() {
 
   return (
     <div>
+      {/* Above the greeting on purpose — a leak outranks everything else here. */}
+      <LeakAlertBanner />
+
       <LargeTitle title={greeting} titleSize={greetingSize} sub="The House"
         right={
           <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>

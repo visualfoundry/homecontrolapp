@@ -166,6 +166,22 @@ function saveNotifications(list: InAppNotification[]): void {
   try { localStorage.setItem(INBOX_KEY, JSON.stringify(list)); } catch { /* quota */ }
 }
 
+/** Prepend incoming notifications, dropping any older row that shares a `tag`.
+ *  A leak re-notifies every 30 minutes until it is dealt with; without this the
+ *  inbox would collect one row per repeat and the unread count would climb even
+ *  though it is all the same unresolved condition. */
+function mergeNotifications(
+  prev: InAppNotification[],
+  incoming: InAppNotification[],
+): InAppNotification[] {
+  const ids  = new Set(prev.map(n => n.id));
+  const fresh = incoming.filter(n => !ids.has(n.id));
+  if (!fresh.length) return prev;
+  const tags = new Set(fresh.map(n => n.tag).filter(Boolean));
+  const kept = tags.size ? prev.filter(n => !n.tag || !tags.has(n.tag)) : prev;
+  return [...fresh, ...kept];
+}
+
 // Shared with the service worker — keep the version and store names in sync with sw.js.
 const SW_IDB_NAME = 'hca-sw';
 const SW_IDB_VERSION = 2;
@@ -545,8 +561,7 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
     if (fresh.length) {
       // The badge follows from the unread count changing — see the effect below.
       setNotifications(prev => {
-        const seen = new Set(prev.map(n => n.id));
-        const next = [...fresh.filter(n => !seen.has(n.id)), ...prev];
+        const next = mergeNotifications(prev, fresh);
         saveNotifications(next);
         return next;
       });
@@ -574,8 +589,8 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
       if (e.data?.type !== 'hca-push-notif') return;
       const notif = e.data.notif as InAppNotification;
       setNotifications(prev => {
-        if (prev.find(n => n.id === notif.id)) return prev;
-        const next = [notif, ...prev];
+        const next = mergeNotifications(prev, [notif]);
+        if (next === prev) return prev;
         saveNotifications(next);
         return next;
       });

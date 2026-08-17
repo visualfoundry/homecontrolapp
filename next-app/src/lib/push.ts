@@ -77,6 +77,13 @@ export interface PushPayload {
   url?: string;
   /** Inbox grouping hint — mirrors InAppNotification['category']. */
   category?: string;
+  /** Escalates delivery: high urgency to the push service (so it isn't held back
+   *  while the phone is idle), and a banner the SW keeps on screen until the user
+   *  acts on it. For conditions that damage the house — currently leaks only. */
+  urgent?: boolean;
+  /** Collapse key for the OS banner. Repeats of the same alert replace the old
+   *  banner instead of stacking, while still re-alerting the user. */
+  tag?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -95,6 +102,9 @@ export interface ActiveAlert {
   payload: PushPayload;
   firstSent: number;  // unix ms
   lastSent: number;   // unix ms
+  /** Per-alert resend window. Absent = the default 24 h. A leak repeats far more
+   *  often than a low battery, so the interval belongs to the alert, not the app. */
+  resendMs?: number;
 }
 
 const ALERTS_FILE = process.env.PUSH_ALERTS_FILE ?? '/tmp/hca-push-alerts.json';
@@ -122,22 +132,25 @@ function writeAlerts(alerts: ActiveAlert[]): void {
  * Returns true if an alert with this key was already sent within the resend window.
  * Use this to skip sendToAll when the state service re-fires on restart.
  */
-export function isAlertRateLimited(key: string): boolean {
+export function isAlertRateLimited(key: string, resendMs?: number): boolean {
   const existing = readAlerts().find(a => a.key === key);
-  return !!existing && Date.now() - existing.lastSent < RESEND_MS;
+  if (!existing) return false;
+  const window = resendMs ?? existing.resendMs ?? RESEND_MS;
+  return Date.now() - existing.lastSent < window;
 }
 
 /** Record or update a persistent alert. Pass didSend=false to update the record
  *  without resetting the lastSent timestamp (used when the send was skipped). */
-export function setActiveAlert(key: string, payload: PushPayload, didSend = true): void {
+export function setActiveAlert(key: string, payload: PushPayload, didSend = true, resendMs?: number): void {
   const now = Date.now();
   const alerts = readAlerts();
   const existing = alerts.find(a => a.key === key);
   if (existing) {
     existing.payload = payload;
+    if (resendMs !== undefined) existing.resendMs = resendMs;
     if (didSend) existing.lastSent = now;
   } else {
-    alerts.push({ key, payload, firstSent: now, lastSent: didSend ? now : 0 });
+    alerts.push({ key, payload, firstSent: now, lastSent: didSend ? now : 0, ...(resendMs !== undefined ? { resendMs } : {}) });
   }
   writeAlerts(alerts);
   console.log(`[push] active alert ${didSend ? 'sent' : 'recorded (rate-limited)'}: ${key}`);
@@ -156,7 +169,7 @@ export async function checkAndResendAlerts(): Promise<void> {
   const alerts = readAlerts();
   let changed = false;
   for (const alert of alerts) {
-    if (now - alert.lastSent >= RESEND_MS) {
+    if (now - alert.lastSent >= (alert.resendMs ?? RESEND_MS)) {
       console.log(`[push] re-sending persistent alert: ${alert.key}`);
       await sendToAll(alert.payload);
       alert.lastSent = now;
@@ -169,8 +182,11 @@ export async function checkAndResendAlerts(): Promise<void> {
 // Auto-start the hourly scheduler when this module is first loaded.
 // globalThis guard prevents duplicate intervals on hot-reloads.
 // Also callable on-demand via POST /api/push/alerts/check (for cron jobs).
+// Ticks every 10 min rather than hourly: an alert may carry a resend window far
+// shorter than an hour (leaks repeat every 30 min), and the scheduler is the
+// backstop for when the state service itself has stopped re-firing.
 if (!global._hcaAlertInterval) {
-  global._hcaAlertInterval = setInterval(() => { void checkAndResendAlerts(); }, 60 * 60 * 1000);
+  global._hcaAlertInterval = setInterval(() => { void checkAndResendAlerts(); }, 10 * 60 * 1000);
   console.log(`[push] alert scheduler started — resend window: ${RESEND_MS / 3_600_000}h`);
 }
 
@@ -183,8 +199,13 @@ export async function sendToAll(payload: PushPayload): Promise<void> {
   if (!subs.length) return;
 
   const data = JSON.stringify(payload);
+  // Urgent alerts ask the push service not to hold delivery while the device is
+  // idle, and to keep trying for an hour; routine ones stay cheap on battery.
+  const opts = payload.urgent
+    ? { urgency: 'high' as const, TTL: 3600 }
+    : { urgency: 'normal' as const, TTL: 86400 };
   const results = await Promise.allSettled(
-    subs.map(s => webpush.sendNotification(s, data)),
+    subs.map(s => webpush.sendNotification(s, data, opts)),
   );
 
   // Remove subscriptions the push service reports as expired / invalid

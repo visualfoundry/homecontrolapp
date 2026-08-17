@@ -54,14 +54,26 @@ try {
  * app to see…"; the reader may already be in the app. Pass a `url` with
  * ?screen=<id> instead, which makes both the banner and the inbox row tappable.
  */
+interface PushAlertOpts {
+  alertKey?: string;
+  url?: string;
+  category?: string;
+  /** High-urgency delivery and a banner that stays until the user acts on it. */
+  urgent?: boolean;
+  /** Repeat interval while the condition persists. Defaults to the app's 24 h. */
+  resendMinutes?: number;
+  /** State id of the device. The app substitutes `{device}` in the title/body
+   *  with its config-plane name — names are WP's job, not this service's. */
+  deviceId?: string;
+}
+
 async function sendPushAlert(
   title: string,
   body: string,
-  alertKey?: string,
-  url = '/',
-  category?: string,
+  opts: PushAlertOpts = {},
 ): Promise<void> {
   if (!HCA_INTERNAL_KEY || !NEXT_APP_URL) return;
+  const { alertKey, url = '/', category, urgent, resendMinutes, deviceId } = opts;
   try {
     await fetch(`${NEXT_APP_URL}/api/push/notify`, {
       method: 'POST',
@@ -73,6 +85,9 @@ async function sendPushAlert(
         title, body, url,
         ...(category ? { category } : {}),
         ...(alertKey ? { alertKey } : {}),
+        ...(urgent ? { urgent: true } : {}),
+        ...(resendMinutes ? { resendMinutes } : {}),
+        ...(deviceId ? { deviceId } : {}),
       }),
       signal: AbortSignal.timeout(5_000),
     });
@@ -131,9 +146,7 @@ async function checkBatteryAlerts(): Promise<void> {
         void sendPushAlert(
           'Low Battery',
           `${lowCount} ${noun} ${verb} a new battery.`,
-          bt.alertKey,
-          `/?screen=${bt.screen}`,
-          bt.category,
+          { alertKey: bt.alertKey, url: `/?screen=${bt.screen}`, category: bt.category },
         );
       }
     } else {
@@ -146,6 +159,48 @@ async function checkBatteryAlerts(): Promise<void> {
         alertSentAt.delete(bt.alertKey);
         void clearPushAlert(bt.alertKey);
       }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Water leak alerts
+//
+// Unlike a low battery, a leak is doing damage while it goes unanswered, so it
+// alerts per sensor (the room matters), at high urgency, and repeats every
+// 30 minutes until the sensor reports dry. The app clears the alert and its
+// home-screen banner off the same dry reading — there is nothing to dismiss.
+// ---------------------------------------------------------------------------
+
+const LEAK_RESEND_MS = 30 * 60 * 1000;
+
+async function checkLeakAlerts(): Promise<void> {
+  const snap = getSnapshot() as Record<string, Record<string, unknown>>;
+  const now = Date.now();
+
+  for (const id of Object.keys(devices)) {
+    if (devices[id]?.class !== 'leak-sensor') continue;
+    const alertKey = `leak:${id}`;
+    const wet = snap[id]?.wet;
+
+    if (wet === true) {
+      const lastSent = alertSentAt.get(alertKey);
+      if (lastSent === undefined || now - lastSent >= LEAK_RESEND_MS) {
+        alertSentAt.set(alertKey, now);
+        void sendPushAlert('Water Leak Detected', 'Water detected by {device}.', {
+          alertKey,
+          deviceId: id,
+          url: '/?screen=leak',
+          category: 'leak',
+          urgent: true,
+          resendMinutes: LEAK_RESEND_MS / 60_000,
+        });
+      }
+    } else if (wet === false && alertSentAt.has(alertKey)) {
+      // Only on a confirmed dry reading — `undefined` means we haven't polled this
+      // sensor yet, and a leak must never be cleared by absence of information.
+      alertSentAt.delete(alertKey);
+      void clearPushAlert(alertKey);
     }
   }
 }
@@ -236,6 +291,7 @@ async function pollAll(): Promise<void> {
     const t0 = Date.now();
     await pollAll();
     void checkBatteryAlerts();
+    void checkLeakAlerts();
     const wait = Math.max(0, POLL_MS - (Date.now() - t0));
     if (wait > 0) await new Promise<void>(r => setTimeout(r, wait));
   }
