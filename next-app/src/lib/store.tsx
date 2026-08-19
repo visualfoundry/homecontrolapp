@@ -33,7 +33,7 @@ import React, {
 import { SECTIONS, MAX_TABS, isTabSlot } from '@/lib/sections';
 import type { SectionDef } from '@/lib/sections';
 import type { StateMap, StatePatch } from '@/types/state';
-import { type UserPrefs, DEFAULT_PREFS, type AppConfig, type NotificationPrefs, DEFAULT_NOTIF_PREFS, type InAppNotification } from '@/types/config';
+import { type UserPrefs, DEFAULT_PREFS, type AppConfig, type NotificationPrefs, DEFAULT_NOTIF_PREFS, type InAppNotification, type RemoteButton } from '@/types/config';
 import { fetchState, postCommand, connectSSE } from '@/lib/state-client';
 
 // ---------------------------------------------------------------------------
@@ -63,6 +63,13 @@ export interface HCContextValue {
   overlayRef: React.RefObject<HTMLDivElement>;
   /** App catalog config (devices, scenes, rooms, etc.). */
   config: AppConfig;
+  /** Press a Harmony remote button on a device node.
+   *
+   *  Deliberately not setD: an IR button is momentary. There is no state to
+   *  apply optimistically and nothing for the stream to confirm, so taking the
+   *  command lock would suppress that device's real patches until the 10 s
+   *  deadline expired. Fire and forget. */
+  pressRemote: (deviceId: string, button: RemoteButton) => void;
   /** In-app notification inbox. */
   notifications: InAppNotification[];
   /** Number of unread notifications. */
@@ -675,6 +682,10 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
     }
   }, [schedulePrefsSync]);
 
+  const pressRemote = useCallback((deviceId: string, button: RemoteButton) => {
+    postCommand(deviceId, { button }, 'button');
+  }, []);
+
   const go = useCallback(
     (id: string) => {
       setStack((prev) => {
@@ -703,6 +714,7 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
   const value: HCContextValue = {
     st,
     setD,
+    pressRemote,
     go,
     back,
     stack,

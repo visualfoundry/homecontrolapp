@@ -9,7 +9,7 @@ import { deviceTag } from '@/lib/debug';
 import type { FlagState } from '@/types/state';
 
 export function TVScreen() {
-  const { st, setD, config } = useHC();
+  const { st, setD, config, go } = useHC();
   const onCount = config.tvs.filter(t => (st[t.id] as FlagState | undefined)?.on).length;
   const allOff = () => config.tvs.forEach(t => setD(t.id, { on: false }));
 
@@ -28,10 +28,13 @@ export function TVScreen() {
               key={t.id}
               icon="tv"
               name={t.name}
-              status={on ? 'On' : 'Off'}
+              // Tapping the tile body opens the Harmony remote; the toggle still
+              // drives the room's on/off variable.
+              status={t.remote ? (on ? 'On · Remote' : 'Off · Remote') : (on ? 'On' : 'Off')}
               active={on}
               data-control={deviceTag(t.name, t.id, config.controlStateIds)}
               onToggle={(v) => setD(t.id, { on: v })}
+              onTap={t.remote ? () => go(`remote:${t.id}`) : undefined}
             />
           );
         })}

@@ -2744,5 +2744,181 @@
     "class": "contact-battery",
     "address": "55 AB F1 4",
     "linkedStateId": "eisy2/var/122"
+  },
+  "eisy0/n011_d44381012": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d44381012",
+    "name": "Apple TV",
+    "hub": "Studio"
+  },
+  "eisy0/n011_d58348055": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d58348055",
+    "name": "Yamaha Amp",
+    "hub": "Studio"
+  },
+  "eisy0/n011_d52305979": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d52305979",
+    "name": "Sony TV",
+    "hub": "Gym"
+  },
+  "eisy0/n011_d52305997": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d52305997",
+    "name": "Apple TV",
+    "hub": "Gym"
+  },
+  "eisy0/n011_d43720866": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d43720866",
+    "name": "Integra AV Receiver",
+    "hub": "Cinema"
+  },
+  "eisy0/n011_d44614020": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d44614020",
+    "name": "Apple TV Gen 4",
+    "hub": "Cinema"
+  },
+  "eisy0/n011_d43720865": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d43720865",
+    "name": "Oppo Home Theater",
+    "hub": "Cinema"
+  },
+  "eisy0/n011_d44312595": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d44312595",
+    "name": "Amazon Fire TV",
+    "hub": "Cinema"
+  },
+  "eisy0/n011_d43720867": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d43720867",
+    "name": "JVC Projector",
+    "hub": "Cinema"
+  },
+  "eisy0/n011_d44170082": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d44170082",
+    "name": "Microsoft Xbox 360",
+    "hub": "Cinema"
+  },
+  "eisy0/n011_d43720868": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d43720868",
+    "name": "Elite Screens Home Appliance",
+    "hub": "Cinema"
+  },
+  "eisy0/n011_d43720863": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d43720863",
+    "name": "Universal Devices Light Contr",
+    "hub": "Cinema"
+  },
+  "eisy0/n011_d48156545": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d48156545",
+    "name": "Apple TV",
+    "hub": "Guest Room"
+  },
+  "eisy0/n011_d48156594": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d48156594",
+    "name": "Sony TV",
+    "hub": "Guest Room"
+  },
+  "eisy0/n011_d48157329": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d48157329",
+    "name": "Sony TV 2",
+    "hub": "Master Bedroom"
+  },
+  "eisy0/n011_d48157382": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d48157382",
+    "name": "ATT STB",
+    "hub": "Master Bedroom"
+  },
+  "eisy0/n011_d48203470": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d48203470",
+    "name": "Sony TV",
+    "hub": "Master Bedroom"
+  },
+  "eisy0/n011_d48157137": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d48157137",
+    "name": "Apple TV",
+    "hub": "Master Bedroom"
+  },
+  "eisy0/n011_d76709738": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d76709738",
+    "name": "Fosi Audio Amp",
+    "hub": "Living Room"
+  },
+  "eisy0/n011_d40052014": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d40052014",
+    "name": "Universal Devices Light Contr",
+    "hub": "Living Room"
+  },
+  "eisy0/n011_d76942069": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d76942069",
+    "name": "Sony TV",
+    "hub": "Living Room"
+  },
+  "eisy0/n011_d39468415": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d39468415",
+    "name": "Apple TV Gen 4",
+    "hub": "Living Room"
   }
 }

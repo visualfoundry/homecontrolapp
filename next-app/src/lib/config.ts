@@ -7,7 +7,14 @@
 
 import { gqlAllControls, HOME_CONFIG_QUERY, GraphQLError } from '@/lib/graphql';
 
-import type { AppConfig, ControlNodeRaw, SceneRoomType, SceneRoomConfig } from '@/types/config';
+import harmonyCatalog from '@/data/harmony.json';
+import type { AppConfig, ControlNodeRaw, SceneRoomType, SceneRoomConfig, RemoteConfig } from '@/types/config';
+
+/** Shape of src/data/harmony.json, written by home-control-services sync-harmony. */
+interface HarmonyCatalogRaw {
+  hubs: Array<{ id: string; name: string; devices: Array<{ id: string; name: string }> }>;
+  unusable: Array<{ name: string; hub: string; address: string }>;
+}
 
 // ---------------------------------------------------------------------------
 // Transform WPGraphQL response → AppConfig
@@ -44,6 +51,56 @@ function inferSceneRoom(id: string, name: string): SceneRoomConfig {
 
   return { id, name, type, hasDoor, hasNightDim };
 }
+
+
+// ---------------------------------------------------------------------------
+// Harmony remote join
+//
+// The catalog is discovered from the EISY plugin (npm run sync-harmony in
+// home-control-services), not authored in WP — the plugin already knows each
+// device's name and room, and re-running discovery keeps it in step with the
+// Harmony app.
+// ---------------------------------------------------------------------------
+
+/** WP place → Harmony hub name, where the two don't match verbatim. */
+const HUB_ALIASES: Record<string, string> = {
+  'Guest Bedroom': 'Guest Room',
+};
+
+/** Devices whose IR carries volume — the amp wins over the TV when a room has one. */
+const VOLUME_HINT = /amp|receiver|avr|audio|sound|soundbar/i;
+/** Source boxes, which own the D-pad and transport keys. */
+const NAV_HINT = /apple ?tv|fire ?tv|roku|shield|oppo|blu-?ray|xbox|playstation|stb|dvr|cable|sat/i;
+/** Not real remote targets even though the hub lists them as devices. */
+const NOT_A_TARGET = /light contr|projector screen|elite screens/i;
+
+function remoteForPlace(place: string | null): RemoteConfig | undefined {
+  if (!place) return undefined;
+  const hubName = HUB_ALIASES[place] ?? place;
+  const hub = (harmonyCatalog as HarmonyCatalogRaw).hubs.find(h => h.name === hubName);
+  if (!hub) return undefined;
+
+  const devices = hub.devices.filter(d => !NOT_A_TARGET.test(d.name));
+  if (devices.length === 0) return undefined;
+
+  // Fall back to the first device rather than nothing: a room with one box uses
+  // it for everything, which is also what the physical remote does.
+  const volume = devices.find(d => VOLUME_HINT.test(d.name))
+    ?? devices.find(d => /tv|projector/i.test(d.name))
+    ?? devices[0];
+  const nav = devices.find(d => NAV_HINT.test(d.name))
+    ?? devices.find(d => /tv/i.test(d.name))
+    ?? devices[0];
+
+  return {
+    hubId: hub.id,
+    hubName: hub.name,
+    devices,
+    volumeId: volume.id,
+    navId: nav.id,
+  };
+}
+
 
 function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
 
@@ -194,9 +251,16 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   // --- TVs ----------------------------------------------------------------
+  // On/off runs through an EISY variable per room. The remote buttons are a
+  // separate, more direct path: straight to the Harmony device nodes on that
+  // room's hub (see home-control-services/src/harmony.ts). The two are joined on
+  // the WP place matching the hub name the Harmony app reports.
   const tvs = controls
     .filter(n => (n.controlFields?.controlType?.nodes[0]?.title ?? '') === 'TV')
-    .map(n => ({ id: toId(n), name: n.title }));
+    .map(n => {
+      const remote = remoteForPlace(getPlace(n));
+      return { id: toId(n), name: n.title, ...(remote ? { remote } : {}) };
+    });
 
   // --- Audio / music zones ------------------------------------------------
   const musicZones = controls

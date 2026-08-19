@@ -34,6 +34,7 @@ import { MusicScreen } from '@/screens/MusicScreen';
 import { FansScreen } from '@/screens/FansScreen';
 import { IrrigationScreen } from '@/screens/IrrigationScreen';
 import { LeakScreen } from '@/screens/LeakScreen';
+import { RemoteScreen } from '@/screens/RemoteScreen';
 import { MotionScreen } from '@/screens/MotionScreen';
 import { OutdoorsScreen } from '@/screens/OutdoorsScreen';
 import { SettingsScreen } from '@/screens/SettingsScreen';
@@ -140,6 +141,14 @@ function ScreenRenderer({ id }: { id: string }) {
     return (
       <ScreenErrorBoundary id={id}>
         {place === 'Garage' ? <GarageScreen /> : <RoomScreen place={place} />}
+      </ScreenErrorBoundary>
+    );
+  }
+  // Per-TV remote pages: "remote:<tvId>".
+  if (id.startsWith('remote:')) {
+    return (
+      <ScreenErrorBoundary id={id}>
+        <RemoteScreen tvId={id.slice(7)} />
       </ScreenErrorBoundary>
     );
   }

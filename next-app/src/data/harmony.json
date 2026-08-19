@@ -1,0 +1,155 @@
+{
+  "hubs": [
+    {
+      "id": "eisy0/n011_h833a60c9aec88",
+      "name": "Cinema",
+      "devices": [
+        {
+          "id": "eisy0/n011_d43720866",
+          "name": "Integra AV Receiver"
+        },
+        {
+          "id": "eisy0/n011_d44614020",
+          "name": "Apple TV Gen 4"
+        },
+        {
+          "id": "eisy0/n011_d43720865",
+          "name": "Oppo Home Theater"
+        },
+        {
+          "id": "eisy0/n011_d44312595",
+          "name": "Amazon Fire TV"
+        },
+        {
+          "id": "eisy0/n011_d43720867",
+          "name": "JVC Projector"
+        },
+        {
+          "id": "eisy0/n011_d44170082",
+          "name": "Microsoft Xbox 360"
+        },
+        {
+          "id": "eisy0/n011_d43720868",
+          "name": "Elite Screens Home Appliance"
+        },
+        {
+          "id": "eisy0/n011_d43720863",
+          "name": "Universal Devices Light Contr"
+        }
+      ]
+    },
+    {
+      "id": "eisy0/n011_h22cdb361d3f66",
+      "name": "Guest Room",
+      "devices": [
+        {
+          "id": "eisy0/n011_d48156545",
+          "name": "Apple TV"
+        },
+        {
+          "id": "eisy0/n011_d48156594",
+          "name": "Sony TV"
+        }
+      ]
+    },
+    {
+      "id": "eisy0/n011_hbfeaaf3152cae",
+      "name": "Gym",
+      "devices": [
+        {
+          "id": "eisy0/n011_d52305979",
+          "name": "Sony TV"
+        },
+        {
+          "id": "eisy0/n011_d52305997",
+          "name": "Apple TV"
+        }
+      ]
+    },
+    {
+      "id": "eisy0/n011_h4e08f566ecdbc",
+      "name": "Library",
+      "devices": []
+    },
+    {
+      "id": "eisy0/n011_h1b97d7de5be5c",
+      "name": "Living Room",
+      "devices": [
+        {
+          "id": "eisy0/n011_d76709738",
+          "name": "Fosi Audio Amp"
+        },
+        {
+          "id": "eisy0/n011_d40052014",
+          "name": "Universal Devices Light Contr"
+        },
+        {
+          "id": "eisy0/n011_d76942069",
+          "name": "Sony TV"
+        },
+        {
+          "id": "eisy0/n011_d39468415",
+          "name": "Apple TV Gen 4"
+        }
+      ]
+    },
+    {
+      "id": "eisy0/n011_h78ca68afcf62d",
+      "name": "Master Bedroom",
+      "devices": [
+        {
+          "id": "eisy0/n011_d48157329",
+          "name": "Sony TV 2"
+        },
+        {
+          "id": "eisy0/n011_d48157382",
+          "name": "ATT STB"
+        },
+        {
+          "id": "eisy0/n011_d48203470",
+          "name": "Sony TV"
+        },
+        {
+          "id": "eisy0/n011_d48157137",
+          "name": "Apple TV"
+        }
+      ]
+    },
+    {
+      "id": "eisy0/n011_h6af922be8b827",
+      "name": "Pergola",
+      "devices": []
+    },
+    {
+      "id": "eisy0/n011_h939cb7ca46ac7",
+      "name": "Studio",
+      "devices": [
+        {
+          "id": "eisy0/n011_d44381012",
+          "name": "Apple TV"
+        },
+        {
+          "id": "eisy0/n011_d58348055",
+          "name": "Yamaha Amp"
+        }
+      ]
+    }
+  ],
+  "unusable": [
+    {
+      "name": "Apple TV",
+      "hub": "Pergola",
+      "address": "n011_d58422434"
+    },
+    {
+      "name": "TCL TV",
+      "hub": "Pergola",
+      "address": "n011_d71194420"
+    },
+    {
+      "name": "JBL Nebula Mars",
+      "hub": "Pergola",
+      "address": "n011_d58423283"
+    }
+  ]
+}

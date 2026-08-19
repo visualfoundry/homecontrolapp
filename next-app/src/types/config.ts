@@ -213,6 +213,41 @@ export interface PoolValveDevice {
 }
 export interface SettingItem   { id: string; name: string }
 
+// ---------------------------------------------------------------------------
+// Harmony remote
+//
+// A TV control's on/off runs through an EISY variable, but the remote buttons go
+// straight to Harmony device nodes on that room's hub. Buttons are addressed per
+// device, and the right target differs by button group — volume usually belongs
+// to the amp, navigation and transport to the source box.
+// ---------------------------------------------------------------------------
+
+export interface RemoteDevice { id: string; name: string }
+
+export interface RemoteConfig {
+  /** Hub state id, e.g. "eisy0/n011_h1b97d7de5be5c". */
+  hubId: string;
+  /** Room name as the Harmony hub reports it. */
+  hubName: string;
+  /** Every button-capable device on this hub, in hub order. */
+  devices: RemoteDevice[];
+  /** Default target for volume/mute. */
+  volumeId: string;
+  /** Default target for the D-pad and transport keys. */
+  navId: string;
+}
+
+/** The 13 buttons the remote offers. Names match the Harmony button table. */
+export type RemoteButton =
+  | 'VolumeUp' | 'VolumeDown' | 'Mute'
+  | 'DirectionUp' | 'DirectionDown' | 'DirectionLeft' | 'DirectionRight' | 'Select'
+  | 'Play' | 'Pause' | 'Stop' | 'Rewind' | 'FastForward';
+
+export interface TvDevice extends SettingItem {
+  /** Present when this room's TV has a Harmony hub behind it. */
+  remote?: RemoteConfig;
+}
+
 export type SceneRoomTypeKey = 'bedroom' | 'bath' | 'living' | 'utility' | 'hall';
 export type TimeOfDayKey = 'Morning' | 'Day' | 'Evening' | 'Night';
 export type SceneSchedules = Partial<Record<SceneRoomTypeKey, Partial<Record<TimeOfDayKey, string>>>>;
@@ -233,7 +268,7 @@ export interface AppConfig {
   climate: ClimateZone[];
   musicZones: MusicZone[];
   fans: FanDevice[];
-  tvs: SettingItem[];
+  tvs: TvDevice[];
   irrigationPrograms: IrrigationProgram[];
   irrigationZones: IrrigationZone[];
   leakSensors: SensorDevice[];
