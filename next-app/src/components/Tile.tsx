@@ -32,6 +32,12 @@ interface TileProps {
   className?: string;
   /** Compact variant — reduces padding and sizes to hit ~96px height */
   compact?: boolean;
+  /** Inactive background. Defaults to var(--card); override to mark a tile as
+   *  secondary or unavailable. */
+  bg?: string;
+  /** Body tap does nothing, and the tile stops advertising itself as tappable.
+   *  For tiles whose only interactive part is the corner control. */
+  inert?: boolean;
   'data-control'?: string;
 }
 
@@ -49,6 +55,8 @@ export function Tile({
   glow = false,
   className,
   compact = false,
+  bg,
+  inert = false,
   'data-control': dataControl,
 }: TileProps) {
   const color = activeColor ?? tint ?? 'var(--accent)';
@@ -57,12 +65,17 @@ export function Tile({
   const chipRadius = compact ? 10 : 12;
   const iconSize = compact ? 19 : 22;
 
+  const activateBody = inert ? undefined : (onTap ?? (() => onToggle?.(!active)));
+
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={onTap ?? (() => onToggle?.(!active))}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (onTap ?? (() => onToggle?.(!active)))(); } }}
+      role={activateBody ? 'button' : undefined}
+      tabIndex={activateBody ? 0 : undefined}
+      onClick={activateBody}
+      onKeyDown={(e) => {
+        if (!activateBody) return;
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activateBody(); }
+      }}
       className={className}
       data-control={dataControl}
       style={{
@@ -72,9 +85,9 @@ export function Tile({
         justifyContent: 'space-between',
         padding: compact ? 12 : 'var(--card-pad)',
         borderRadius: 'var(--radius)',
-        cursor: 'pointer',
+        cursor: activateBody ? 'pointer' : 'default',
         textAlign: 'left',
-        background: active ? color : 'var(--card)',
+        background: active ? color : (bg ?? 'var(--card)'),
         boxShadow: active && glow
           ? `var(--shadow), 0 0 24px ${color}55`
           : 'var(--shadow)',
