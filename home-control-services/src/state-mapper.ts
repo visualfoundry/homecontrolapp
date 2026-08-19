@@ -32,7 +32,8 @@ export type DeviceClass =
   | 'motion-battery'
   | 'leak-battery'
   | 'contact-battery'
-  | 'pool-valve';
+  | 'pool-valve'
+  | 'harmony-device';
 
 export interface DeviceEntry {
   /** 'device' = Insteon node; 'variable' = ISY integer/state variable */
@@ -46,6 +47,10 @@ export interface DeviceEntry {
   varId?: number;
   // contact-battery: stateId of the contact-sensor variable to patch with lowBattery
   linkedStateId?: string;
+  // harmony-device: friendly name and the hub (room) it hangs off, both straight
+  // from the Harmony plugin — these nodes have no WP control behind them.
+  name?: string;
+  hub?: string;
 }
 
 export type DevicesMap = Record<string, DeviceEntry>;
@@ -108,6 +113,11 @@ export function nodeToState(
 
     case 'leak-sensor':
       return { wet: st > 0 };
+
+    case 'harmony-device':
+      // Write-only: IR is one-way, so a remote button has no readable state.
+      // Reporting `on` here would invent a status the hub never confirms.
+      return {};
 
     case 'pool-valve':
       return { on: st > 0 };
@@ -212,6 +222,35 @@ export interface NodeCommand {
  * Translate a UI state patch into an ISY node command.
  * Returns null if no command applies (e.g. read-only sensor).
  */
+
+// ---------------------------------------------------------------------------
+// Harmony remote buttons
+//
+// Every Harmony device node accepts SET_BUTTON <index> against one shared
+// 322-entry button table (verified identical across all 22 device nodes on
+// EISY 0), so a single map serves every room. Only the buttons the remote UI
+// offers are listed — sending an index a given device has no IR code for is a
+// silent no-op on the hub, so unknown names are rejected here instead.
+// ---------------------------------------------------------------------------
+
+export const HARMONY_BUTTONS = {
+  DirectionDown:  0,
+  DirectionLeft:  1,
+  DirectionRight: 2,
+  DirectionUp:    3,
+  Select:         4,
+  Stop:           5,
+  Play:           6,
+  Rewind:         7,
+  Pause:          8,
+  FastForward:    9,
+  Mute:          22,
+  VolumeDown:    23,
+  VolumeUp:      24,
+} as const;
+
+export type HarmonyButton = keyof typeof HARMONY_BUTTONS;
+
 export function patchToNodeCommand(
   cls: DeviceClass,
   patch: Record<string, unknown>,
@@ -253,6 +292,18 @@ export function patchToNodeCommand(
     case 'pool-valve':
       if ('on' in patch) return { cmd: patch.on ? 'DON' : 'DOF' };
       return null;
+
+    case 'harmony-device': {
+      // Momentary IR button — there is no state to converge on, so this is the
+      // one class whose commands are fire-and-forget (see /command).
+      if ('button' in patch) {
+        const idx = HARMONY_BUTTONS[patch.button as HarmonyButton];
+        // 0 is a valid index (DirectionDown) — check for presence, not truthiness.
+        return idx !== undefined ? { cmd: 'SET_BUTTON', value: idx } : null;
+      }
+      if ('on' in patch) return { cmd: patch.on ? 'DON' : 'DOF' };
+      return null;
+    }
 
     case 'thermostat': {
       if ('mode' in patch) {

@@ -20,6 +20,7 @@ import { writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getVariables } from '../src/eisy-client.js';
+import { discoverHarmony } from '../src/harmony.js';
 import { EISY_URLS, WP_GRAPHQL_URL } from '../src/config.js';
 import type { DeviceClass, DeviceEntry, DevicesMap } from '../src/state-mapper.js';
 
@@ -291,6 +292,18 @@ async function main() {
   if (variableControls.length > 0) {
     console.log('Probing EISYs for variable types…');
     await probeVariableTypes(devices, variableControls);
+  }
+
+  // Harmony devices come from the EISY plugin rather than WP — see src/harmony.ts.
+  // Kept here so a full regeneration doesn't drop them; `npm run sync-harmony`
+  // refreshes just this part without rebuilding everything else.
+  try {
+    console.log('Discovering Harmony devices on eisy0…');
+    const { devices: harmony, catalog } = await discoverHarmony(EISY_URLS[0], 0);
+    Object.assign(devices, harmony);
+    console.log(`  ${Object.keys(harmony).length} harmony devices across ${catalog.hubs.length} hubs`);
+  } catch (err) {
+    console.warn('  Harmony discovery failed (continuing):', err instanceof Error ? err.message : err);
   }
 
   const outPath = join(__dirname, '..', 'devices.json');

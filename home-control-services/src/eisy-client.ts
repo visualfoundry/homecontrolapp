@@ -119,6 +119,73 @@ export async function getVariables(
  * EISY admin. Forces the ISY to request current status from the physical device
  * and update its database. Use this to re-read battery or sensor state.
  */
+/**
+ * GET /rest/nodes — full node definitions (address, name, nodeDefId, parent).
+ *
+ * Distinct from getNodeStatus, which returns live values but no names or tree
+ * structure. Used at build time to discover plugin-backed nodes (Harmony) that
+ * have no WP control behind them. The payload is large and the EISY serves it
+ * slowly, hence the long default timeout.
+ */
+export interface NodeDefinition {
+  address: string;
+  name: string;
+  nodeDefId: string;
+  parent: string | null;
+}
+
+export async function getNodeDefinitions(
+  baseUrl: string,
+  timeoutMs = 90_000,
+): Promise<NodeDefinition[]> {
+  const xml = await eisyGet(`${baseUrl}/rest/nodes`, timeoutMs);
+  const parsed = parser.parse(xml) as {
+    nodes?: { node?: Array<Record<string, unknown>> };
+  };
+  const out: NodeDefinition[] = [];
+  for (const n of parsed.nodes?.node ?? []) {
+    const address = String(n.address ?? '');
+    if (!address) continue;
+    const parent = n.parent as { '#text'?: unknown } | string | undefined;
+    out.push({
+      address,
+      name: String(n.name ?? ''),
+      nodeDefId: String(n['@_nodeDefId'] ?? ''),
+      parent: parent == null
+        ? null
+        : String(typeof parent === 'object' ? parent['#text'] ?? '' : parent) || null,
+    });
+  }
+  return out;
+}
+
+/**
+ * GET /rest/profiles — every family's node definitions and editors, as JSON.
+ *
+ * Plugin node servers publish one nodedef per discovered device, so this is the
+ * authoritative answer to "which commands does this node accept".
+ */
+export async function getProfiles(
+  baseUrl: string,
+  timeoutMs = 90_000,
+): Promise<ProfilesDoc> {
+  const text = await eisyGet(`${baseUrl}/rest/profiles`, timeoutMs);
+  return JSON.parse(text) as ProfilesDoc;
+}
+
+export interface ProfilesDoc {
+  families: Array<{
+    id: string;
+    instances: Array<{
+      id: string;
+      nodedefs?: Array<{
+        id: string;
+        cmds?: { accepts?: Array<{ id: string }> };
+      }>;
+    }>;
+  }>;
+}
+
 export async function queryNode(baseUrl: string, address: string): Promise<void> {
   const encoded = encodeURIComponent(address);
   await eisyGet(`${baseUrl}/rest/nodes/${encoded}/query`);
