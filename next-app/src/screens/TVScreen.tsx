@@ -32,13 +32,11 @@ export function TVScreen() {
               // Power is the switch's job alone. The tile body opens the remote
               // where there is one, and does nothing where there isn't — so a tap
               // can never turn a TV on or off by accident.
-              status={hasRemote ? (on ? 'On · Remote' : 'Off · Remote') : (on ? 'On · No remote' : 'No remote')}
+              status={hasRemote ? (on ? 'On · Remote' : 'Off · Remote') : (on ? 'On' : 'Off')}
               active={on}
-              // Rooms without a button-capable Harmony hub read as recessed and
-              // fill neutral grey rather than accent, so they stay visibly apart
-              // from the rooms a remote can drive, in both on and off states.
-              tint={hasRemote ? undefined : 'var(--tint-unavailable)'}
-              bg={hasRemote ? undefined : 'var(--seg-bg)'}
+              // Rooms with no button-capable Harmony device lose the chip behind
+              // the icon — the one cue that this tile has nothing to open.
+              iconChip={hasRemote}
               inert={!hasRemote}
               data-control={deviceTag(t.name, t.id, config.controlStateIds)}
               onToggle={(v) => setD(t.id, { on: v })}

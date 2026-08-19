@@ -32,9 +32,9 @@ interface TileProps {
   className?: string;
   /** Compact variant — reduces padding and sizes to hit ~96px height */
   compact?: boolean;
-  /** Inactive background. Defaults to var(--card); override to mark a tile as
-   *  secondary or unavailable. */
-  bg?: string;
+  /** Draw the rounded background behind the icon. Off marks a tile whose extra
+   *  affordance is absent — the icon reads plain rather than chipped. */
+  iconChip?: boolean;
   /** Body tap does nothing, and the tile stops advertising itself as tappable.
    *  For tiles whose only interactive part is the corner control. */
   inert?: boolean;
@@ -55,7 +55,7 @@ export function Tile({
   glow = false,
   className,
   compact = false,
-  bg,
+  iconChip = true,
   inert = false,
   'data-control': dataControl,
 }: TileProps) {
@@ -87,7 +87,7 @@ export function Tile({
         borderRadius: 'var(--radius)',
         cursor: activateBody ? 'pointer' : 'default',
         textAlign: 'left',
-        background: active ? color : (bg ?? 'var(--card)'),
+        background: active ? color : 'var(--card)',
         boxShadow: active && glow
           ? `var(--shadow), 0 0 24px ${color}55`
           : 'var(--shadow)',
@@ -114,7 +114,7 @@ export function Tile({
         <div style={{
           width: chipSize, height: chipSize, borderRadius: chipRadius, flexShrink: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: active ? 'rgba(255,255,255,0.22)' : 'var(--icon-bg)',
+          background: iconChip ? (active ? 'rgba(255,255,255,0.22)' : 'var(--icon-bg)') : 'transparent',
           color: active ? '#fff' : 'var(--text2)',
           transition: 'background 200ms ease, color 200ms ease',
         }}>
