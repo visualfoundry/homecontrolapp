@@ -220,6 +220,29 @@ function FavTile({ id, icon, label }: { id: string; icon: React.ComponentProps<t
   );
 }
 
+// A TV favourite behaves exactly as it does on the TV screen: the switch owns
+// power, the tile body opens that room's remote, and a TV with no Harmony hub
+// keeps neither the chip nor the tap — so a stray tap can't cut the picture.
+function TvFavTile({ id, label }: { id: string; label: string }) {
+  const { st, setD, config, go } = useHC();
+  const on = (st[id] as FlagState | undefined)?.on ?? false;
+  const hasRemote = !!config.tvs.find(t => t.id === id)?.remote;
+  return (
+    <Tile
+      icon="tv"
+      name={label}
+      status={hasRemote ? (on ? 'On · Remote' : 'Off · Remote') : (on ? 'On' : 'Off')}
+      active={on}
+      iconChip={hasRemote}
+      inert={!hasRemote}
+      compact
+      data-control={deviceTag(label, id, config.controlStateIds)}
+      onTap={hasRemote ? () => go(`remote:${id}`) : undefined}
+      control={<Toggle on={on} onChange={(v) => setD(id, { on: v })} accent="rgba(255,255,255,0.4)" size={0.72} />}
+    />
+  );
+}
+
 function LightFavTile({ id, label }: { id: string; label: string }) {
   const { st, setD, config } = useHC();
   const s = (st[id] as LightState | undefined) ?? { on: false, level: 0 };
@@ -747,6 +770,7 @@ export function HomeScreen() {
   const favLookup = Object.fromEntries(config.favCatalog.flatMap(g => g.items.map(it => [it.id, it])));
   const lightSceneIds = new Set(config.lightSceneRooms.map(r => r.id));
   const carDoorIds = new Set(config.garageCarDoors.map(d => d.id));
+  const tvIds = new Set(config.tvs.map(t => t.id));
 
   const firstName = typeof window !== 'undefined' ? (localStorage.getItem('hca:first_name') ?? '') : '';
   const greeting = (() => {
@@ -990,6 +1014,9 @@ export function HomeScreen() {
               }
               if (it.icon === 'fan') {
                 return <FanFavTile key={id} id={id} label={it.label} />;
+              }
+              if (tvIds.has(id)) {
+                return <TvFavTile key={id} id={id} label={it.label} />;
               }
               return <FavTile key={id} id={it.id} icon={it.icon as React.ComponentProps<typeof Icon>['name']} label={it.label} />;
             })}

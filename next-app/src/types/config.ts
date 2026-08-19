@@ -237,10 +237,10 @@ export interface RemoteConfig {
   navId: string;
 }
 
-/** The 13 buttons the remote offers. Names match the Harmony button table. */
+/** The 14 buttons the remote offers. Names match the Harmony button table. */
 export type RemoteButton =
   | 'VolumeUp' | 'VolumeDown' | 'Mute'
-  | 'DirectionUp' | 'DirectionDown' | 'DirectionLeft' | 'DirectionRight' | 'Select'
+  | 'DirectionUp' | 'DirectionDown' | 'DirectionLeft' | 'DirectionRight' | 'Select' | 'Back'
   | 'Play' | 'Pause' | 'Stop' | 'Rewind' | 'FastForward';
 
 export interface TvDevice extends SettingItem {

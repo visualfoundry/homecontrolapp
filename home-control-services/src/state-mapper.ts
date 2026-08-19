@@ -244,6 +244,7 @@ export const HARMONY_BUTTONS = {
   Rewind:         7,
   Pause:          8,
   FastForward:    9,
+  Back:          13,
   Mute:          22,
   VolumeDown:    23,
   VolumeUp:      24,

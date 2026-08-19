@@ -66,7 +66,8 @@ export function RemoteScreen({ tvId }: { tvId?: string }) {
         right={<Toggle on={on} onChange={(v) => setD(tv.id, { on: v })} aria-label={`${tv.name} power`} />}
       />
 
-      {/* D-pad */}
+      {/* D-pad — Back sits in the pad's bottom-left corner, where a real remote
+          keeps it, rather than in a row of its own. */}
       <Card style={{ marginBottom: 14 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 62px)', gap: 10,
           justifyContent: 'center', justifyItems: 'center', alignItems: 'center' }}>
@@ -76,7 +77,10 @@ export function RemoteScreen({ tvId }: { tvId?: string }) {
             <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: 0.3 }}>OK</span>
           </RemoteButton>
           {dpad('DirectionRight', 'Right', 0)}
-          <span /> {dpad('DirectionDown', 'Down', 90)} <span />
+          <RemoteButton onPress={nav('Back')} label="Back" size={62}>
+            <span style={{ fontSize: 14, fontWeight: 640, letterSpacing: -0.2 }}>Back</span>
+          </RemoteButton>
+          {dpad('DirectionDown', 'Down', 90)} <span />
         </div>
       </Card>
 
