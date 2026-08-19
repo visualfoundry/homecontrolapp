@@ -83,13 +83,18 @@ function remoteForPlace(place: string | null): RemoteConfig | undefined {
   const devices = hub.devices.filter(d => !NOT_A_TARGET.test(d.name));
   if (devices.length === 0) return undefined;
 
+  // A display, as opposed to a source box. Tested against NAV_HINT first because
+  // "Apple TV" contains "TV" — without that exclusion a room whose only display
+  // is a Sony TV would still route volume to the Apple TV sitting under it.
+  const isDisplay = (name: string) => /tv|projector|display/i.test(name) && !NAV_HINT.test(name);
+
   // Fall back to the first device rather than nothing: a room with one box uses
   // it for everything, which is also what the physical remote does.
   const volume = devices.find(d => VOLUME_HINT.test(d.name))
-    ?? devices.find(d => /tv|projector/i.test(d.name))
+    ?? devices.find(d => isDisplay(d.name))
     ?? devices[0];
   const nav = devices.find(d => NAV_HINT.test(d.name))
-    ?? devices.find(d => /tv/i.test(d.name))
+    ?? devices.find(d => isDisplay(d.name))
     ?? devices[0];
 
   return {
