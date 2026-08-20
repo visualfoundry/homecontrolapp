@@ -217,7 +217,62 @@
     {
       "id": "eisy0/n011_h4e08f566ecdbc",
       "name": "Library",
-      "devices": []
+      "devices": [
+        {
+          "id": "eisy0/n011_d48157575",
+          "name": "Apple TV",
+          "buttons": [
+            "DirectionDown",
+            "DirectionLeft",
+            "DirectionRight",
+            "DirectionUp",
+            "Select",
+            "Stop",
+            "Play",
+            "Rewind",
+            "Pause",
+            "FastForward",
+            "Back"
+          ],
+          "buttonsKnown": true
+        },
+        {
+          "id": "eisy0/n011_d48157676",
+          "name": "Cisco DVR",
+          "buttons": [
+            "DirectionDown",
+            "DirectionLeft",
+            "DirectionRight",
+            "DirectionUp",
+            "Select",
+            "Stop",
+            "Play",
+            "Rewind",
+            "Pause",
+            "FastForward",
+            "Back",
+            "Mute",
+            "VolumeDown",
+            "VolumeUp"
+          ],
+          "buttonsKnown": true
+        },
+        {
+          "id": "eisy0/n011_d48199779",
+          "name": "Sony TV 2",
+          "buttons": [
+            "DirectionDown",
+            "DirectionLeft",
+            "DirectionRight",
+            "DirectionUp",
+            "Select",
+            "Mute",
+            "VolumeDown",
+            "VolumeUp"
+          ],
+          "buttonsKnown": true
+        }
+      ]
     },
     {
       "id": "eisy0/n011_h1b97d7de5be5c",
@@ -232,11 +287,17 @@
             "DirectionRight",
             "DirectionUp",
             "Select",
+            "Stop",
+            "Play",
+            "Rewind",
+            "Pause",
+            "FastForward",
+            "Back",
             "Mute",
             "VolumeDown",
             "VolumeUp"
           ],
-          "buttonsKnown": true
+          "buttonsKnown": false
         },
         {
           "id": "eisy0/n011_d40052014",
@@ -280,6 +341,16 @@
             "Pause",
             "FastForward",
             "Back"
+          ],
+          "buttonsKnown": true
+        },
+        {
+          "id": "eisy0/n011_d81452675",
+          "name": "NAD Amp",
+          "buttons": [
+            "Mute",
+            "VolumeDown",
+            "VolumeUp"
           ],
           "buttonsKnown": true
         }
@@ -378,12 +449,9 @@
             "Rewind",
             "Pause",
             "FastForward",
-            "Back",
-            "Mute",
-            "VolumeDown",
-            "VolumeUp"
+            "Back"
           ],
-          "buttonsKnown": false
+          "buttonsKnown": true
         },
         {
           "id": "eisy0/n011_d71194420",
@@ -394,7 +462,6 @@
             "DirectionRight",
             "DirectionUp",
             "Select",
-            "Stop",
             "Play",
             "Rewind",
             "Pause",
@@ -404,7 +471,7 @@
             "VolumeDown",
             "VolumeUp"
           ],
-          "buttonsKnown": false
+          "buttonsKnown": true
         },
         {
           "id": "eisy0/n011_d58423283",
@@ -415,17 +482,14 @@
             "DirectionRight",
             "DirectionUp",
             "Select",
-            "Stop",
             "Play",
-            "Rewind",
             "Pause",
-            "FastForward",
             "Back",
             "Mute",
             "VolumeDown",
             "VolumeUp"
           ],
-          "buttonsKnown": false
+          "buttonsKnown": true
         }
       ]
     },
@@ -466,19 +530,9 @@
   ],
   "unprofiled": [
     {
-      "name": "Apple TV",
-      "hub": "Pergola",
-      "address": "n011_d58422434"
-    },
-    {
-      "name": "TCL TV",
-      "hub": "Pergola",
-      "address": "n011_d71194420"
-    },
-    {
-      "name": "JBL Nebula Mars",
-      "hub": "Pergola",
-      "address": "n011_d58423283"
+      "name": "Fosi Audio Amp",
+      "hub": "Living Room",
+      "address": "n011_d76709738"
     }
   ]
 }

@@ -2841,6 +2841,30 @@
     "name": "Universal Devices Light Contr",
     "hub": "Cinema"
   },
+  "eisy0/n011_d48157575": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d48157575",
+    "name": "Apple TV",
+    "hub": "Library"
+  },
+  "eisy0/n011_d48157676": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d48157676",
+    "name": "Cisco DVR",
+    "hub": "Library"
+  },
+  "eisy0/n011_d48199779": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d48199779",
+    "name": "Sony TV 2",
+    "hub": "Library"
+  },
   "eisy0/n011_d48156545": {
     "type": "device",
     "eisyIdx": 0,
@@ -2919,6 +2943,14 @@
     "class": "harmony-device",
     "address": "n011_d39468415",
     "name": "Apple TV Gen 4",
+    "hub": "Living Room"
+  },
+  "eisy0/n011_d81452675": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d81452675",
+    "name": "NAD Amp",
     "hub": "Living Room"
   },
   "eisy0/n011_d58422434": {
