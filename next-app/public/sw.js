@@ -143,6 +143,19 @@ async function swBumpUnread() {
   return next;
 }
 
+// Badge writes are serialised through this chain. Each push runs its own async
+// handler, so three alerts arriving together (the daily re-send fires them in one
+// batch) would each bump the counter — correctly, IDB serialises that — and then
+// race on setAppBadge, leaving whichever call happens to land last on screen. Two
+// alerts showing a badge of 1 is that race, not a miscount.
+let badgeChain = Promise.resolve();
+
+function queueBadgeUpdate(fn) {
+  const run = badgeChain.then(fn, fn);
+  badgeChain = run.catch(() => {});
+  return run;
+}
+
 async function swStoreNotif(notif) {
   const db = await openIdb();
   await new Promise((resolve, reject) => {
@@ -210,10 +223,14 @@ self.addEventListener('push', (e) => {
       const cs = await clients.matchAll({ type: 'window', includeUncontrolled: true });
       cs.forEach(c => c.postMessage({ type: 'hca-push-notif', notif }));
 
-      // Update the home-screen icon badge from the unread count.
+      // Update the home-screen icon badge from the unread count. Bump and write
+      // as one queued step so concurrent pushes can't apply their counts out of
+      // order — the last badge written is then always the highest.
       if ('setAppBadge' in navigator) {
-        const unread = await swBumpUnread().catch(() => 0);
-        if (unread > 0) navigator.setAppBadge(unread).catch(() => {});
+        await queueBadgeUpdate(async () => {
+          const unread = await swBumpUnread().catch(() => 0);
+          if (unread > 0) await navigator.setAppBadge(unread).catch(() => {});
+        });
       }
     })()
   );

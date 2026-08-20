@@ -67,12 +67,14 @@ interface PushAlertOpts {
   deviceId?: string;
 }
 
+/** Returns false when the app couldn't be reached, so the caller can retry.
+ *  Recording a send that never left would silence the alert for 24 h. */
 async function sendPushAlert(
   title: string,
   body: string,
   opts: PushAlertOpts = {},
-): Promise<void> {
-  if (!HCA_INTERNAL_KEY || !NEXT_APP_URL) return;
+): Promise<boolean> {
+  if (!HCA_INTERNAL_KEY || !NEXT_APP_URL) return false;
   const { alertKey, url = '/', category, urgent, resendMinutes, deviceId } = opts;
   try {
     await fetch(`${NEXT_APP_URL}/api/push/notify`, {
@@ -91,13 +93,17 @@ async function sendPushAlert(
       }),
       signal: AbortSignal.timeout(5_000),
     });
+    return true;
   } catch (err) {
     console.warn('[push] notify failed:', err instanceof Error ? err.message : err);
+    return false;
   }
 }
 
-async function clearPushAlert(alertKey: string): Promise<void> {
-  if (!HCA_INTERNAL_KEY || !NEXT_APP_URL) return;
+/** Returns false when the app couldn't be reached. A dropped clear leaves the
+ *  alert re-firing every 24 h forever, so the caller must keep it pending. */
+async function clearPushAlert(alertKey: string): Promise<boolean> {
+  if (!HCA_INTERNAL_KEY || !NEXT_APP_URL) return false;
   try {
     await fetch(`${NEXT_APP_URL}/api/push/notify`, {
       method: 'POST',
@@ -108,8 +114,10 @@ async function clearPushAlert(alertKey: string): Promise<void> {
       body: JSON.stringify({ alertKey, clear: true }),
       signal: AbortSignal.timeout(5_000),
     });
+    return true;
   } catch (err) {
     console.warn('[push] clear failed:', err instanceof Error ? err.message : err);
+    return false;
   }
 }
 
@@ -126,6 +134,30 @@ const BATTERY_TYPES = [
 const alertSentAt = new Map<string, number>();
 const ALERT_RESEND_MS = 24 * 60 * 60 * 1000;
 
+// Which devices of a class have ever reported a battery state since startup, and
+// how many that was on the previous cycle.
+//
+// Waiting for EVERY device of the class to confirm — the obvious rule — never
+// completes: some sensors have no battery sub-node in the snapshot at all (two
+// motion sensors and five contact sensors here), so their lowBattery stays
+// undefined for ever and the alert can never clear. Tracking who has actually
+// reported, and only judging once that set stops growing, gives the same
+// protection against clearing on a half-filled snapshot without the deadlock.
+const batteryReporters = new Map<string, Set<string>>();
+const batteryReportersLastSize = new Map<string, number>();
+
+// When each alert was last confirmed clear. The raise bookkeeping lives in this
+// process, but the alert itself is persisted by the app — so an alert raised
+// before a restart is invisible here, and gating the clear on our own map is how
+// motion and leak ended up re-firing daily with nothing behind them. Instead the
+// clear is idempotent and re-issued at this interval while the class is healthy.
+const alertClearedAt = new Map<string, number>();
+const CLEAR_RECHECK_MS = 60 * 60 * 1000;
+
+// Alerts with a POST in flight. The send is only recorded once it lands, and the
+// poll runs every second — without this, one 5 s timeout is five duplicate sends.
+const alertInFlight = new Set<string>();
+
 async function checkBatteryAlerts(): Promise<void> {
   const snap = getSnapshot() as Record<string, Record<string, unknown>>;
   const now = Date.now();
@@ -136,28 +168,50 @@ async function checkBatteryAlerts(): Promise<void> {
 
     const lowCount = knownIds.filter(id => snap[id]?.lowBattery === true).length;
 
+    let reporters = batteryReporters.get(bt.class);
+    if (!reporters) { reporters = new Set(); batteryReporters.set(bt.class, reporters); }
+    for (const id of knownIds) {
+      if (snap[id]?.lowBattery !== undefined) reporters.add(id);
+    }
+    const settled = reporters.size > 0 && reporters.size === batteryReportersLastSize.get(bt.class);
+    batteryReportersLastSize.set(bt.class, reporters.size);
+
     if (lowCount > 0) {
       // Only call the API on first detection or after 24h — not every poll cycle.
       const lastSent = alertSentAt.get(bt.alertKey);
-      if (lastSent === undefined || now - lastSent >= ALERT_RESEND_MS) {
-        alertSentAt.set(bt.alertKey, now);
+      const dueToSend = lastSent === undefined || now - lastSent >= ALERT_RESEND_MS;
+      if (dueToSend && !alertInFlight.has(bt.alertKey)) {
+        alertInFlight.add(bt.alertKey);
         const noun = bt.label + (lowCount > 1 ? 's' : '');
         const verb = lowCount > 1 ? 'need' : 'needs';
+        // Only record the send once it has actually left, so a failed POST is
+        // retried next cycle instead of muting the alert for a day.
         void sendPushAlert(
           'Low Battery',
           `${lowCount} ${noun} ${verb} a new battery.`,
           { alertKey: bt.alertKey, url: `/?screen=${bt.screen}`, category: bt.category },
-        );
+        ).then(sent => {
+          alertInFlight.delete(bt.alertKey);
+          if (!sent) return;
+          alertSentAt.set(bt.alertKey, now);
+          alertClearedAt.delete(bt.alertKey);
+        });
       }
-    } else {
-      // Only clear when EVERY expected device has confirmed battery state in the snapshot.
-      // Checking lowBattery !== undefined (not just state !== undefined) ensures we don't
-      // clear the alert for contact-sensors whose open/close state is read from a
-      // different poll path (variables) than the battery state (node status).
-      const confirmedCount = knownIds.filter(id => snap[id]?.lowBattery !== undefined).length;
-      if (confirmedCount === knownIds.length && alertSentAt.has(bt.alertKey)) {
-        alertSentAt.delete(bt.alertKey);
-        void clearPushAlert(bt.alertKey);
+    } else if (settled) {
+      // Keep the raise on record until the clear lands — a dropped one would
+      // leave the app re-sending this alert daily with nothing behind it.
+      const lastClear = alertClearedAt.get(bt.alertKey);
+      const due = alertSentAt.has(bt.alertKey)
+        || lastClear === undefined
+        || now - lastClear >= CLEAR_RECHECK_MS;
+      if (due && !alertInFlight.has(bt.alertKey)) {
+        alertInFlight.add(bt.alertKey);
+        void clearPushAlert(bt.alertKey).then(cleared => {
+          alertInFlight.delete(bt.alertKey);
+          if (!cleared) return;
+          alertSentAt.delete(bt.alertKey);
+          alertClearedAt.set(bt.alertKey, now);
+        });
       }
     }
   }
