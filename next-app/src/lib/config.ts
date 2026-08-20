@@ -13,8 +13,12 @@ import type { AppConfig, ControlNodeRaw, SceneRoomType, SceneRoomConfig, RemoteC
 
 /** Shape of src/data/harmony.json, written by home-control-services sync-harmony. */
 interface HarmonyCatalogRaw {
-  hubs: Array<{ id: string; name: string; devices: Array<{ id: string; name: string; buttons?: string[] }> }>;
-  unusable: Array<{ name: string; hub: string; address: string }>;
+  hubs: Array<{
+    id: string;
+    name: string;
+    devices: Array<{ id: string; name: string; buttons?: string[]; buttonsKnown?: boolean }>;
+  }>;
+  unprofiled: Array<{ name: string; hub: string; address: string }>;
 }
 
 // ---------------------------------------------------------------------------
@@ -88,7 +92,12 @@ function remoteForPlace(place: string | null): RemoteConfig | undefined {
   // the hub lists it (the Insteon bridge node is the usual case).
   const devices: RemoteDevice[] = hub.devices
     .filter(d => !NOT_A_TARGET.test(d.name))
-    .map(d => ({ id: d.id, name: d.name, buttons: (d.buttons ?? []) as RemoteButton[] }))
+    .map(d => ({
+      id: d.id,
+      name: d.name,
+      buttons: (d.buttons ?? []) as RemoteButton[],
+      buttonsKnown: d.buttonsKnown !== false,
+    }))
     .filter(d => d.buttons.length > 0);
   if (devices.length === 0) return undefined;
 
@@ -114,7 +123,11 @@ function remoteForPlace(place: string | null): RemoteConfig | undefined {
   const routes: Partial<Record<RemoteButton, string>> = {};
   for (const b of REMOTE_BUTTONS) {
     const order = VOLUME_GROUP.includes(b) ? volumeFirst : navFirst;
-    const target = order.find(d => d.buttons.includes(b));
+    // A box whose profile the EISY never built claims every button, so it only
+    // gets one no profiled box in the room claims — otherwise the Pergola-style
+    // guess would outrank a device that demonstrably has the code.
+    const target = order.find(d => d.buttonsKnown && d.buttons.includes(b))
+      ?? order.find(d => d.buttons.includes(b));
     if (target) routes[b] = target.id;
   }
   // Every box present but not one usable key — no remote rather than a dead one.

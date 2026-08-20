@@ -42,8 +42,8 @@ async function main() {
   for (const hub of catalog.hubs) {
     console.log(`    ${hub.name}: ${hub.devices.map(d => d.name).join(', ') || '(none)'}`);
   }
-  for (const u of catalog.unusable) {
-    console.warn(`  ! ${u.hub} / ${u.name} (${u.address}) — no SET_BUTTON in profile; needs a profile rebuild on the EISY`);
+  for (const u of catalog.unprofiled) {
+    console.warn(`  ~ ${u.hub} / ${u.name} (${u.address}) — no profile on the EISY; offered with every button until one is built`);
   }
 
   // --- devices.json: replace the harmony-device set, leave everything else ---

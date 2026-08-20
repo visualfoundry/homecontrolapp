@@ -27,6 +27,11 @@ export interface HarmonyDeviceInfo {
    *  hub takes any index in the shared table but only acts on its own, so this
    *  is what stops the UI offering a key that goes nowhere. */
   buttons: HarmonyButton[];
+  /** False when the EISY publishes no profile for this node, so `buttons` is the
+   *  full set on spec rather than the device's own list. The node still accepts
+   *  SET_BUTTON — the plugin created it, only the profile wasn't rebuilt — so
+   *  these stay usable, just guessed. */
+  buttonsKnown: boolean;
 }
 
 export interface HarmonyHubInfo {
@@ -37,9 +42,10 @@ export interface HarmonyHubInfo {
 
 export interface HarmonyCatalog {
   hubs: HarmonyHubInfo[];
-  /** Devices the plugin lists but whose profile carries no SET_BUTTON — they
-   *  need a profile rebuild on the EISY before a remote can drive them. */
-  unusable: Array<{ name: string; hub: string; address: string }>;
+  /** Devices the plugin lists but the EISY publishes no profile for. Offered
+   *  with the full button set until a profile rebuild on the EISY says which
+   *  keys they really have. */
+  unprofiled: Array<{ name: string; hub: string; address: string }>;
 }
 
 export interface HarmonyDiscovery {
@@ -74,7 +80,7 @@ export async function discoverHarmony(
   baseUrl: string,
   eisyIdx: number,
 ): Promise<HarmonyDiscovery> {
-  const empty: HarmonyDiscovery = { devices: {}, catalog: { hubs: [], unusable: [] } };
+  const empty: HarmonyDiscovery = { devices: {}, catalog: { hubs: [], unprofiled: [] } };
 
   const nodes = await getNodeDefinitions(baseUrl);
   const controller = nodes.find(n => n.nodeDefId === 'HarmonyController');
@@ -133,7 +139,7 @@ function buildResult(
 ): HarmonyDiscovery {
   const devices: DevicesMap = {};
   const hubs: HarmonyHubInfo[] = [];
-  const unusable: HarmonyCatalog['unusable'] = [];
+  const unprofiled: HarmonyCatalog['unprofiled'] = [];
 
   const hubNodes = nodes.filter(n => hubRe.test(n.address));
 
@@ -147,10 +153,12 @@ function buildResult(
     for (const dev of nodes) {
       if (!deviceRe.test(dev.address) || dev.parent !== hub.address) continue;
 
-      if (buttonCapable && !buttonCapable.has(dev.nodeDefId)) {
-        unusable.push({ name: dev.name, hub: hub.name, address: dev.address });
-        continue;
-      }
+      // A node the EISY has no profile for is still driveable — the plugin owns
+      // the hub connection and answers SET_BUTTON regardless (verified against
+      // the Pergola's nodes, which the profile omits entirely). Take it, and
+      // note that its button list is the spec rather than the device's own.
+      const profiled = !buttonCapable || buttonCapable.has(dev.nodeDefId);
+      if (!profiled) unprofiled.push({ name: dev.name, hub: hub.name, address: dev.address });
 
       const stateId = `eisy${eisyIdx}/${dev.address}`;
       devices[stateId] = {
@@ -161,16 +169,20 @@ function buildResult(
         name: dev.name,
         hub: hub.name,
       };
-      // No editor read (unreadable profile) means "unknown", not "none" — claim
-      // every button rather than leaving the room with a dead remote.
-      const buttons = buttonsByNodeDef.get(dev.nodeDefId)
-        ?? (Object.keys(HARMONY_BUTTONS) as HarmonyButton[]);
-      hubInfo.devices.push({ id: stateId, name: dev.name, buttons });
+      // No editor read means "unknown", not "none" — claim every button rather
+      // than leaving the room with a dead remote.
+      const known = buttonsByNodeDef.get(dev.nodeDefId);
+      hubInfo.devices.push({
+        id: stateId,
+        name: dev.name,
+        buttons: known ?? (Object.keys(HARMONY_BUTTONS) as HarmonyButton[]),
+        buttonsKnown: known !== undefined,
+      });
     }
 
     hubs.push(hubInfo);
   }
 
   hubs.sort((a, b) => a.name.localeCompare(b.name));
-  return { devices, catalog: { hubs, unusable } };
+  return { devices, catalog: { hubs, unprofiled } };
 }

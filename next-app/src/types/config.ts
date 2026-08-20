@@ -227,6 +227,10 @@ export interface RemoteDevice {
   name: string;
   /** Buttons this box has an IR code for, straight from its EISY profile. */
   buttons: RemoteButton[];
+  /** False when the EISY publishes no profile for the node, so `buttons` is the
+   *  full set on spec. Such a box is still driveable but only wins a button no
+   *  profiled box in the room claims. */
+  buttonsKnown: boolean;
 }
 
 export interface RemoteConfig {

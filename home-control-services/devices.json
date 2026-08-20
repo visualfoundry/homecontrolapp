@@ -2920,5 +2920,29 @@
     "address": "n011_d39468415",
     "name": "Apple TV Gen 4",
     "hub": "Living Room"
+  },
+  "eisy0/n011_d58422434": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d58422434",
+    "name": "Apple TV",
+    "hub": "Pergola"
+  },
+  "eisy0/n011_d71194420": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d71194420",
+    "name": "TCL TV",
+    "hub": "Pergola"
+  },
+  "eisy0/n011_d58423283": {
+    "type": "device",
+    "eisyIdx": 0,
+    "class": "harmony-device",
+    "address": "n011_d58423283",
+    "name": "JBL Nebula Mars",
+    "hub": "Pergola"
   }
 }
