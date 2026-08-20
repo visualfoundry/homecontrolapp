@@ -180,7 +180,18 @@ export interface ProfilesDoc {
       id: string;
       nodedefs?: Array<{
         id: string;
-        cmds?: { accepts?: Array<{ id: string }> };
+        cmds?: { accepts?: Array<{ id: string; parameters?: Array<{ editor?: string }> }> };
+      }>;
+      /** Command parameter value lists. A plugin publishes one per device, which
+       *  is how "which buttons does this box actually have" is discoverable. */
+      editors?: Array<{
+        id: string;
+        ranges?: Array<{
+          /** Indexes this editor allows, e.g. "0-4,21-24,77,168-174". */
+          subset?: string;
+          /** index → name, over the editor's full table (not just the subset). */
+          names?: Record<string, string>;
+        }>;
       }>;
     }>;
   }>;

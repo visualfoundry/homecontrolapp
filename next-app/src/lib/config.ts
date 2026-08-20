@@ -8,11 +8,12 @@
 import { gqlAllControls, HOME_CONFIG_QUERY, GraphQLError } from '@/lib/graphql';
 
 import harmonyCatalog from '@/data/harmony.json';
-import type { AppConfig, ControlNodeRaw, SceneRoomType, SceneRoomConfig, RemoteConfig } from '@/types/config';
+import { REMOTE_BUTTONS } from '@/types/config';
+import type { AppConfig, ControlNodeRaw, SceneRoomType, SceneRoomConfig, RemoteConfig, RemoteButton, RemoteDevice } from '@/types/config';
 
 /** Shape of src/data/harmony.json, written by home-control-services sync-harmony. */
 interface HarmonyCatalogRaw {
-  hubs: Array<{ id: string; name: string; devices: Array<{ id: string; name: string }> }>;
+  hubs: Array<{ id: string; name: string; devices: Array<{ id: string; name: string; buttons?: string[] }> }>;
   unusable: Array<{ name: string; hub: string; address: string }>;
 }
 
@@ -74,13 +75,21 @@ const NAV_HINT = /apple ?tv|fire ?tv|roku|shield|oppo|blu-?ray|xbox|playstation|
 /** Not real remote targets even though the hub lists them as devices. */
 const NOT_A_TARGET = /light contr|projector screen|elite screens/i;
 
+/** Volume/mute go to the amp when there is one; everything else to the source box. */
+const VOLUME_GROUP: RemoteButton[] = ['VolumeUp', 'VolumeDown', 'Mute'];
+
 function remoteForPlace(place: string | null): RemoteConfig | undefined {
   if (!place) return undefined;
   const hubName = HUB_ALIASES[place] ?? place;
   const hub = (harmonyCatalog as HarmonyCatalogRaw).hubs.find(h => h.name === hubName);
   if (!hub) return undefined;
 
-  const devices = hub.devices.filter(d => !NOT_A_TARGET.test(d.name));
+  // A box that advertises no button the remote offers is not a target, however
+  // the hub lists it (the Insteon bridge node is the usual case).
+  const devices: RemoteDevice[] = hub.devices
+    .filter(d => !NOT_A_TARGET.test(d.name))
+    .map(d => ({ id: d.id, name: d.name, buttons: (d.buttons ?? []) as RemoteButton[] }))
+    .filter(d => d.buttons.length > 0);
   if (devices.length === 0) return undefined;
 
   // A display, as opposed to a source box. Tested against NAV_HINT first because
@@ -88,22 +97,30 @@ function remoteForPlace(place: string | null): RemoteConfig | undefined {
   // is a Sony TV would still route volume to the Apple TV sitting under it.
   const isDisplay = (name: string) => /tv|projector|display/i.test(name) && !NAV_HINT.test(name);
 
-  // Fall back to the first device rather than nothing: a room with one box uses
-  // it for everything, which is also what the physical remote does.
-  const volume = devices.find(d => VOLUME_HINT.test(d.name))
-    ?? devices.find(d => isDisplay(d.name))
-    ?? devices[0];
-  const nav = devices.find(d => NAV_HINT.test(d.name))
-    ?? devices.find(d => isDisplay(d.name))
-    ?? devices[0];
+  // Preference order per group, then the first box that actually has the code —
+  // the Studio's Apple TV has no volume and its Yamaha amp has nothing else, so
+  // a single target per group is not enough on its own.
+  const volumeFirst = [
+    ...devices.filter(d => VOLUME_HINT.test(d.name)),
+    ...devices.filter(d => isDisplay(d.name)),
+    ...devices,
+  ];
+  const navFirst = [
+    ...devices.filter(d => NAV_HINT.test(d.name)),
+    ...devices.filter(d => isDisplay(d.name)),
+    ...devices,
+  ];
 
-  return {
-    hubId: hub.id,
-    hubName: hub.name,
-    devices,
-    volumeId: volume.id,
-    navId: nav.id,
-  };
+  const routes: Partial<Record<RemoteButton, string>> = {};
+  for (const b of REMOTE_BUTTONS) {
+    const order = VOLUME_GROUP.includes(b) ? volumeFirst : navFirst;
+    const target = order.find(d => d.buttons.includes(b));
+    if (target) routes[b] = target.id;
+  }
+  // Every box present but not one usable key — no remote rather than a dead one.
+  if (Object.keys(routes).length === 0) return undefined;
+
+  return { hubId: hub.id, hubName: hub.name, devices, routes };
 }
 
 

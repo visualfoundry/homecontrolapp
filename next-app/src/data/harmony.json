@@ -6,35 +6,115 @@
       "devices": [
         {
           "id": "eisy0/n011_d43720866",
-          "name": "Integra AV Receiver"
+          "name": "Integra AV Receiver",
+          "buttons": [
+            "DirectionDown",
+            "DirectionLeft",
+            "DirectionRight",
+            "DirectionUp",
+            "Select",
+            "Mute",
+            "VolumeDown",
+            "VolumeUp"
+          ]
         },
         {
           "id": "eisy0/n011_d44614020",
-          "name": "Apple TV Gen 4"
+          "name": "Apple TV Gen 4",
+          "buttons": [
+            "DirectionDown",
+            "DirectionLeft",
+            "DirectionRight",
+            "DirectionUp",
+            "Select",
+            "Stop",
+            "Play",
+            "Rewind",
+            "Pause",
+            "FastForward",
+            "Back"
+          ]
         },
         {
           "id": "eisy0/n011_d43720865",
-          "name": "Oppo Home Theater"
+          "name": "Oppo Home Theater",
+          "buttons": [
+            "DirectionDown",
+            "DirectionLeft",
+            "DirectionRight",
+            "DirectionUp",
+            "Select",
+            "Stop",
+            "Play",
+            "Rewind",
+            "Pause",
+            "FastForward",
+            "Mute",
+            "VolumeDown",
+            "VolumeUp"
+          ]
         },
         {
           "id": "eisy0/n011_d44312595",
-          "name": "Amazon Fire TV"
+          "name": "Amazon Fire TV",
+          "buttons": [
+            "DirectionDown",
+            "DirectionLeft",
+            "DirectionRight",
+            "DirectionUp",
+            "Select",
+            "Stop",
+            "Play",
+            "Rewind",
+            "Pause",
+            "FastForward",
+            "Back"
+          ]
         },
         {
           "id": "eisy0/n011_d43720867",
-          "name": "JVC Projector"
+          "name": "JVC Projector",
+          "buttons": [
+            "DirectionDown",
+            "DirectionLeft",
+            "DirectionRight",
+            "DirectionUp",
+            "Select"
+          ]
         },
         {
           "id": "eisy0/n011_d44170082",
-          "name": "Microsoft Xbox 360"
+          "name": "Microsoft Xbox 360",
+          "buttons": [
+            "DirectionDown",
+            "DirectionLeft",
+            "DirectionRight",
+            "DirectionUp",
+            "Select",
+            "Stop",
+            "Play",
+            "Rewind",
+            "Pause",
+            "FastForward",
+            "Mute",
+            "VolumeDown",
+            "VolumeUp"
+          ]
         },
         {
           "id": "eisy0/n011_d43720868",
-          "name": "Elite Screens Home Appliance"
+          "name": "Elite Screens Home Appliance",
+          "buttons": [
+            "DirectionDown",
+            "DirectionUp",
+            "Select",
+            "Stop"
+          ]
         },
         {
           "id": "eisy0/n011_d43720863",
-          "name": "Universal Devices Light Contr"
+          "name": "Universal Devices Light Contr",
+          "buttons": []
         }
       ]
     },
@@ -44,11 +124,39 @@
       "devices": [
         {
           "id": "eisy0/n011_d48156545",
-          "name": "Apple TV"
+          "name": "Apple TV",
+          "buttons": [
+            "DirectionDown",
+            "DirectionLeft",
+            "DirectionRight",
+            "DirectionUp",
+            "Select",
+            "Stop",
+            "Play",
+            "Rewind",
+            "Pause",
+            "FastForward",
+            "Back"
+          ]
         },
         {
           "id": "eisy0/n011_d48156594",
-          "name": "Sony TV"
+          "name": "Sony TV",
+          "buttons": [
+            "DirectionDown",
+            "DirectionLeft",
+            "DirectionRight",
+            "DirectionUp",
+            "Select",
+            "Stop",
+            "Play",
+            "Rewind",
+            "Pause",
+            "FastForward",
+            "Mute",
+            "VolumeDown",
+            "VolumeUp"
+          ]
         }
       ]
     },
@@ -58,11 +166,39 @@
       "devices": [
         {
           "id": "eisy0/n011_d52305979",
-          "name": "Sony TV"
+          "name": "Sony TV",
+          "buttons": [
+            "DirectionDown",
+            "DirectionLeft",
+            "DirectionRight",
+            "DirectionUp",
+            "Select",
+            "Stop",
+            "Play",
+            "Rewind",
+            "Pause",
+            "FastForward",
+            "Mute",
+            "VolumeDown",
+            "VolumeUp"
+          ]
         },
         {
           "id": "eisy0/n011_d52305997",
-          "name": "Apple TV"
+          "name": "Apple TV",
+          "buttons": [
+            "DirectionDown",
+            "DirectionLeft",
+            "DirectionRight",
+            "DirectionUp",
+            "Select",
+            "Stop",
+            "Play",
+            "Rewind",
+            "Pause",
+            "FastForward",
+            "Back"
+          ]
         }
       ]
     },
@@ -77,19 +213,59 @@
       "devices": [
         {
           "id": "eisy0/n011_d76709738",
-          "name": "Fosi Audio Amp"
+          "name": "Fosi Audio Amp",
+          "buttons": [
+            "DirectionDown",
+            "DirectionLeft",
+            "DirectionRight",
+            "DirectionUp",
+            "Select",
+            "Mute",
+            "VolumeDown",
+            "VolumeUp"
+          ]
         },
         {
           "id": "eisy0/n011_d40052014",
-          "name": "Universal Devices Light Contr"
+          "name": "Universal Devices Light Contr",
+          "buttons": []
         },
         {
           "id": "eisy0/n011_d76942069",
-          "name": "Sony TV"
+          "name": "Sony TV",
+          "buttons": [
+            "DirectionDown",
+            "DirectionLeft",
+            "DirectionRight",
+            "DirectionUp",
+            "Select",
+            "Stop",
+            "Play",
+            "Rewind",
+            "Pause",
+            "FastForward",
+            "Back",
+            "Mute",
+            "VolumeDown",
+            "VolumeUp"
+          ]
         },
         {
           "id": "eisy0/n011_d39468415",
-          "name": "Apple TV Gen 4"
+          "name": "Apple TV Gen 4",
+          "buttons": [
+            "DirectionDown",
+            "DirectionLeft",
+            "DirectionRight",
+            "DirectionUp",
+            "Select",
+            "Stop",
+            "Play",
+            "Rewind",
+            "Pause",
+            "FastForward",
+            "Back"
+          ]
         }
       ]
     },
@@ -99,19 +275,68 @@
       "devices": [
         {
           "id": "eisy0/n011_d48157329",
-          "name": "Sony TV 2"
+          "name": "Sony TV 2",
+          "buttons": [
+            "DirectionDown",
+            "DirectionLeft",
+            "DirectionRight",
+            "DirectionUp",
+            "Select",
+            "Mute",
+            "VolumeDown",
+            "VolumeUp"
+          ]
         },
         {
           "id": "eisy0/n011_d48157382",
-          "name": "ATT STB"
+          "name": "ATT STB",
+          "buttons": [
+            "DirectionDown",
+            "DirectionLeft",
+            "DirectionRight",
+            "DirectionUp",
+            "Select",
+            "Stop",
+            "Play",
+            "Rewind",
+            "Pause",
+            "FastForward",
+            "Back",
+            "Mute",
+            "VolumeDown",
+            "VolumeUp"
+          ]
         },
         {
           "id": "eisy0/n011_d48203470",
-          "name": "Sony TV"
+          "name": "Sony TV",
+          "buttons": [
+            "DirectionDown",
+            "DirectionLeft",
+            "DirectionRight",
+            "DirectionUp",
+            "Select",
+            "Mute",
+            "VolumeDown",
+            "VolumeUp"
+          ]
         },
         {
           "id": "eisy0/n011_d48157137",
-          "name": "Apple TV"
+          "name": "Apple TV",
+          "buttons": [
+            "DirectionDown",
+            "DirectionLeft",
+            "DirectionRight",
+            "DirectionUp",
+            "Select",
+            "Stop",
+            "Play",
+            "Rewind",
+            "Pause",
+            "FastForward",
+            "Back"
+          ]
         }
       ]
     },
@@ -126,11 +351,29 @@
       "devices": [
         {
           "id": "eisy0/n011_d44381012",
-          "name": "Apple TV"
+          "name": "Apple TV",
+          "buttons": [
+            "DirectionDown",
+            "DirectionLeft",
+            "DirectionRight",
+            "DirectionUp",
+            "Select",
+            "Stop",
+            "Play",
+            "Rewind",
+            "Pause",
+            "FastForward",
+            "Back"
+          ]
         },
         {
           "id": "eisy0/n011_d58348055",
-          "name": "Yamaha Amp"
+          "name": "Yamaha Amp",
+          "buttons": [
+            "Mute",
+            "VolumeDown",
+            "VolumeUp"
+          ]
         }
       ]
     }

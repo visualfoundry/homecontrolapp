@@ -222,7 +222,12 @@ export interface SettingItem   { id: string; name: string }
 // to the amp, navigation and transport to the source box.
 // ---------------------------------------------------------------------------
 
-export interface RemoteDevice { id: string; name: string }
+export interface RemoteDevice {
+  id: string;
+  name: string;
+  /** Buttons this box has an IR code for, straight from its EISY profile. */
+  buttons: RemoteButton[];
+}
 
 export interface RemoteConfig {
   /** Hub state id, e.g. "eisy0/n011_h1b97d7de5be5c". */
@@ -231,17 +236,20 @@ export interface RemoteConfig {
   hubName: string;
   /** Every button-capable device on this hub, in hub order. */
   devices: RemoteDevice[];
-  /** Default target for volume/mute. */
-  volumeId: string;
-  /** Default target for the D-pad and transport keys. */
-  navId: string;
+  /** Which device each button is sent to. A button missing from this map is one
+   *  no box in the room can perform, and the remote doesn't draw a key for it —
+   *  the hub answers 404 for a button a device never learned. */
+  routes: Partial<Record<RemoteButton, string>>;
 }
 
 /** The 14 buttons the remote offers. Names match the Harmony button table. */
-export type RemoteButton =
-  | 'VolumeUp' | 'VolumeDown' | 'Mute'
-  | 'DirectionUp' | 'DirectionDown' | 'DirectionLeft' | 'DirectionRight' | 'Select' | 'Back'
-  | 'Play' | 'Pause' | 'Stop' | 'Rewind' | 'FastForward';
+export const REMOTE_BUTTONS = [
+  'VolumeUp', 'VolumeDown', 'Mute',
+  'DirectionUp', 'DirectionDown', 'DirectionLeft', 'DirectionRight', 'Select', 'Back',
+  'Play', 'Pause', 'Stop', 'Rewind', 'FastForward',
+] as const;
+
+export type RemoteButton = typeof REMOTE_BUTTONS[number];
 
 export interface TvDevice extends SettingItem {
   /** Present when this room's TV has a Harmony hub behind it. */

@@ -13,7 +13,8 @@
 // =============================================================================
 
 import { getNodeDefinitions, getProfiles } from './eisy-client.js';
-import type { DevicesMap } from './state-mapper.js';
+import { HARMONY_BUTTONS } from './state-mapper.js';
+import type { DevicesMap, HarmonyButton } from './state-mapper.js';
 
 /** Family/instance of the Harmony plugin's profile in /rest/profiles. */
 const HARMONY_FAMILY = '10';
@@ -22,6 +23,10 @@ export interface HarmonyDeviceInfo {
   /** State-service id, e.g. "eisy0/n011_d52305979". */
   id: string;
   name: string;
+  /** Which of the remote's buttons this box actually has an IR code for. The
+   *  hub takes any index in the shared table but only acts on its own, so this
+   *  is what stops the UI offering a key that goes nowhere. */
+  buttons: HarmonyButton[];
 }
 
 export interface HarmonyHubInfo {
@@ -42,6 +47,24 @@ export interface HarmonyDiscovery {
   devices: DevicesMap;
   catalog: HarmonyCatalog;
 }
+
+/** Expand an ISY editor subset ("0-4,21-24,77") into the indexes it allows. */
+function expandSubset(subset: string): number[] {
+  const out: number[] = [];
+  for (const part of subset.split(',')) {
+    const [from, to] = part.split('-');
+    const a = Number(from);
+    if (!Number.isFinite(a)) continue;
+    const b = to === undefined ? a : Number(to);
+    for (let i = a; i <= (Number.isFinite(b) ? b : a); i++) out.push(i);
+  }
+  return out;
+}
+
+/** Reverse of HARMONY_BUTTONS: table index → the name the remote calls it. */
+const BUTTON_BY_INDEX = new Map<number, HarmonyButton>(
+  (Object.entries(HARMONY_BUTTONS) as Array<[HarmonyButton, number]>).map(([n, i]) => [i, n]),
+);
 
 /**
  * Discover the Harmony hubs and their button-capable devices on one EISY.
@@ -68,21 +91,36 @@ export async function discoverHarmony(
   // rebuilt since its devices were added lists the nodes but defines no commands
   // for them, and a button sent there would fail silently.
   const buttonCapable = new Set<string>();
+  // nodedef → the remote buttons that device advertises, from its own SET_BUTTON
+  // editor. Each device gets its own editor whose `subset` lists the indexes the
+  // hub learned for it; anything outside it is a 404 from the EISY.
+  const buttonsByNodeDef = new Map<string, HarmonyButton[]>();
   try {
     const profiles = await getProfiles(baseUrl);
     const fam = profiles.families?.find(f => f.id === HARMONY_FAMILY);
     for (const inst of fam?.instances ?? []) {
+      const editors = new Map((inst.editors ?? []).map(e => [e.id, e]));
       for (const nd of inst.nodedefs ?? []) {
-        if (nd.cmds?.accepts?.some(a => a.id === 'SET_BUTTON')) buttonCapable.add(nd.id);
+        const setButton = nd.cmds?.accepts?.find(a => a.id === 'SET_BUTTON');
+        if (!setButton) continue;
+        buttonCapable.add(nd.id);
+
+        const editor = editors.get(setButton.parameters?.[0]?.editor ?? '');
+        const subset = editor?.ranges?.[0]?.subset;
+        if (!subset) continue;
+        const buttons = expandSubset(subset)
+          .map(i => BUTTON_BY_INDEX.get(i))
+          .filter((b): b is HarmonyButton => b !== undefined);
+        buttonsByNodeDef.set(nd.id, buttons);
       }
     }
   } catch {
     // Profile unreadable — treat every device as usable rather than dropping the
     // whole catalog; a bad button is a no-op, a missing remote is a regression.
-    return buildResult(nodes, eisyIdx, hubRe, deviceRe, null);
+    return buildResult(nodes, eisyIdx, hubRe, deviceRe, null, buttonsByNodeDef);
   }
 
-  return buildResult(nodes, eisyIdx, hubRe, deviceRe, buttonCapable);
+  return buildResult(nodes, eisyIdx, hubRe, deviceRe, buttonCapable, buttonsByNodeDef);
 }
 
 function buildResult(
@@ -91,6 +129,7 @@ function buildResult(
   hubRe: RegExp,
   deviceRe: RegExp,
   buttonCapable: Set<string> | null,
+  buttonsByNodeDef: Map<string, HarmonyButton[]>,
 ): HarmonyDiscovery {
   const devices: DevicesMap = {};
   const hubs: HarmonyHubInfo[] = [];
@@ -122,7 +161,11 @@ function buildResult(
         name: dev.name,
         hub: hub.name,
       };
-      hubInfo.devices.push({ id: stateId, name: dev.name });
+      // No editor read (unreadable profile) means "unknown", not "none" — claim
+      // every button rather than leaving the room with a dead remote.
+      const buttons = buttonsByNodeDef.get(dev.nodeDefId)
+        ?? (Object.keys(HARMONY_BUTTONS) as HarmonyButton[]);
+      hubInfo.devices.push({ id: stateId, name: dev.name, buttons });
     }
 
     hubs.push(hubInfo);
