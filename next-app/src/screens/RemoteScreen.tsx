@@ -12,6 +12,12 @@ import type { FlagState } from '@/types/state';
 
 const AUTO = '__auto';
 
+/** Key sizes. The pad and volume get the full-size key; the five transport keys
+ *  have to sit on one row inside a card on a 375px phone (307px of usable width
+ *  after the screen and card padding), which caps them at 56 with a 6px gap. */
+const KEY = 72;
+const SMALL_KEY = 56;
+
 /** Opened as "remote:<tvId>" — same parameterised-screen pattern as "room:<place>". */
 export function RemoteScreen({ tvId }: { tvId?: string }) {
   const { config, st, setD, pressRemote, go } = useHC();
@@ -51,9 +57,9 @@ export function RemoteScreen({ tvId }: { tvId?: string }) {
   const nav = press(navTarget);
 
   const dpad = (b: Btn, label: string, rotate: number) => (
-    <RemoteButton onPress={nav(b)} repeat label={label} size={62}>
+    <RemoteButton onPress={nav(b)} repeat label={label} size={KEY}>
       <span style={{ display: 'flex', transform: `rotate(${rotate}deg)` }}>
-        <Icon name="chevron" size={26} strokeWidth={2.4} />
+        <Icon name="chevron" size={30} strokeWidth={2.4} />
       </span>
     </RemoteButton>
   );
@@ -66,56 +72,56 @@ export function RemoteScreen({ tvId }: { tvId?: string }) {
         right={<Toggle on={on} onChange={(v) => setD(tv.id, { on: v })} aria-label={`${tv.name} power`} />}
       />
 
-      {/* D-pad — Back sits in the pad's bottom-left corner, where a real remote
+      {/* D-pad — Back sits in the pad's bottom-right corner, where a real remote
           keeps it, rather than in a row of its own. */}
       <Card style={{ marginBottom: 14 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 62px)', gap: 10,
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(3, ${KEY}px)`, gap: 12,
           justifyContent: 'center', justifyItems: 'center', alignItems: 'center' }}>
           <span /> {dpad('DirectionUp', 'Up', -90)} <span />
           {dpad('DirectionLeft', 'Left', 180)}
-          <RemoteButton onPress={nav('Select')} label="OK" size={62} round tint="var(--accent)">
-            <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: 0.3 }}>OK</span>
+          <RemoteButton onPress={nav('Select')} label="OK" size={KEY} round tint="var(--accent)">
+            <span style={{ fontSize: 18, fontWeight: 700, letterSpacing: 0.3 }}>OK</span>
           </RemoteButton>
           {dpad('DirectionRight', 'Right', 0)}
-          <RemoteButton onPress={nav('Back')} label="Back" size={62}>
-            <span style={{ fontSize: 14, fontWeight: 640, letterSpacing: -0.2 }}>Back</span>
+          <span /> {dpad('DirectionDown', 'Down', 90)}
+          <RemoteButton onPress={nav('Back')} label="Back" size={KEY}>
+            <span style={{ fontSize: 15, fontWeight: 640, letterSpacing: -0.2 }}>Back</span>
           </RemoteButton>
-          {dpad('DirectionDown', 'Down', 90)} <span />
         </div>
       </Card>
 
       {/* Volume */}
       <Card style={{ marginBottom: 14 }}>
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
           <RemoteButton onPress={vol('VolumeDown')} repeat label="Volume down">
-            <Icon name="minus" size={26} strokeWidth={2.6} />
+            <Icon name="minus" size={30} strokeWidth={2.6} />
           </RemoteButton>
           <RemoteButton onPress={vol('Mute')} label="Mute">
-            <Icon name="mute" size={24} />
+            <Icon name="mute" size={28} />
           </RemoteButton>
           <RemoteButton onPress={vol('VolumeUp')} repeat label="Volume up">
-            <Icon name="plus" size={26} strokeWidth={2.6} />
+            <Icon name="plus" size={30} strokeWidth={2.6} />
           </RemoteButton>
         </div>
       </Card>
 
       {/* Transport */}
       <Card style={{ marginBottom: 14 }}>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-          <RemoteButton onPress={nav('Rewind')} repeat label="Rewind" size={54}>
-            <Icon name="prev" size={22} />
+        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap', rowGap: 8 }}>
+          <RemoteButton onPress={nav('Rewind')} repeat label="Rewind" size={SMALL_KEY}>
+            <Icon name="prev" size={23} />
           </RemoteButton>
-          <RemoteButton onPress={nav('Play')} label="Play" size={54}>
-            <Icon name="play" size={22} />
+          <RemoteButton onPress={nav('Play')} label="Play" size={SMALL_KEY}>
+            <Icon name="play" size={23} />
           </RemoteButton>
-          <RemoteButton onPress={nav('Pause')} label="Pause" size={54}>
-            <Icon name="pause" size={22} />
+          <RemoteButton onPress={nav('Pause')} label="Pause" size={SMALL_KEY}>
+            <Icon name="pause" size={23} />
           </RemoteButton>
-          <RemoteButton onPress={nav('Stop')} label="Stop" size={54}>
-            <Icon name="stop" size={18} />
+          <RemoteButton onPress={nav('Stop')} label="Stop" size={SMALL_KEY}>
+            <Icon name="stop" size={19} />
           </RemoteButton>
-          <RemoteButton onPress={nav('FastForward')} repeat label="Fast forward" size={54}>
-            <Icon name="next" size={22} />
+          <RemoteButton onPress={nav('FastForward')} repeat label="Fast forward" size={SMALL_KEY}>
+            <Icon name="next" size={23} />
           </RemoteButton>
         </div>
       </Card>
