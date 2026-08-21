@@ -13,6 +13,16 @@ export interface UnifiConfig {
   apiKey?: string;
 }
 
+/** UniFi Network — a different console from Protect (gateway, not NVR) and a
+ *  different key. Presence reads the client list from here. */
+export interface UnifiNetworkConfig {
+  host: string;
+  apiKey: string;
+}
+
+let cachedNetwork: UnifiNetworkConfig | null = null;
+let networkExpiry = 0;
+
 let cached: UnifiConfig | null = null;
 let cacheExpiry = 0;
 const CACHE_TTL = 60 * 60 * 1000; // 1 hour
@@ -64,4 +74,36 @@ export async function getUnifiConfig(): Promise<UnifiConfig | null> {
 export function invalidateUnifiConfig(): void {
   cached = null;
   cacheExpiry = 0;
+  cachedNetwork = null;
+  networkExpiry = 0;
+}
+
+/** Null until a Network host and key are set in HCA Settings. */
+export async function getUnifiNetworkConfig(): Promise<UnifiNetworkConfig | null> {
+  if (cachedNetwork && Date.now() < networkExpiry) return cachedNetwork;
+
+  const internalKey = process.env.HCA_INTERNAL_KEY;
+  const wpBase = (process.env.NEXT_PUBLIC_WP_GRAPHQL_URL ?? '').replace(/\/graphql$/, '');
+  if (!internalKey || !wpBase) return null;
+
+  try {
+    const res = await fetch(`${wpBase}/wp-json/hca/v1/settings`, {
+      headers: { 'X-HCA-Internal-Key': internalKey },
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      unifi_network_host?: string;
+      unifi_network_api_key?: string;
+    };
+    if (!data.unifi_network_host || !data.unifi_network_api_key) return null;
+
+    const raw = data.unifi_network_host;
+    const url = new URL(raw.startsWith('http') ? raw : `https://${raw}`);
+    cachedNetwork = { host: `${url.protocol}//${url.host}`, apiKey: data.unifi_network_api_key };
+    networkExpiry = Date.now() + CACHE_TTL;
+    return cachedNetwork;
+  } catch {
+    return null;
+  }
 }

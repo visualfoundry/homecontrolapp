@@ -202,6 +202,95 @@ const smallPill: React.CSSProperties = {
   ...pillBtn, flexShrink: 0, fontSize: 13, fontWeight: 620, padding: '7px 12px',
 };
 
+interface WifiClient { mac: string; name: string }
+
+/** Assign each person's phone, so Wi-Fi presence knows whose it is. */
+function DeviceAssignment({ people }: { people: Array<{ personId: string; name: string }> }) {
+  const [clients, setClients] = React.useState<WifiClient[] | null>(null);
+  const [assigned, setAssigned] = React.useState<Record<string, string[]>>({});
+  const [error, setError] = React.useState<string | null>(null);
+  const [open, setOpen] = React.useState<string | null>(null);
+
+  const load = React.useCallback(() => {
+    fetch('/api/presence/clients')
+      .then(r => r.json())
+      .then((d: { clients: WifiClient[]; assigned: Record<string, string[]>; error: string | null }) => {
+        setClients(d.clients ?? []);
+        setAssigned(d.assigned ?? {});
+        setError(d.error);
+      })
+      .catch(() => setError('Could not read the client list'));
+  }, []);
+  React.useEffect(load, [load]);
+
+  async function toggleMac(personId: string, mac: string) {
+    const current = assigned[personId] ?? [];
+    const next = current.includes(mac) ? current.filter(m => m !== mac) : [...current, mac];
+    setAssigned({ ...assigned, [personId]: next });
+    await fetch('/api/presence/clients', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ personId, macs: next }),
+    }).catch(() => {});
+    load();
+  }
+
+  if (clients === null && !error) return null;
+
+  return (
+    <Card>
+      <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>Wi-Fi presence</div>
+      <div style={{ fontSize: 12.5, color: 'var(--text2)', marginTop: 3, lineHeight: 1.45 }}>
+        A phone on the house Wi-Fi counts as home, with the app closed and nothing set
+        up on the phone. Assign each person&apos;s device below.
+      </div>
+      {error && (
+        <div style={{ fontSize: 12.5, color: 'var(--amber)', marginTop: 8, lineHeight: 1.45 }}>
+          {error}
+        </div>
+      )}
+      {clients && clients.length > 0 && people.map(p => {
+        const macs = assigned[p.personId] ?? [];
+        return (
+          <div key={p.personId} style={{ marginTop: 12 }}>
+            <button onClick={() => setOpen(open === p.personId ? null : p.personId)}
+              style={{
+                background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left',
+              }}>
+              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', flex: 1 }}>
+                {p.name}
+              </span>
+              <span style={{ fontSize: 12.5, color: 'var(--text2)' }}>
+                {macs.length ? `${macs.length} device${macs.length > 1 ? 's' : ''}` : 'none'}
+              </span>
+              <Icon name={open === p.personId ? 'chevDown' : 'chevron'} size={16} />
+            </button>
+            {open === p.personId && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                {clients.map(c => {
+                  const on = macs.includes(c.mac);
+                  return (
+                    <button key={c.mac} onClick={() => toggleMac(p.personId, c.mac)}
+                      aria-pressed={on}
+                      style={{
+                        ...smallPill,
+                        background: on ? 'var(--accent)' : 'var(--icon-bg)',
+                        color: on ? '#fff' : 'var(--text)',
+                      }}>
+                      {c.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </Card>
+  );
+}
+
 interface PresenceRow {
   personId: string;
   name: string;
@@ -349,6 +438,9 @@ function PresenceLinks() {
     <>
       <div style={{ marginBottom: 12 }}>
         <PresenceFromApp hasHome={hasHome} onChange={load} />
+      </div>
+      <div style={{ marginBottom: 12 }}>
+        <DeviceAssignment people={rows.map(r => ({ personId: r.personId, name: r.name }))} />
       </div>
     <Card pad={false}>
       {rows.map((r, i) => (

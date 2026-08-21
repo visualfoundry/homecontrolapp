@@ -40,6 +40,12 @@ export interface HomeCoords { lat: number; lng: number; radius: number }
 interface Store {
   tokens: PresenceToken[];
   last: Record<string, PresenceReading>;
+  /** personId → the MAC addresses of their devices, for Wi-Fi presence. */
+  devices?: Record<string, string[]>;
+  /** MAC → epoch ms this service last saw it on the network. Ours rather than
+   *  the console's, because the newer UniFi API doesn't report a last-seen for
+   *  clients that have dropped off — they simply stop being listed. */
+  macSeen?: Record<string, number>;
   /** Set from the app ("use my current location"), so nobody has to hand-enter
    *  coordinates into an env file to make distance reports work. */
   home?: HomeCoords;
@@ -48,9 +54,15 @@ interface Store {
 function read(): Store {
   try {
     const raw = JSON.parse(readFileSync(STORE, 'utf8')) as Partial<Store>;
-    return { tokens: raw.tokens ?? [], last: raw.last ?? {}, ...(raw.home ? { home: raw.home } : {}) };
+    return {
+      tokens: raw.tokens ?? [],
+      last: raw.last ?? {},
+      devices: raw.devices ?? {},
+      macSeen: raw.macSeen ?? {},
+      ...(raw.home ? { home: raw.home } : {}),
+    };
   } catch {
-    return { tokens: [], last: {} };
+    return { tokens: [], last: {}, devices: {}, macSeen: {} };
   }
 }
 
@@ -187,4 +199,33 @@ export async function applyPresence(
     ...(distance !== undefined ? { distance } : {}),
   });
   return true;
+}
+
+// ---------------------------------------------------------------------------
+// Wi-Fi presence — device assignments and the last time each MAC was seen
+// ---------------------------------------------------------------------------
+
+export function deviceMap(): Record<string, string[]> {
+  return read().devices ?? {};
+}
+
+export function setDevices(personId: string, macs: string[]): void {
+  const store = read();
+  store.devices = { ...(store.devices ?? {}) };
+  const cleaned = macs.map(m => m.trim().toLowerCase()).filter(Boolean);
+  if (cleaned.length) store.devices[personId] = cleaned;
+  else delete store.devices[personId];
+  write(store);
+}
+
+export function macsSeen(): Record<string, number> {
+  return read().macSeen ?? {};
+}
+
+export function noteMacsSeen(macs: string[], at = Date.now()): void {
+  if (!macs.length) return;
+  const store = read();
+  store.macSeen = { ...(store.macSeen ?? {}) };
+  for (const mac of macs) store.macSeen[mac] = at;
+  write(store);
 }

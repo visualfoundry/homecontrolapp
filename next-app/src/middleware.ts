@@ -44,6 +44,7 @@ export const config = {
     // authenticate on its own token from a phone that has no session.
     '/api/presence',
     '/api/presence/report',
+    '/api/presence/clients',
     '/api/spotify/:path*',
     '/api/cameras/:path*',
     '/api/debug',
