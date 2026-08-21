@@ -495,20 +495,6 @@ add_action( 'acf/include_fields', function () {
 					'type'         => 'password',
 					'instructions' => 'Optional — from UniFi Protect → System → API Tokens. If set, bypasses username/password (recommended).',
 				),
-				array(
-					'key'          => 'field_unifi_network_host',
-					'label'        => 'UniFi Network Host',
-					'name'         => 'unifi_network_host',
-					'type'         => 'text',
-					'instructions' => 'The console running UniFi Network — the gateway, e.g. https://192.168.1.1. Separate from Protect, which runs on the NVR.',
-				),
-				array(
-					'key'          => 'field_unifi_network_api_key',
-					'label'        => 'UniFi Network API Key',
-					'name'         => 'unifi_network_api_key',
-					'type'         => 'password',
-					'instructions' => 'For Wi-Fi presence. Create it on the gateway: Settings → Control Plane → Integrations → Create API Key. A Protect token will not work here, and an API key is required because a password login is refused when the account has MFA.',
-				),
 			),
 			'location' => array(
 				array(
@@ -607,8 +593,10 @@ function homecontrolapp_rest_settings( WP_REST_Request $req ) {
 			'unifi_protect_username' => (string) ( get_field( 'unifi_protect_username', 'option' ) ?? '' ),
 			'unifi_protect_password' => (string) ( get_field( 'unifi_protect_password', 'option' ) ?? '' ),
 			'unifi_api_key'          => (string) ( get_field( 'unifi_api_key', 'option' ) ?? '' ),
-			'unifi_network_host'     => (string) ( get_field( 'unifi_network_host', 'option' ) ?? '' ),
-			'unifi_network_api_key'  => (string) ( get_field( 'unifi_network_api_key', 'option' ) ?? '' ),
+			// From wp-config.php, not ACF: a credential belongs in one place, and
+			// that is where this install's other secrets already live.
+			'unifi_network_host'     => defined( 'UNIFI_NETWORK_HOST' ) ? (string) UNIFI_NETWORK_HOST : '',
+			'unifi_network_api_key'  => defined( 'UNIFI_NETWORK_API_KEY' ) ? (string) UNIFI_NETWORK_API_KEY : '',
 		),
 		200
 	);
