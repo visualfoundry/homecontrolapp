@@ -202,7 +202,7 @@ const smallPill: React.CSSProperties = {
   ...pillBtn, flexShrink: 0, fontSize: 13, fontWeight: 620, padding: '7px 12px',
 };
 
-interface WifiClient { mac: string; name: string }
+interface WifiClient { mac: string; name: string; personal: boolean }
 
 /** Assign each person's phone, so Wi-Fi presence knows whose it is. */
 function DeviceAssignment({ people }: { people: Array<{ personId: string; name: string }> }) {
@@ -210,6 +210,9 @@ function DeviceAssignment({ people }: { people: Array<{ personId: string; name: 
   const [assigned, setAssigned] = React.useState<Record<string, string[]>>({});
   const [error, setError] = React.useState<string | null>(null);
   const [open, setOpen] = React.useState<string | null>(null);
+  // Forty clients, five of which are phones. Showing the TVs, plugs and garage
+  // doors by default would bury the ones anybody would ever pick.
+  const [showAll, setShowAll] = React.useState(false);
 
   const load = React.useCallback(() => {
     fetch('/api/presence/clients')
@@ -249,6 +252,19 @@ function DeviceAssignment({ people }: { people: Array<{ personId: string; name: 
           {error}
         </div>
       )}
+      {clients && clients.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
+          <button onClick={() => setShowAll(!showAll)}
+            style={{ ...smallPill, background: 'var(--icon-bg)', color: 'var(--text)' }}>
+            {showAll ? 'Phones only' : `Show all ${clients.length}`}
+          </button>
+          <span style={{ fontSize: 12.5, color: 'var(--text2)' }}>
+            {showAll
+              ? 'Every wireless client'
+              : `${clients.filter(c => c.personal).length} phones and tablets`}
+          </span>
+        </div>
+      )}
       {clients && clients.length > 0 && people.map(p => {
         const macs = assigned[p.personId] ?? [];
         return (
@@ -268,7 +284,7 @@ function DeviceAssignment({ people }: { people: Array<{ personId: string; name: 
             </button>
             {open === p.personId && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-                {clients.map(c => {
+                {clients.filter(c => showAll || c.personal || macs.includes(c.mac)).map(c => {
                   const on = macs.includes(c.mac);
                   return (
                     <button key={c.mac} onClick={() => toggleMac(p.personId, c.mac)}
