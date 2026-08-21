@@ -8,6 +8,7 @@
 import dynamic from 'next/dynamic';
 import type { AppConfig } from '@/types/config';
 import { AuthGate } from '@/components/AuthGate';
+import { PresenceReporter } from '@/components/PresenceReporter';
 
 const AppShell = dynamic<{ config: AppConfig }>(
   () => import('@/components/AppShell').then((m) => ({ default: m.AppShell })),
@@ -17,6 +18,8 @@ const AppShell = dynamic<{ config: AppConfig }>(
 export function ClientShell({ config }: { config: AppConfig }) {
   return (
     <AuthGate>
+      {/* Inside the gate: reporting presence needs a session to attribute it to. */}
+      <PresenceReporter />
       <AppShell config={config} />
     </AuthGate>
   );

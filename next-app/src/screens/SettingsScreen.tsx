@@ -10,6 +10,7 @@ import { Segmented } from '@/components/Segmented';
 import { LargeTitle } from '@/components/LargeTitle';
 import { PushPermission } from '@/components/PushPermission';
 import { pillBtn } from '@/lib/styles';
+import { PRESENCE_REPORT_KEY, reportLocationOnce } from '@/components/PresenceReporter';
 import type { FlagState } from '@/types/state';
 import type { SettingItem, UserPrefs, NotificationPrefs } from '@/types/config';
 
@@ -209,15 +210,85 @@ function ago(at: number): string {
   return `${Math.round(hrs / 24)} d ago`;
 }
 
+/** The app's own half of presence: report on open, and define where "home" is. */
+function PresenceFromApp({ hasHome, onChange }: { hasHome: boolean; onChange: () => void }) {
+  const [on, setOn] = React.useState(false);
+  const [status, setStatus] = React.useState('');
+  React.useEffect(() => { setOn(localStorage.getItem(PRESENCE_REPORT_KEY) === '1'); }, []);
+
+  async function toggle(next: boolean) {
+    localStorage.setItem(PRESENCE_REPORT_KEY, next ? '1' : '0');
+    setOn(next);
+    // Turning it on is a deliberate tap, so this is the moment to ask for the
+    // permission rather than on some later resume.
+    if (next) {
+      setStatus('Checking location…');
+      await reportLocationOnce(true);
+      setStatus('');
+      onChange();
+    }
+  }
+
+  async function setHome() {
+    setStatus('Reading location…');
+    const position = await new Promise<GeolocationPosition | null>(resolve => {
+      navigator.geolocation?.getCurrentPosition(
+        p => resolve(p), () => resolve(null),
+        { enableHighAccuracy: true, timeout: 10_000 },
+      );
+    });
+    if (!position) { setStatus('Location unavailable'); return; }
+    const res = await fetch('/api/presence/report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+        setHome: true,
+      }),
+    }).catch(() => null);
+    setStatus(res?.ok ? 'Home location saved' : 'Could not save');
+    setTimeout(() => setStatus(''), 3_000);
+    onChange();
+  }
+
+  return (
+    <Card>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
+            Report my location when I open the app
+          </div>
+          <div style={{ fontSize: 12.5, color: 'var(--text2)', marginTop: 2 }}>
+            Corrects presence whenever the app is opened. Arriving and leaving while
+            the app is closed still needs the link below in a phone automation.
+          </div>
+        </div>
+        <Toggle on={on} onChange={toggle} size={0.82} />
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
+        <button onClick={setHome} style={pillBtn}>Set home to here</button>
+        <span style={{ fontSize: 12.5, color: 'var(--text2)' }}>
+          {status || (hasHome ? 'Home location set' : 'No home location yet')}
+        </span>
+      </div>
+    </Card>
+  );
+}
+
 function PresenceLinks() {
   const [rows, setRows] = React.useState<PresenceRow[] | null>(null);
+  const [hasHome, setHasHome] = React.useState(false);
   const [copied, setCopied] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState<string | null>(null);
 
   const load = React.useCallback(() => {
     fetch('/api/presence')
       .then(r => r.ok ? r.json() : Promise.reject(new Error(String(r.status))))
-      .then((d: { people: PresenceRow[] }) => setRows(d.people))
+      .then((d: { people: PresenceRow[]; home: { radius: number } | null }) => {
+        setRows(d.people);
+        setHasHome(d.home !== null);
+      })
       .catch(() => setRows([]));
   }, []);
   React.useEffect(load, [load]);
@@ -262,6 +333,10 @@ function PresenceLinks() {
   }
 
   return (
+    <>
+      <div style={{ marginBottom: 12 }}>
+        <PresenceFromApp hasHome={hasHome} onChange={load} />
+      </div>
     <Card pad={false}>
       {rows.map((r, i) => (
         <div key={r.personId} style={{
@@ -295,7 +370,8 @@ function PresenceLinks() {
           )}
         </div>
       ))}
-    </Card>
+      </Card>
+    </>
   );
 }
 

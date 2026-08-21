@@ -15,11 +15,9 @@
 
 import { type NextRequest, NextResponse } from 'next/server';
 import {
-  personForToken, recordReading, homeCoords, distanceMetres,
+  personForToken, applyPresence, homeCoords, distanceMetres,
   type PresenceSource,
 } from '@/lib/presence';
-import { fetchConfig } from '@/lib/config';
-import { STATE_API_BASE_URL } from '@/lib/state-service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -71,36 +69,10 @@ async function handle(req: NextRequest, token: string) {
 
   const source = (params.get('source') as PresenceSource | null) ?? 'geofence';
 
-  // The EISY variable behind the person's WP control is the source of truth.
-  const config = await fetchConfig();
-  const stateId = config.controlStateIds[entry.personId];
-  if (!stateId) {
-    return NextResponse.json({ error: 'No state id for that person' }, { status: 500 });
+  const ok = await applyPresence(entry.personId, intent.home, source, intent.distance);
+  if (!ok) {
+    return NextResponse.json({ error: 'Could not write presence' }, { status: 502 });
   }
-  if (!STATE_API_BASE_URL) {
-    return NextResponse.json({ error: 'STATE_API_BASE_URL not configured' }, { status: 503 });
-  }
-
-  try {
-    const res = await fetch(`${STATE_API_BASE_URL}/command`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ target: stateId, patch: { on: intent.home } }),
-      signal: AbortSignal.timeout(5_000),
-    });
-    if (!res.ok && res.status !== 202) {
-      return NextResponse.json({ error: `state service ${res.status}` }, { status: 502 });
-    }
-  } catch {
-    return NextResponse.json({ error: 'state service unreachable' }, { status: 502 });
-  }
-
-  recordReading(entry.personId, {
-    home: intent.home,
-    source,
-    at: Date.now(),
-    ...(intent.distance !== undefined ? { distance: intent.distance } : {}),
-  });
 
   console.log(`[presence] ${entry.label} → ${intent.home ? 'home' : 'away'} (${source})`);
   return NextResponse.json({ ok: true, person: entry.label, home: intent.home });

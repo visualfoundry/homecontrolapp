@@ -35,15 +35,20 @@ export interface PresenceReading {
   distance?: number;
 }
 
+export interface HomeCoords { lat: number; lng: number; radius: number }
+
 interface Store {
   tokens: PresenceToken[];
   last: Record<string, PresenceReading>;
+  /** Set from the app ("use my current location"), so nobody has to hand-enter
+   *  coordinates into an env file to make distance reports work. */
+  home?: HomeCoords;
 }
 
 function read(): Store {
   try {
     const raw = JSON.parse(readFileSync(STORE, 'utf8')) as Partial<Store>;
-    return { tokens: raw.tokens ?? [], last: raw.last ?? {} };
+    return { tokens: raw.tokens ?? [], last: raw.last ?? {}, ...(raw.home ? { home: raw.home } : {}) };
   } catch {
     return { tokens: [], last: {} };
   }
@@ -110,12 +115,20 @@ export function recordReading(personId: string, reading: PresenceReading): void 
 // resume, or a Shortcut that sends a location instead of an event).
 // ---------------------------------------------------------------------------
 
-export function homeCoords(): { lat: number; lng: number; radius: number } | null {
+export function homeCoords(): HomeCoords | null {
   const lat = Number(process.env.HOME_LAT);
   const lng = Number(process.env.HOME_LNG);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-  const radius = Number(process.env.HOME_RADIUS_M);
-  return { lat, lng, radius: Number.isFinite(radius) && radius > 0 ? radius : 150 };
+  if (Number.isFinite(lat) && Number.isFinite(lng)) {
+    const radius = Number(process.env.HOME_RADIUS_M);
+    return { lat, lng, radius: Number.isFinite(radius) && radius > 0 ? radius : 150 };
+  }
+  return read().home ?? null;
+}
+
+export function setHomeCoords(coords: HomeCoords): void {
+  const store = read();
+  store.home = coords;
+  write(store);
 }
 
 /** Metres between two points (haversine — flat-earth error is irrelevant at
@@ -131,4 +144,47 @@ export function distanceMetres(
   const s = Math.sin(dLat / 2) ** 2
     + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(s));
+}
+
+// ---------------------------------------------------------------------------
+// Applying a reading
+// ---------------------------------------------------------------------------
+
+/**
+ * Write a person's presence to the EISY variable behind their WP control, which
+ * is what every ISY program keyed on presence actually reads. Returns false if
+ * the person has no variable or the state service refused it.
+ */
+export async function applyPresence(
+  personId: string,
+  home: boolean,
+  source: PresenceSource,
+  distance?: number,
+): Promise<boolean> {
+  const { fetchConfig } = await import('@/lib/config');
+  const { STATE_API_BASE_URL } = await import('@/lib/state-service');
+
+  const config = await fetchConfig();
+  const stateId = config.controlStateIds[personId];
+  if (!stateId || !STATE_API_BASE_URL) return false;
+
+  try {
+    const res = await fetch(`${STATE_API_BASE_URL}/command`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target: stateId, patch: { on: home } }),
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!res.ok && res.status !== 202) return false;
+  } catch {
+    return false;
+  }
+
+  recordReading(personId, {
+    home,
+    source,
+    at: Date.now(),
+    ...(distance !== undefined ? { distance } : {}),
+  });
+  return true;
 }

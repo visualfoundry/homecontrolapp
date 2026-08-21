@@ -43,6 +43,7 @@ export const config = {
     // which would also catch the geofence webhook, whose whole point is to
     // authenticate on its own token from a phone that has no session.
     '/api/presence',
+    '/api/presence/report',
     '/api/spotify/:path*',
     '/api/cameras/:path*',
     '/api/debug',

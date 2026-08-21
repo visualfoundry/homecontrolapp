@@ -6,7 +6,7 @@
 
 import { type NextRequest, NextResponse } from 'next/server';
 import { sessionUserId } from '@/lib/session-guard';
-import { listTokens, mintToken, revokeToken, lastReadings } from '@/lib/presence';
+import { listTokens, mintToken, revokeToken, lastReadings, homeCoords } from '@/lib/presence';
 import { fetchConfig } from '@/lib/config';
 
 export const runtime = 'nodejs';
@@ -19,7 +19,9 @@ export async function GET(req: NextRequest) {
   const config = await fetchConfig();
   const tokens = listTokens();
   const last = lastReadings();
+  const home = homeCoords();
   return NextResponse.json({
+    home: home ? { radius: home.radius } : null,
     people: config.people.map(p => ({
       personId: p.id,
       name: p.name,
