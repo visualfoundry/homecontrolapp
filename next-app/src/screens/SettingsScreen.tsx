@@ -9,6 +9,7 @@ import { Toggle } from '@/components/Toggle';
 import { Segmented } from '@/components/Segmented';
 import { LargeTitle } from '@/components/LargeTitle';
 import { PushPermission } from '@/components/PushPermission';
+import { pillBtn } from '@/lib/styles';
 import type { FlagState } from '@/types/state';
 import type { SettingItem, UserPrefs, NotificationPrefs } from '@/types/config';
 
@@ -182,6 +183,122 @@ function CertInstallCard() {
   );
 }
 
+
+// ---------------------------------------------------------------------------
+// Presence links — the geofence webhook per person
+//
+// Each person gets one secret URL. Their phone's own automation (iOS Shortcuts:
+// Automation → "When I arrive Home" → Get Contents of URL) calls it, and the app
+// writes that person's EISY variable — the same variable Locative used to set
+// through the ISY Portal, so nothing downstream of it changes.
+// ---------------------------------------------------------------------------
+
+interface PresenceRow {
+  personId: string;
+  name: string;
+  token: string | null;
+  last: { home: boolean; source: string; at: number; distance?: number } | null;
+}
+
+function ago(at: number): string {
+  const mins = Math.round((Date.now() - at) / 60_000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs} h ago`;
+  return `${Math.round(hrs / 24)} d ago`;
+}
+
+function PresenceLinks() {
+  const [rows, setRows] = React.useState<PresenceRow[] | null>(null);
+  const [copied, setCopied] = React.useState<string | null>(null);
+  const [busy, setBusy] = React.useState<string | null>(null);
+
+  const load = React.useCallback(() => {
+    fetch('/api/presence')
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(String(r.status))))
+      .then((d: { people: PresenceRow[] }) => setRows(d.people))
+      .catch(() => setRows([]));
+  }, []);
+  React.useEffect(load, [load]);
+
+  async function mint(personId: string) {
+    setBusy(personId);
+    await fetch('/api/presence', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ personId }),
+    }).catch(() => {});
+    setBusy(null);
+    load();
+  }
+
+  async function revoke(personId: string) {
+    setBusy(personId);
+    await fetch('/api/presence', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ personId }),
+    }).catch(() => {});
+    setBusy(null);
+    load();
+  }
+
+  function copy(token: string, personId: string) {
+    // Two URLs — arriving and leaving — since that is what a Shortcut needs.
+    const base = `${window.location.origin}/api/presence/${token}`;
+    const text = `Arrive: ${base}?home=1\nLeave:  ${base}?home=0`;
+    navigator.clipboard?.writeText(text).then(
+      () => { setCopied(personId); setTimeout(() => setCopied(null), 2_500); },
+      () => {},
+    );
+  }
+
+  if (rows === null) {
+    return <Card><span style={{ fontSize: 14, color: 'var(--text2)' }}>Loading…</span></Card>;
+  }
+  if (rows.length === 0) {
+    return <Card><span style={{ fontSize: 14, color: 'var(--text2)' }}>No people configured.</span></Card>;
+  }
+
+  return (
+    <Card pad={false}>
+      {rows.map((r, i) => (
+        <div key={r.personId} style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '12px 14px',
+          borderTop: i === 0 ? 'none' : '0.5px solid var(--sep)',
+        }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>{r.name}</div>
+            <div style={{ fontSize: 12.5, color: 'var(--text2)', marginTop: 2 }}>
+              {r.last
+                ? `${r.last.home ? 'Home' : 'Away'} · ${r.last.source} · ${ago(r.last.at)}`
+                : r.token ? 'Link ready — no report yet' : 'No link'}
+            </div>
+          </div>
+          {r.token ? (
+            <>
+              <button onClick={() => copy(r.token!, r.personId)} style={{ ...pillBtn, flexShrink: 0 }}>
+                {copied === r.personId ? 'Copied' : 'Copy links'}
+              </button>
+              <button onClick={() => revoke(r.personId)} disabled={busy === r.personId}
+                style={{ ...pillBtn, flexShrink: 0, color: 'var(--red)' }}>
+                Revoke
+              </button>
+            </>
+          ) : (
+            <button onClick={() => mint(r.personId)} disabled={busy === r.personId}
+              style={{ ...pillBtn, flexShrink: 0 }}>
+              {busy === r.personId ? '…' : 'Create link'}
+            </button>
+          )}
+        </div>
+      ))}
+    </Card>
+  );
+}
+
 export function SettingsScreen() {
   const { prefs, setPrefs, config } = useHC();
   const [notifPrefs, setNotifPrefsState] = React.useState<NotificationPrefs>(loadNotifPrefs);
@@ -228,6 +345,11 @@ export function SettingsScreen() {
       <div style={{ marginTop: 22 }}>
         <SectionTitle>Schedules</SectionTitle>
         <ToggleList items={config.settingsSchedules} />
+      </div>
+
+      <div style={{ marginTop: 22 }}>
+        <SectionTitle>Presence Links</SectionTitle>
+        <PresenceLinks />
       </div>
 
       {safetyRows.length > 0 && (
