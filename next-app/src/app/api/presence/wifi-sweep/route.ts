@@ -40,6 +40,14 @@ export async function POST(req: NextRequest) {
   const present = new Set(clients.filter(c => !c.wired).map(c => c.mac));
   noteMacsSeen([...present], now);
 
+  // A MAC we have never observed has no clock to measure silence against, and
+  // "never seen" would otherwise read as "silent since 1970" — declaring someone
+  // away the instant their device is assigned, even if they are home with their
+  // phone briefly on cellular. Start its clock now and let the grace period run.
+  const known = macsSeen();
+  const unclocked = Object.values(devices).flat().filter(m => !present.has(m) && !known[m]);
+  if (unclocked.length) noteMacsSeen(unclocked, now);
+
   const seen = macsSeen();
   const last = lastReadings();
   const changed: Array<{ personId: string; home: boolean }> = [];
