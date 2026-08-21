@@ -229,3 +229,35 @@ export function noteMacsSeen(macs: string[], at = Date.now()): void {
   for (const mac of macs) store.macSeen[mac] = at;
   write(store);
 }
+
+/**
+ * What each person's EISY variable actually says right now, keyed by person id.
+ *
+ * The sweep converges on this rather than on its own memory of what it last
+ * wrote. Anything else can move these variables — an ISY program, a tile tap,
+ * or another presence source entirely — and a sweep that trusts its own memory
+ * would see no change to make and leave a wrong value standing indefinitely.
+ */
+export async function currentPresence(): Promise<Record<string, boolean>> {
+  const { fetchConfig } = await import('@/lib/config');
+  const { STATE_API_BASE_URL } = await import('@/lib/state-service');
+  if (!STATE_API_BASE_URL) return {};
+
+  try {
+    const [config, res] = await Promise.all([
+      fetchConfig(),
+      fetch(`${STATE_API_BASE_URL}/state`, { cache: 'no-store', signal: AbortSignal.timeout(6_000) }),
+    ]);
+    if (!res.ok) return {};
+    const snapshot = await res.json() as Record<string, { on?: boolean } | undefined>;
+    const out: Record<string, boolean> = {};
+    for (const person of config.people) {
+      const stateId = config.controlStateIds[person.id];
+      const value = stateId ? snapshot[stateId]?.on : undefined;
+      if (typeof value === 'boolean') out[person.id] = value;
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}

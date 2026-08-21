@@ -13,7 +13,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { listClients } from '@/lib/unifi-network';
 import {
-  deviceMap, macsSeen, noteMacsSeen, applyPresence, lastReadings,
+  deviceMap, macsSeen, noteMacsSeen, applyPresence, currentPresence,
 } from '@/lib/presence';
 
 export const runtime = 'nodejs';
@@ -49,7 +49,10 @@ export async function POST(req: NextRequest) {
   if (unclocked.length) noteMacsSeen(unclocked, now);
 
   const seen = macsSeen();
-  const last = lastReadings();
+  // What the EISY says now, not what we remember saying. Anything else can move
+  // these variables, and a sweep that trusts its own memory would go quiet
+  // instead of correcting a value some other writer left wrong.
+  const actual = await currentPresence();
   const changed: Array<{ personId: string; home: boolean }> = [];
 
   for (const [personId, macs] of Object.entries(devices)) {
@@ -58,9 +61,8 @@ export async function POST(req: NextRequest) {
     const home = anyPresent ? true : quietFor < AWAY_AFTER_MS ? null : false;
     if (home === null) continue; // inside the grace window — leave it alone
 
-    // Only write on a change, so this doesn't fight a geofence report that said
-    // the same thing a second ago.
-    if (last[personId]?.home === home) continue;
+    // Already correct on the EISY — nothing to say.
+    if (actual[personId] === home) continue;
     if (await applyPresence(personId, home, 'wifi')) {
       changed.push({ personId, home });
     }
