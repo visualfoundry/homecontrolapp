@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuthenticationResponse } from '@simplewebauthn/server';
 import type { AuthenticationResponseJSON } from '@simplewebauthn/server';
-import { signSession } from '@/lib/auth';
+import { signSession, SESSION_COOKIE, sessionCookieOptions } from '@/lib/auth';
 import {
   getRpConfig,
   verifyAndClearChallenge,
@@ -71,12 +71,7 @@ export async function POST(req: NextRequest) {
 
   const session = await signSession(stored.userId);
   const res = NextResponse.json({ ok: true });
-  res.cookies.set('hca_session', session, {
-    httpOnly: true,
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 8 * 60 * 60,
-  });
+  res.cookies.set(SESSION_COOKIE, session, sessionCookieOptions);
   res.cookies.set(CHALLENGE_COOKIE, '', { maxAge: 0, path: '/' });
   return res;
 }

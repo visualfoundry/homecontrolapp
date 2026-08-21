@@ -9,6 +9,10 @@ import {
 
 const PASSKEY_KEY = 'hca:passkey_enrolled';
 const CREDENTIAL_ID_KEY = 'hca:credential_id';
+/** When the server last confirmed this device's session. The cookie is HttpOnly,
+ *  so this is the only way the client can tell "session probably still good, the
+ *  network just isn't up yet" from "actually signed out". */
+const SESSION_OK_KEY = 'hca:session_ok';
 
 function getPasskeyLabel(): string {
   if (typeof navigator === 'undefined') return 'Passkey';
@@ -61,18 +65,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const [passkeyLabel] = useState(() => getPasskeyLabel());
 
   useEffect(() => {
-    // 6 s timeout: if the server is unreachable (e.g. phone just unlocked, WiFi
-    // not yet re-established) the fetch aborts and falls through to the catch,
-    // showing the login form rather than hanging on a white/spinner screen.
-    fetch('/api/auth/check', { signal: AbortSignal.timeout(6_000) }).then(async r => {
-      if (r.ok) {
-        try {
-          const data = await r.json() as { ok: boolean; firstName?: string };
-          if (data.firstName) localStorage.setItem('hca:first_name', data.firstName);
-        } catch { /* ignore */ }
-        setState('ok');
-        return;
-      }
+    let cancelled = false;
+
+    async function askForCredentials() {
       // Show passkey screen only if enrolled here AND this device has biometric auth.
       const enrolled = !!localStorage.getItem(PASSKEY_KEY);
       if (enrolled && browserSupportsWebAuthn() && await hasPlatformBiometrics()) {
@@ -80,7 +75,55 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       } else {
         setState('form');
       }
-    }).catch(() => setState('form'));
+    }
+
+    /** Resolves true when the server answered, false when it couldn't be reached. */
+    async function probe(): Promise<boolean> {
+      // 6 s timeout: a phone that just unlocked may not have WiFi back yet, and
+      // hanging on a spinner is worse than deciding.
+      const r = await fetch('/api/auth/check', { signal: AbortSignal.timeout(6_000) });
+      if (cancelled) return true;
+      if (r.ok) {
+        try {
+          const data = await r.json() as { ok: boolean; firstName?: string };
+          if (data.firstName) localStorage.setItem('hca:first_name', data.firstName);
+        } catch { /* ignore */ }
+        localStorage.setItem(SESSION_OK_KEY, String(Date.now()));
+        setState('ok');
+        return true;
+      }
+      // A real answer of "no" — the session is genuinely gone.
+      localStorage.removeItem(SESSION_OK_KEY);
+      await askForCredentials();
+      return true;
+    }
+
+    (async () => {
+      try {
+        await probe();
+        return;
+      } catch { /* unreachable — fall through to the retry */ }
+      if (cancelled) return;
+
+      // One retry: waking from lock, the first request often loses the race with
+      // the network coming back.
+      await new Promise(r => setTimeout(r, 1_500));
+      if (cancelled) return;
+      try {
+        await probe();
+        return;
+      } catch { /* still unreachable */ }
+      if (cancelled) return;
+
+      // The server never answered, so nothing here says the session expired.
+      // Demanding a password on a network hiccup is the wrong default: enter the
+      // app on the strength of the last confirmed session and let a real 401 from
+      // any protected call raise the re-auth prompt instead.
+      if (localStorage.getItem(SESSION_OK_KEY)) setState('ok');
+      else await askForCredentials();
+    })();
+
+    return () => { cancelled = true; };
   }, []);
 
   // Listen for session-expired events while the app is running.
@@ -89,6 +132,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     async function handleExpired() {
       setSessionExpired(true);
       setError('');
+      // A 401 is the server's own answer, so stop vouching for this session on
+      // the next cold start.
+      localStorage.removeItem(SESSION_OK_KEY);
       const enrolled = !!localStorage.getItem(PASSKEY_KEY);
       if (enrolled && browserSupportsWebAuthn() && await hasPlatformBiometrics()) {
         setState('passkey');
@@ -136,6 +182,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       });
       if (res.ok) {
         setSessionExpired(false);
+        localStorage.setItem(SESSION_OK_KEY, String(Date.now()));
         // Offer enrollment if this device has biometric auth and no passkey registered yet.
         const enrolled = !!localStorage.getItem(PASSKEY_KEY);
         if (!enrolled && browserSupportsWebAuthn() && await hasPlatformBiometrics()) {
@@ -181,6 +228,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         // Pin this device's credential ID so future logins skip the picker.
         localStorage.setItem(CREDENTIAL_ID_KEY, assertion.id);
         setSessionExpired(false);
+        localStorage.setItem(SESSION_OK_KEY, String(Date.now()));
         setState('ok');
       } else {
         throw new Error('Verification failed');

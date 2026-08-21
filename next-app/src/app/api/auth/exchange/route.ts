@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyWpToken, signSession } from '@/lib/auth';
+import { verifyWpToken, signSession, SESSION_COOKIE, sessionCookieOptions } from '@/lib/auth';
 
 /**
  * POST /api/auth/exchange
@@ -29,11 +29,6 @@ export async function POST(req: NextRequest) {
 
   const session = await signSession(userId);
   const res = NextResponse.json({ ok: true });
-  res.cookies.set('hca_session', session, {
-    httpOnly: true,
-    sameSite: 'lax', // lax (not strict) so WP login redirect lands with cookie intact
-    path: '/',
-    maxAge: 8 * 60 * 60, // 8 hours
-  });
+  res.cookies.set(SESSION_COOKIE, session, sessionCookieOptions);
   return res;
 }

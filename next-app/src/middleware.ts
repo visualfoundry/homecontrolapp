@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySession } from '@/lib/auth';
+import {
+  readSession, signSession, sessionCookieOptions,
+  SESSION_COOKIE, SESSION_RENEW_AFTER,
+} from '@/lib/auth';
 
 /**
  * Protect device-control API routes with session cookie validation.
@@ -10,15 +13,24 @@ import { verifySession } from '@/lib/auth';
  * /api/auth/passkey/register-*    — protected (must be logged in to enroll)
  */
 export async function middleware(req: NextRequest) {
-  const session = req.cookies.get('hca_session')?.value;
+  const session = req.cookies.get(SESSION_COOKIE)?.value;
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  const userId = await verifySession(session);
-  if (!userId) {
+  const claims = await readSession(session);
+  if (!claims) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  return NextResponse.next();
+
+  const res = NextResponse.next();
+  // Slide the expiry once the session is past halfway. The app polls these
+  // routes constantly, so anyone still using it never reaches the hard expiry —
+  // which is what made re-authentication feel arbitrary rather than earned.
+  const remaining = claims.expiry - Math.floor(Date.now() / 1000);
+  if (remaining < SESSION_RENEW_AFTER) {
+    res.cookies.set(SESSION_COOKIE, await signSession(claims.userId), sessionCookieOptions);
+  }
+  return res;
 }
 
 export const config = {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { signSession } from '@/lib/auth';
+import { signSession, SESSION_COOKIE, sessionCookieOptions } from '@/lib/auth';
 
 /**
  * POST /api/auth/login
@@ -63,11 +63,6 @@ export async function POST(req: NextRequest) {
   const session = await signSession(userId);
 
   const out = NextResponse.json({ ok: true });
-  out.cookies.set('hca_session', session, {
-    httpOnly: true,
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 8 * 60 * 60, // 8 hours
-  });
+  out.cookies.set(SESSION_COOKIE, session, sessionCookieOptions);
   return out;
 }

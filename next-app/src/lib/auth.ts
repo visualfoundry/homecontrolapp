@@ -14,7 +14,30 @@
 //   Session cookie: "<userId>|<expiry_ts>.<hex_hmac_sha256(payload, NEXTAUTH_SECRET)>"
 // =============================================================================
 
-const SESSION_MAX_AGE = 8 * 60 * 60; // 8 hours in seconds
+/**
+ * How long a session lives without being renewed.
+ *
+ * This is a house control panel on the owner's own phone, reached over the home
+ * network — the thing it protects is a light switch, and the cost of a short
+ * session is being thrown out to a login screen mid-use. The middleware slides
+ * the expiry on every authenticated request (see SESSION_RENEW_AFTER), so this
+ * is really "how long the app may sit unopened before asking again".
+ */
+export const SESSION_MAX_AGE = 30 * 24 * 60 * 60; // 30 days
+
+/** Re-issue the cookie once a session is past halfway through its life. Anyone
+ *  using the app at all stays signed in; the renewal costs one HMAC. */
+export const SESSION_RENEW_AFTER = SESSION_MAX_AGE / 2;
+
+export const SESSION_COOKIE = 'hca_session';
+
+/** One definition of the cookie, so the four places that set it can't drift. */
+export const sessionCookieOptions = {
+  httpOnly: true,
+  sameSite: 'lax' as const, // lax (not strict) so the WP login redirect lands with the cookie intact
+  path: '/',
+  maxAge: SESSION_MAX_AGE,
+};
 
 // ---------------------------------------------------------------------------
 // Internal Web Crypto helpers
@@ -112,9 +135,12 @@ export async function signSession(userId: number): Promise<string> {
 
 /**
  * Verify a session cookie value.
- * Returns the userId on success, null if missing, malformed, expired, or tampered.
+ * Returns the userId and its expiry, or null if missing, malformed, expired or
+ * tampered with. The expiry is what lets the middleware slide the session.
  */
-export async function verifySession(session: string): Promise<number | null> {
+export async function readSession(
+  session: string,
+): Promise<{ userId: number; expiry: number } | null> {
   const dot = session.lastIndexOf('.');
   if (dot < 1) return null;
 
@@ -131,7 +157,15 @@ export async function verifySession(session: string): Promise<number | null> {
   if (!userId || !expiry) return null;
   if (Math.floor(Date.now() / 1000) > expiry) return null;
 
-  return userId;
+  return { userId, expiry };
+}
+
+/**
+ * Verify a session cookie value.
+ * Returns the userId on success, null if missing, malformed, expired, or tampered.
+ */
+export async function verifySession(session: string): Promise<number | null> {
+  return (await readSession(session))?.userId ?? null;
 }
 
 // ---------------------------------------------------------------------------
