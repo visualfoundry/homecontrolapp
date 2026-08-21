@@ -9,6 +9,7 @@
 
 import { STATE_API_BASE_URL, commandTargetToStateId } from '@/lib/state-service';
 import { type NextRequest, NextResponse } from 'next/server';
+import { sessionUserId } from '@/lib/session-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +20,10 @@ interface CommandBody {
 }
 
 export async function POST(req: NextRequest) {
+  // See /api/state — a revoked session must not still be able to work the house.
+  if (!(await sessionUserId(req))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   let body: CommandBody;
   try {
     body = (await req.json()) as CommandBody;

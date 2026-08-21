@@ -10,6 +10,7 @@
 
 import { type NextRequest } from 'next/server';
 import { STATE_API_BASE_URL, idMaps } from '@/lib/state-service';
+import { sessionUserId } from '@/lib/session-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,6 +61,13 @@ function idRemapStream(stateToConfig: Record<string, string[]>): TransformStream
 }
 
 export async function GET(req: NextRequest) {
+  // See /api/state — revocation is enforced in the Node runtime, not middleware.
+  if (!(await sessionUserId(req))) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
   if (!STATE_API_BASE_URL) {
     return new Response(': STATE_API_BASE_URL not configured\n\n', { status: 503, headers: SSE_HEADERS });
   }

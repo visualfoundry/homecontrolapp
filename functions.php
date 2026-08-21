@@ -793,3 +793,151 @@ function homecontrolapp_prefs_put( WP_REST_Request $req ) {
 // -------------------------------------------------------------------------
 // The "App Shell" page template (page-app-shell.php) outputs the minimal HTML
 // needed to mount the PWA. Assign it to the home page in WP admin.
+
+// -------------------------------------------------------------------------
+// App session revocation — "Sign out app" per user
+// -------------------------------------------------------------------------
+// The Next.js session cookie is a stateless HMAC of userId|expiry|issuedAt, so
+// nothing in WP can invalidate one on its own. This gives each user an epoch:
+// a timestamp meaning "reject app sessions issued before this". Bumping it signs
+// that user out of the app on every device they've installed it on, and no one
+// else. The lost-phone lever.
+//
+// Next reads the epochs from GET /wp-json/hca/v1/session-epochs (cached, with a
+// short TTL), and the bump is pushed straight to Next so it takes effect at once
+// rather than at the end of that TTL.
+
+const HCA_SESSION_EPOCH_META = 'hca_session_epoch';
+
+add_action( 'rest_api_init', function () {
+	register_rest_route(
+		'hca/v1',
+		'/session-epochs',
+		array(
+			'methods'             => 'GET',
+			'callback'            => 'homecontrolapp_session_epochs',
+			'permission_callback' => '__return_true',
+		)
+	);
+} );
+
+/** GET /wp-json/hca/v1/session-epochs — { "<userId>": <unix seconds>, … } */
+function homecontrolapp_session_epochs( WP_REST_Request $req ) {
+	$key = defined( 'HCA_INTERNAL_KEY' ) ? HCA_INTERNAL_KEY : '';
+	if ( empty( $key ) || $req->get_header( 'X-HCA-Internal-Key' ) !== $key ) {
+		return new WP_REST_Response( array( 'error' => 'Forbidden' ), 403 );
+	}
+
+	$out   = array();
+	$users = get_users(
+		array(
+			'meta_key'     => HCA_SESSION_EPOCH_META,
+			'meta_compare' => 'EXISTS',
+			'fields'       => array( 'ID' ),
+		)
+	);
+	foreach ( $users as $u ) {
+		$epoch = (int) get_user_meta( $u->ID, HCA_SESSION_EPOCH_META, true );
+		if ( $epoch > 0 ) {
+			$out[ (string) $u->ID ] = $epoch;
+		}
+	}
+	// Force an object rather than [] when empty, so the JSON shape never changes.
+	return new WP_REST_Response( (object) $out, 200 );
+}
+
+/** Bump a user's epoch and tell Next about it immediately. */
+function homecontrolapp_revoke_app_sessions( $user_id ) {
+	$user_id = (int) $user_id;
+	if ( ! $user_id ) {
+		return;
+	}
+	$epoch = time();
+	update_user_meta( $user_id, HCA_SESSION_EPOCH_META, $epoch );
+
+	$next_base = defined( 'NEXT_APP_URL' ) ? NEXT_APP_URL : '';
+	$secret    = defined( 'REVALIDATE_SECRET' ) ? REVALIDATE_SECRET : '';
+	if ( empty( $next_base ) || empty( $secret ) ) {
+		return;
+	}
+
+	// Blocking, unlike the revalidation ping: the admin is told whether the app
+	// actually acted on this, and a signed-out-everywhere claim should be earned.
+	wp_remote_post(
+		trailingslashit( $next_base ) . 'api/auth/revoke',
+		array(
+			'body'     => wp_json_encode(
+				array(
+					'secret' => $secret,
+					'userId' => $user_id,
+					'epoch'  => $epoch,
+				)
+			),
+			'headers'  => array( 'Content-Type' => 'application/json' ),
+			'timeout'  => 5,
+			'blocking' => true,
+		)
+	);
+}
+
+// Row action on Users → "Sign out app".
+add_filter( 'user_row_actions', function ( $actions, $user ) {
+	if ( ! current_user_can( 'edit_users' ) ) {
+		return $actions;
+	}
+	$url = wp_nonce_url(
+		add_query_arg(
+			array(
+				'action'  => 'hca_revoke_sessions',
+				'user_id' => $user->ID,
+			),
+			admin_url( 'users.php' )
+		),
+		'hca_revoke_' . $user->ID
+	);
+	$actions['hca_revoke'] = sprintf(
+		'<a href="%s">%s</a>',
+		esc_url( $url ),
+		esc_html__( 'Sign out app', 'homecontrolapp' )
+	);
+	return $actions;
+}, 10, 2 );
+
+add_action( 'load-users.php', function () {
+	if ( ( $_GET['action'] ?? '' ) !== 'hca_revoke_sessions' ) {
+		return;
+	}
+	$user_id = (int) ( $_GET['user_id'] ?? 0 );
+	if ( ! $user_id || ! current_user_can( 'edit_users' ) ) {
+		wp_die( esc_html__( 'You cannot do that.', 'homecontrolapp' ) );
+	}
+	check_admin_referer( 'hca_revoke_' . $user_id );
+
+	homecontrolapp_revoke_app_sessions( $user_id );
+
+	wp_safe_redirect(
+		add_query_arg(
+			array( 'hca_revoked' => $user_id ),
+			admin_url( 'users.php' )
+		)
+	);
+	exit;
+} );
+
+add_action( 'admin_notices', function () {
+	$user_id = (int) ( $_GET['hca_revoked'] ?? 0 );
+	if ( ! $user_id ) {
+		return;
+	}
+	$user = get_userdata( $user_id );
+	printf(
+		'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
+		esc_html(
+			sprintf(
+				/* translators: %s: user login */
+				__( '%s has been signed out of the Home Control app on every device. They will be asked to sign in again.', 'homecontrolapp' ),
+				$user ? $user->user_login : (string) $user_id
+			)
+		)
+	);
+} );

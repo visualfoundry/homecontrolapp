@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import https from 'node:https';
-import { verifySession } from '@/lib/auth';
+import { sessionUserId } from '@/lib/session-guard';
 
 const INTERNAL_KEY = process.env.HCA_INTERNAL_KEY ?? '';
 
@@ -41,11 +41,8 @@ async function wpFetch(path: string, method: string, body?: Record<string, unkno
   });
 }
 
-async function getUserId(req: NextRequest): Promise<number | null> {
-  const session = req.cookies.get('hca_session')?.value ?? '';
-  if (!session) return null;
-  return verifySession(session);
-}
+/** Shared with the device routes, so a revoked session loses prefs too. */
+const getUserId = sessionUserId;
 
 export async function GET(req: NextRequest) {
   const userId = await getUserId(req);

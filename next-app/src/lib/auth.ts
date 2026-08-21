@@ -11,7 +11,7 @@
 //
 // Token formats (stateless, no DB writes):
 //   WP init token:  "<userId>.<hex_hmac_sha256(userId|hour, WP_AUTH_KEY)>"
-//   Session cookie: "<userId>|<expiry_ts>.<hex_hmac_sha256(payload, NEXTAUTH_SECRET)>"
+//   Session cookie: "<userId>|<expiry_ts>|<issued_ts>.<hex_hmac_sha256(payload, NEXTAUTH_SECRET)>"
 // =============================================================================
 
 /**
@@ -125,10 +125,12 @@ function getSessionKey(): string {
   return key;
 }
 
-/** Sign a session string for the given userId. Valid for SESSION_MAX_AGE seconds. */
+/** Sign a session string for the given userId. Valid for SESSION_MAX_AGE seconds.
+ *  The issued-at is what lets WP revoke a session it never saw: an epoch bump
+ *  rejects everything signed before it. */
 export async function signSession(userId: number): Promise<string> {
-  const expiry = Math.floor(Date.now() / 1000) + SESSION_MAX_AGE;
-  const payload = `${userId}|${expiry}`;
+  const now = Math.floor(Date.now() / 1000);
+  const payload = `${userId}|${now + SESSION_MAX_AGE}|${now}`;
   const sig = await hmacHex(getSessionKey(), payload);
   return `${payload}.${sig}`;
 }
@@ -140,7 +142,7 @@ export async function signSession(userId: number): Promise<string> {
  */
 export async function readSession(
   session: string,
-): Promise<{ userId: number; expiry: number } | null> {
+): Promise<{ userId: number; expiry: number; issuedAt: number } | null> {
   const dot = session.lastIndexOf('.');
   if (dot < 1) return null;
 
@@ -150,14 +152,17 @@ export async function readSession(
   const ok = await hmacVerify(getSessionKey(), payload, sig);
   if (!ok) return null;
 
-  const [userIdStr, expiryStr] = payload.split('|');
+  const [userIdStr, expiryStr, issuedStr] = payload.split('|');
   const userId = parseInt(userIdStr, 10);
   const expiry = parseInt(expiryStr, 10);
+  // Cookies signed before the issued-at existed read as 0, which any revocation
+  // outranks — the safe direction for a field that used to be absent.
+  const issuedAt = parseInt(issuedStr ?? '', 10) || 0;
 
   if (!userId || !expiry) return null;
   if (Math.floor(Date.now() / 1000) > expiry) return null;
 
-  return { userId, expiry };
+  return { userId, expiry, issuedAt };
 }
 
 /**

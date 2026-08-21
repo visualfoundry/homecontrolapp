@@ -1,12 +1,18 @@
 // GET /api/state — full state snapshot
 // Proxies to the home-control service at STATE_API_BASE_URL.
 
-import { NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { STATE_API_BASE_URL, stateToConfigIds } from '@/lib/state-service';
+import { sessionUserId } from '@/lib/session-guard';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  // Revoked-session check — the middleware validated the signature, but only
+  // this runtime can ask WP whether the session was withdrawn.
+  if (!(await sessionUserId(req))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   if (!STATE_API_BASE_URL) {
     return NextResponse.json({ error: 'STATE_API_BASE_URL not configured' }, { status: 503 });
   }
