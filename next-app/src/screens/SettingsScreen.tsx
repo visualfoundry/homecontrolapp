@@ -10,7 +10,10 @@ import { Segmented } from '@/components/Segmented';
 import { LargeTitle } from '@/components/LargeTitle';
 import { PushPermission } from '@/components/PushPermission';
 import { pillBtn } from '@/lib/styles';
-import { PRESENCE_REPORT_KEY, reportLocationOnce } from '@/components/PresenceReporter';
+import {
+  locationPermission, currentPosition, reportLocation,
+  type Permissionish,
+} from '@/components/PresenceReporter';
 import type { FlagState } from '@/types/state';
 import type { SettingItem, UserPrefs, NotificationPrefs } from '@/types/config';
 
@@ -215,34 +218,34 @@ function ago(at: number): string {
   return `${Math.round(hrs / 24)} d ago`;
 }
 
-/** The app's own half of presence: report on open, and define where "home" is. */
+/**
+ * The app's own half of presence. No switch: reporting is always on, and the
+ * browser's location permission is the only thing that decides whether it can
+ * happen — so this shows that state and offers the two actions that need a
+ * deliberate tap (granting, and defining where home is).
+ */
 function PresenceFromApp({ hasHome, onChange }: { hasHome: boolean; onChange: () => void }) {
-  const [on, setOn] = React.useState(false);
+  const [perm, setPerm] = React.useState<Permissionish>('unknown');
   const [status, setStatus] = React.useState('');
-  React.useEffect(() => { setOn(localStorage.getItem(PRESENCE_REPORT_KEY) === '1'); }, []);
 
-  async function toggle(next: boolean) {
-    localStorage.setItem(PRESENCE_REPORT_KEY, next ? '1' : '0');
-    setOn(next);
-    // Turning it on is a deliberate tap, so this is the moment to ask for the
-    // permission rather than on some later resume.
-    if (next) {
-      setStatus('Checking location…');
-      await reportLocationOnce(true);
-      setStatus('');
-      onChange();
-    }
+  const refresh = React.useCallback(() => { void locationPermission().then(setPerm); }, []);
+  React.useEffect(refresh, [refresh]);
+
+  async function allow() {
+    setStatus('Asking…');
+    const r = await reportLocation();
+    refresh();
+    setStatus(r.ok
+      ? `Reported ${r.person ?? ''} ${r.home ? 'home' : 'away'}${r.distance !== undefined ? ` (${r.distance} m)` : ''}`
+      : (r.error ?? 'Could not report'));
+    setTimeout(() => setStatus(''), 4_000);
+    onChange();
   }
 
   async function setHome() {
     setStatus('Reading location…');
-    const position = await new Promise<GeolocationPosition | null>(resolve => {
-      navigator.geolocation?.getCurrentPosition(
-        p => resolve(p), () => resolve(null),
-        { enableHighAccuracy: true, timeout: 10_000 },
-      );
-    });
-    if (!position) { setStatus('Location unavailable'); return; }
+    const position = await currentPosition(true);
+    if (!position) { setStatus('Location unavailable'); refresh(); return; }
     const res = await fetch('/api/presence/report', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -253,28 +256,33 @@ function PresenceFromApp({ hasHome, onChange }: { hasHome: boolean; onChange: ()
       }),
     }).catch(() => null);
     setStatus(res?.ok ? 'Home location saved' : 'Could not save');
-    setTimeout(() => setStatus(''), 3_000);
+    setTimeout(() => setStatus(''), 4_000);
+    refresh();
     onChange();
   }
 
+  const permLabel = perm === 'granted' ? 'Location allowed'
+    : perm === 'denied' ? 'Location denied — enable it for this app in Settings'
+    : 'Location not granted yet';
+
   return (
     <Card>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
-            Report my location when I open the app
-          </div>
-          <div style={{ fontSize: 12.5, color: 'var(--text2)', marginTop: 2 }}>
-            Corrects presence whenever the app is opened. Arriving and leaving while
-            the app is closed still needs the link below in a phone automation.
-          </div>
-        </div>
-        <Toggle on={on} onChange={toggle} size={0.82} />
+      <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
+        This app reports your location when you open it
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
-        <button onClick={setHome} style={pillBtn}>Set home to here</button>
+      <div style={{ fontSize: 12.5, color: 'var(--text2)', marginTop: 3, lineHeight: 1.45 }}>
+        Corrects presence every time the app is opened. Arriving and leaving while the
+        app is closed still needs each person&apos;s link below in a phone automation.
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+        {perm !== 'granted' && (
+          <button onClick={allow} style={smallPill}>Allow location</button>
+        )}
+        <button onClick={setHome} style={{ ...smallPill, background: 'var(--icon-bg)', color: 'var(--text)' }}>
+          Set home to here
+        </button>
         <span style={{ fontSize: 12.5, color: 'var(--text2)' }}>
-          {status || (hasHome ? 'Home location set' : 'No home location yet')}
+          {status || `${permLabel} · ${hasHome ? 'home location set' : 'no home location yet'}`}
         </span>
       </div>
     </Card>
