@@ -194,6 +194,11 @@ function CertInstallCard() {
 // through the ISY Portal, so nothing downstream of it changes.
 // ---------------------------------------------------------------------------
 
+/** Two actions have to share a phone-width row with a name and a status line. */
+const smallPill: React.CSSProperties = {
+  ...pillBtn, flexShrink: 0, fontSize: 13, fontWeight: 620, padding: '7px 12px',
+};
+
 interface PresenceRow {
   personId: string;
   name: string;
@@ -354,17 +359,17 @@ function PresenceLinks() {
           </div>
           {r.token ? (
             <>
-              <button onClick={() => copy(r.token!, r.personId)} style={{ ...pillBtn, flexShrink: 0 }}>
+              <button onClick={() => copy(r.token!, r.personId)} style={smallPill}>
                 {copied === r.personId ? 'Copied' : 'Copy links'}
               </button>
               <button onClick={() => revoke(r.personId)} disabled={busy === r.personId}
-                style={{ ...pillBtn, flexShrink: 0, color: 'var(--red)' }}>
+                style={{ ...smallPill, background: 'var(--icon-bg)', color: 'var(--red)' }}>
                 Revoke
               </button>
             </>
           ) : (
             <button onClick={() => mint(r.personId)} disabled={busy === r.personId}
-              style={{ ...pillBtn, flexShrink: 0 }}>
+              style={smallPill}>
               {busy === r.personId ? '…' : 'Create link'}
             </button>
           )}
