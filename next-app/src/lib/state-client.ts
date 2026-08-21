@@ -56,27 +56,60 @@ export function postCommand(
 
 type PatchHandler = (id: string, patch: Record<string, unknown>) => void;
 
+/** Longest silence tolerated before the stream is presumed dead. The service
+ *  pings every 30 s, so three missed pings is a connection that isn't there. */
+const STALE_MS = 95_000;
+/** How often to check that for an app that's been left open. */
+const WATCHDOG_MS = 30_000;
+/** Stricter bar on resume: a socket the OS killed while the phone slept still
+ *  reads as OPEN, so anything past one missed ping is worth rebuilding — a spare
+ *  reconnect costs far less than a screen of stale state. */
+const RESUME_STALE_MS = 45_000;
+
+export interface StreamHandle {
+  /** Close permanently. */
+  close(): void;
+  /** Re-seed now, and rebuild the connection if it looks dead. Call on resume. */
+  revalidate(): void;
+}
+
 /**
  * Open an SSE connection to /stream.
  *
  * - Calls `onPatch(id, patch)` for each `event: patch` message.
  * - On error / disconnect: calls `onReseed()` then reconnects after 3 s.
  *
- * Returns a cleanup function — call it to close the connection permanently.
+ * A frozen tab is the case `onerror` doesn't cover. When the OS suspends a
+ * backgrounded PWA it tears the socket down underneath us, and on resume the
+ * EventSource can sit there reporting OPEN while nothing will ever arrive again
+ * — the app shows state frozen at the moment it was backgrounded, and only a
+ * force-quit fixes it. So liveness is tracked from the last byte seen rather
+ * than from readyState, and `revalidate()` (on resume, and on a watchdog for an
+ * app left open) reseeds and rebuilds a stream that has gone quiet.
  */
 export function connectSSE(
   onPatch: PatchHandler,
   onReseed: () => void,
-): () => void {
+): StreamHandle {
   let es: EventSource | null = null;
   let closed = false;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  let lastSeen = Date.now();
+  let lastRevalidate = 0;
 
   function connect() {
     if (closed) return;
+    lastSeen = Date.now();
     es = new EventSource(`${BASE}/stream`);
 
+    es.onopen = () => { lastSeen = Date.now(); };
+
+    // Keepalive. Any traffic counts as proof of life, but the service's ping is
+    // the only thing guaranteed to arrive on an idle house.
+    es.addEventListener('ping', () => { lastSeen = Date.now(); });
+
     es.addEventListener('patch', (e: MessageEvent) => {
+      lastSeen = Date.now();
       try {
         const { id, patch } = JSON.parse(e.data as string) as {
           id: string;
@@ -113,11 +146,45 @@ export function connectSSE(
     };
   }
 
+  /** Drop the current connection and open a new one immediately. */
+  function reconnectNow() {
+    if (closed) return;
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+    es?.close();
+    es = null;
+    onReseed();
+    connect();
+  }
+
   connect();
 
-  return () => {
-    closed = true;
-    if (reconnectTimer) clearTimeout(reconnectTimer);
-    es?.close();
+  const watchdog = setInterval(() => {
+    if (closed || document.visibilityState !== 'visible') return;
+    if (Date.now() - lastSeen > STALE_MS) reconnectNow();
+  }, WATCHDOG_MS);
+
+  return {
+    close() {
+      closed = true;
+      clearInterval(watchdog);
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      es?.close();
+    },
+    revalidate() {
+      if (closed) return;
+      // visibilitychange, pageshow and focus all fire on one resume — reseeding
+      // three times over is just three GETs for the same answer.
+      if (Date.now() - lastRevalidate < 2_000) return;
+      lastRevalidate = Date.now();
+
+      const dead = es === null
+        || es.readyState === EventSource.CLOSED
+        || Date.now() - lastSeen > RESUME_STALE_MS;
+      // reconnectNow reseeds on its way through, so don't pay for two.
+      if (dead) reconnectNow();
+      // Even a stream that survived the background may have missed patches while
+      // the tab was frozen, and /state is one cheap GET.
+      else onReseed();
+    },
   };
 }

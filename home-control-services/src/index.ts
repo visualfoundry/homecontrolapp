@@ -381,8 +381,12 @@ app.get('/stream', (req: Request, res: Response) => {
     (res as unknown as { flush?: () => void }).flush?.();
   });
 
+  // A real event, not a `:` comment: EventSource never surfaces comments to JS,
+  // so a comment keeps the socket warm but tells the client nothing. The client
+  // uses this to tell "quiet house" apart from "connection died while the phone
+  // was asleep", which is invisible from readyState alone.
   const heartbeat = setInterval(() => {
-    try { res.write(': heartbeat\n\n'); }
+    try { res.write('event: ping\ndata: {}\n\n'); }
     catch { clearInterval(heartbeat); }
   }, 30_000);
 

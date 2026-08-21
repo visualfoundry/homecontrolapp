@@ -508,7 +508,7 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
 
     reseed();
 
-    const cleanup = connectSSE(
+    const stream = connectSSE(
       // onPatch — value-based command lock.
       // After setD sends a command, the device is locked to the optimistic value
       // until the stream confirms ALL commanded fields have reached their targets.
@@ -547,9 +547,26 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
       reseed,
     );
 
+    // Coming back to the app is the moment its state is most likely to be wrong:
+    // a suspended PWA loses its stream without an error, so what's on screen is
+    // frozen at the moment it was backgrounded. Reseed and re-check the stream on
+    // every resume — visibilitychange for a tab, pageshow for a bfcache restore,
+    // online for a network that dropped underneath it.
+    const onResume = () => {
+      if (document.visibilityState === 'visible') stream.revalidate();
+    };
+    document.addEventListener('visibilitychange', onResume);
+    window.addEventListener('pageshow', onResume);
+    window.addEventListener('online', onResume);
+    window.addEventListener('focus', onResume);
+
     return () => {
       alive = false;
-      cleanup();
+      document.removeEventListener('visibilitychange', onResume);
+      window.removeEventListener('pageshow', onResume);
+      window.removeEventListener('online', onResume);
+      window.removeEventListener('focus', onResume);
+      stream.close();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // intentionally run once on mount
