@@ -328,6 +328,10 @@ function ago(at: number): string {
  * browser's location permission is the only thing that decides whether it can
  * happen — so this shows that state and offers the two actions that need a
  * deliberate tap (granting, and defining where home is).
+ *
+ * "Allow location" is the one place allowed to re-open the OS prompt. The
+ * reporter itself opens it once per install and never again, so this button is
+ * the way back from a denial or a dismissed sheet.
  */
 function PresenceFromApp({ hasHome, onChange }: { hasHome: boolean; onChange: () => void }) {
   const [perm, setPerm] = React.useState<Permissionish>('unknown');
@@ -340,9 +344,12 @@ function PresenceFromApp({ hasHome, onChange }: { hasHome: boolean; onChange: ()
     setStatus('Asking…');
     const r = await reportLocation();
     refresh();
-    setStatus(r.ok
-      ? `Reported ${r.person ?? ''} ${r.home ? 'home' : 'away'}${r.distance !== undefined ? ` (${r.distance} m)` : ''}`
-      : (r.error ?? 'Could not report'));
+    setStatus(!r.ok
+      ? (r.error ?? 'Could not report')
+      : r.unchanged
+        // Outside the fence, but by less than the fix's own margin of error.
+        ? `Location too rough to judge (${r.distance} m ±${r.accuracy} m) — presence left as it was`
+        : `Reported ${r.person ?? ''} ${r.home ? 'home' : 'away'}${r.distance !== undefined ? ` (${r.distance} m)` : ''}`);
     setTimeout(() => setStatus(''), 4_000);
     onChange();
   }
@@ -373,11 +380,12 @@ function PresenceFromApp({ hasHome, onChange }: { hasHome: boolean; onChange: ()
   return (
     <Card>
       <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
-        This app reports your location when you open it
+        This app reports your location while it&apos;s open
       </div>
       <div style={{ fontSize: 12.5, color: 'var(--text2)', marginTop: 3, lineHeight: 1.45 }}>
-        Corrects presence every time the app is opened. Arriving and leaving while the
-        app is closed still needs each person&apos;s link below in a phone automation.
+        Asked for once, then it keeps presence right for as long as the app is in front
+        of you. Arriving and leaving while the app is closed still needs each
+        person&apos;s link below in a phone automation.
       </div>
       <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
         {perm !== 'granted' && (

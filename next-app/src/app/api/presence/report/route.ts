@@ -4,10 +4,11 @@
 // to their "Geo <Name> at Home" person by first name. Static segment, so it wins
 // over the [token] route next to it.
 //
-// This is the app doing what it can do — report while it is running. iOS will not
-// wake a web app to check a geofence, so this makes presence right whenever the
-// app is opened, and the phone's own automation covers arrival and departure
-// while the app is closed. Both write the same variable.
+// This is the app doing what it can do — report while it is running. The client
+// watches the position for as long as it is open, so crossing the fence with the
+// app in hand shows up at once. iOS will not wake a web app to check a geofence,
+// so the phone's own automation still covers arrival and departure while the app
+// is closed. Both write the same variable.
 
 import { type NextRequest, NextResponse } from 'next/server';
 import { sessionUserId } from '@/lib/session-guard';
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json().catch(() => null) as
-    { lat?: number; lng?: number; setHome?: boolean; radius?: number } | null;
+    { lat?: number; lng?: number; accuracy?: number; setHome?: boolean; radius?: number } | null;
   const lat = Number(body?.lat);
   const lng = Number(body?.lng);
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
@@ -74,6 +75,27 @@ export async function POST(req: NextRequest) {
 
   const distance = Math.round(distanceMetres(home, { lat, lng }));
   const isHome = distance <= home.radius;
+
+  // How far the fix could be off, when the app sent it.
+  //
+  // Indoors a phone can place itself a kilometre from where it is, on Wi-Fi
+  // alone, and now that the app reports continuously rather than once per open,
+  // one such fix would put someone out of the house while they are asleep in it.
+  // So a fix that says "home" is taken at face value — nothing else puts you
+  // inside your own fence — while "away" has to mean the whole uncertainty
+  // circle is outside it. A fix that can't tell leaves presence as it stands.
+  const accuracy = Number(body?.accuracy);
+  const margin = Number.isFinite(accuracy) && accuracy > 0 ? accuracy : 0;
+  if (!isHome && distance - margin <= home.radius) {
+    console.log(
+      `[presence] ${person.name} → unchanged (app, ${distance} m ±${Math.round(margin)} m)`,
+    );
+    return NextResponse.json({
+      ok: true, person: person.name, unchanged: true, distance,
+      accuracy: Math.round(margin),
+    });
+  }
+
   const ok = await applyPresence(person.id, isHome, 'app', distance);
   if (!ok) return NextResponse.json({ error: 'Could not write presence' }, { status: 502 });
 
