@@ -7,9 +7,13 @@
 // name and which hub (room) it belongs to, so the catalog is discovered from the
 // EISY instead of authored twice.
 //
-// Only device nodes matter for the remote: hubs accept SET_ACTIVITY but not
-// SET_BUTTON, and activity nodes accept only DON/DOF. Buttons must be addressed
-// to a specific device node.
+// The two node kinds this file cares about split cleanly by job:
+//   * device nodes accept SET_BUTTON — they are what the remote's keys address,
+//     because a button must go to a specific box.
+//   * hub nodes accept SET_ACTIVITY and DOF, and publish the running activity on
+//     GV3 — they are what the room's power switch reads and writes.
+// Activity nodes accept DON/DOF but say nothing a hub's GV3 doesn't, so they are
+// not registered.
 // =============================================================================
 
 import { getNodeDefinitions, getProfiles } from './eisy-client.js';
@@ -34,10 +38,21 @@ export interface HarmonyDeviceInfo {
   buttonsKnown: boolean;
 }
 
+/** One of a hub's Harmony activities, as the hub's SET_ACTIVITY editor lists it.
+ *  Index 0 ("Power Off") is not an activity and is left out. */
+export interface HarmonyActivityInfo {
+  index: number;
+  name: string;
+}
+
 export interface HarmonyHubInfo {
   id: string;
   name: string;
   devices: HarmonyDeviceInfo[];
+  /** Activities this hub can start, lowest index first. Empty when the EISY
+   *  publishes no profile for the hub — the room can then still be switched off
+   *  (DOF needs no index) but not on. */
+  activities: HarmonyActivityInfo[];
 }
 
 export interface HarmonyCatalog {
@@ -101,12 +116,31 @@ export async function discoverHarmony(
   // editor. Each device gets its own editor whose `subset` lists the indexes the
   // hub learned for it; anything outside it is a 404 from the EISY.
   const buttonsByNodeDef = new Map<string, HarmonyButton[]>();
+  // nodedef → the activities that hub can start, from its own SET_ACTIVITY
+  // editor. Each hub gets its own, because activity indexes are per-hub.
+  const activitiesByNodeDef = new Map<string, HarmonyActivityInfo[]>();
   try {
     const profiles = await getProfiles(baseUrl);
     const fam = profiles.families?.find(f => f.id === HARMONY_FAMILY);
     for (const inst of fam?.instances ?? []) {
       const editors = new Map((inst.editors ?? []).map(e => [e.id, e]));
       for (const nd of inst.nodedefs ?? []) {
+        const setActivity = nd.cmds?.accepts?.find(a => a.id === 'SET_ACTIVITY');
+        if (setActivity) {
+          const range = editors.get(setActivity.parameters?.[0]?.editor ?? '')?.ranges?.[0];
+          if (range?.names) {
+            // The editor's `names` table covers the whole range; `subset` is what
+            // this hub actually learned. Take the intersection so a room is never
+            // offered an activity its hub would 404 on.
+            const allowed = range.subset ? new Set(expandSubset(range.subset)) : null;
+            activitiesByNodeDef.set(nd.id, Object.entries(range.names)
+              .map(([idx, name]) => ({ index: Number(idx), name }))
+              .filter(a => Number.isFinite(a.index) && a.index > 0
+                        && (allowed === null || allowed.has(a.index)))
+              .sort((a, b) => a.index - b.index));
+          }
+        }
+
         const setButton = nd.cmds?.accepts?.find(a => a.id === 'SET_BUTTON');
         if (!setButton) continue;
         buttonCapable.add(nd.id);
@@ -123,10 +157,10 @@ export async function discoverHarmony(
   } catch {
     // Profile unreadable — treat every device as usable rather than dropping the
     // whole catalog; a bad button is a no-op, a missing remote is a regression.
-    return buildResult(nodes, eisyIdx, hubRe, deviceRe, null, buttonsByNodeDef);
+    return buildResult(nodes, eisyIdx, hubRe, deviceRe, null, buttonsByNodeDef, activitiesByNodeDef);
   }
 
-  return buildResult(nodes, eisyIdx, hubRe, deviceRe, buttonCapable, buttonsByNodeDef);
+  return buildResult(nodes, eisyIdx, hubRe, deviceRe, buttonCapable, buttonsByNodeDef, activitiesByNodeDef);
 }
 
 function buildResult(
@@ -136,6 +170,7 @@ function buildResult(
   deviceRe: RegExp,
   buttonCapable: Set<string> | null,
   buttonsByNodeDef: Map<string, HarmonyButton[]>,
+  activitiesByNodeDef: Map<string, HarmonyActivityInfo[]>,
 ): HarmonyDiscovery {
   const devices: DevicesMap = {};
   const hubs: HarmonyHubInfo[] = [];
@@ -148,6 +183,17 @@ function buildResult(
       id: `eisy${eisyIdx}/${hub.address}`,
       name: hub.name,
       devices: [],
+      activities: activitiesByNodeDef.get(hub.nodeDefId) ?? [],
+    };
+
+    // The hub node itself is a state device, unlike the boxes under it: GV3
+    // reports the running activity, so this is where the room's power lives.
+    devices[hubInfo.id] = {
+      type: 'device',
+      eisyIdx,
+      class: 'harmony-hub',
+      address: hub.address,
+      name: hub.name,
     };
 
     for (const dev of nodes) {

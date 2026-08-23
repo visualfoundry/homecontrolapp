@@ -43,8 +43,10 @@ import { fetchState, postCommand, connectSSE } from '@/lib/state-client';
 export interface HCContextValue {
   /** Flat device state map. */
   st: StateMap;
-  /** Shallow-merge a patch into one device's state. */
-  setD: (id: string, patch: StatePatch) => void;
+  /** Shallow-merge a patch into one device's state.
+   *  `lockMs` overrides how long the optimistic value survives an unconfirming
+   *  stream — raise it for anything the hardware takes its time over. */
+  setD: (id: string, patch: StatePatch, lockMs?: number) => void;
   /** Navigate to a screen. Tab slots reset the stack; others push. */
   go: (id: string) => void;
   /** Pop the nav stack. */
@@ -670,7 +672,7 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
    * for device-control keys (everything except _*, person:*, auto:* which
    * are user-prefs / presence / automation — not routed through the service).
    */
-  const setD = useCallback((id: string, patch: StatePatch) => {
+  const setD = useCallback((id: string, patch: StatePatch, lockMs = 10_000) => {
     setSt((prev) => ({
       ...prev,
       [id]: { ...(prev[id] ?? {}), ...patch } as StateMap[string],
@@ -689,12 +691,12 @@ export function HCProvider({ children, config }: { children: React.ReactNode; co
     if (isDeviceControl) {
       postCommand(id, patch as Record<string, unknown>);
       // Lock this device until the stream confirms the commanded values have
-      // settled, or 10 s elapses (safety fallback for lost/failed commands).
+      // settled, or `lockMs` elapses (safety fallback for lost/failed commands).
       // Each new setD call overwrites the previous target so rapid re-commands
       // always track the latest intent.
       pendingUntil.current.set(id, {
         target: patch as Record<string, unknown>,
-        deadline: Date.now() + 10_000,
+        deadline: Date.now() + lockMs,
       });
     }
   }, [schedulePrefsSync]);

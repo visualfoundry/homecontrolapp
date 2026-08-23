@@ -142,6 +142,7 @@ function WeatherWidget({ cond, skyDark }: { cond: WeatherCondition; skyDark: boo
 
 import type { SceneRoomTypeKey, TimeOfDayKey, ClimateZone } from '@/types/config';
 import { deviceTag } from '@/lib/debug';
+import { tvIsOn, tvPowerPatch, TV_POWER_LOCK_MS } from '@/lib/tv-power';
 
 // ── Scrollable stat pill ──────────────────────────────────────────────────────
 function StatTile({ icon, label, value, tint, onTap, compact, active, 'data-control': dataControl }: {
@@ -225,8 +226,9 @@ function FavTile({ id, icon, label }: { id: string; icon: React.ComponentProps<t
 // keeps neither the chip nor the tap — so a stray tap can't cut the picture.
 function TvFavTile({ id, label }: { id: string; label: string }) {
   const { st, setD, config, go } = useHC();
-  const on = (st[id] as FlagState | undefined)?.on ?? false;
-  const hasRemote = !!config.tvs.find(t => t.id === id)?.remote;
+  const tv = config.tvs.find(t => t.id === id);
+  const on = tv ? tvIsOn(tv, st) : false;
+  const hasRemote = !!tv?.remote;
   return (
     <Tile
       icon="tv"
@@ -238,7 +240,14 @@ function TvFavTile({ id, label }: { id: string; label: string }) {
       compact
       data-control={deviceTag(label, id, config.controlStateIds)}
       onTap={hasRemote ? () => go(`remote:${id}`) : undefined}
-      control={<Toggle on={on} onChange={(v) => setD(id, { on: v })} accent="rgba(255,255,255,0.4)" size={0.72} />}
+      control={
+        <Toggle
+          on={on}
+          onChange={(v) => { if (tv) setD(tv.powerId, tvPowerPatch(tv, v), TV_POWER_LOCK_MS); }}
+          accent="rgba(255,255,255,0.4)"
+          size={0.72}
+        />
+      }
     />
   );
 }

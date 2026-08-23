@@ -124,6 +124,24 @@
           "buttons": [],
           "buttonsKnown": true
         }
+      ],
+      "activities": [
+        {
+          "index": 6,
+          "name": "Listen to Music"
+        },
+        {
+          "index": 7,
+          "name": "Watch Apple TV"
+        },
+        {
+          "index": 8,
+          "name": "Play a Game"
+        },
+        {
+          "index": 9,
+          "name": "Watch a Blu-ray"
+        }
       ]
     },
     {
@@ -168,6 +186,12 @@
           ],
           "buttonsKnown": true
         }
+      ],
+      "activities": [
+        {
+          "index": 2,
+          "name": "Watch Apple TV"
+        }
       ]
     },
     {
@@ -211,6 +235,12 @@
             "Back"
           ],
           "buttonsKnown": true
+        }
+      ],
+      "activities": [
+        {
+          "index": 5,
+          "name": "Watch Apple TV"
         }
       ]
     },
@@ -271,6 +301,16 @@
             "VolumeUp"
           ],
           "buttonsKnown": true
+        }
+      ],
+      "activities": [
+        {
+          "index": 10,
+          "name": "Watch Cable TV"
+        },
+        {
+          "index": 11,
+          "name": "Watch Apple TV"
         }
       ]
     },
@@ -354,6 +394,12 @@
           ],
           "buttonsKnown": true
         }
+      ],
+      "activities": [
+        {
+          "index": 4,
+          "name": "Watch Apple TV"
+        }
       ]
     },
     {
@@ -429,6 +475,12 @@
           ],
           "buttonsKnown": true
         }
+      ],
+      "activities": [
+        {
+          "index": 3,
+          "name": "Watch Apple TV"
+        }
       ]
     },
     {
@@ -491,6 +543,12 @@
           ],
           "buttonsKnown": true
         }
+      ],
+      "activities": [
+        {
+          "index": 12,
+          "name": "Watch TV"
+        }
       ]
     },
     {
@@ -524,6 +582,12 @@
             "VolumeUp"
           ],
           "buttonsKnown": true
+        }
+      ],
+      "activities": [
+        {
+          "index": 1,
+          "name": "Watch Apple TV"
         }
       ]
     }

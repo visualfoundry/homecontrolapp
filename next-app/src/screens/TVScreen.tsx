@@ -6,12 +6,14 @@ import { Tile } from '@/components/Tile';
 import { LargeTitle } from '@/components/LargeTitle';
 import { pillBtn } from '@/lib/styles';
 import { deviceTag } from '@/lib/debug';
-import type { FlagState } from '@/types/state';
+import { tvIsOn, tvPowerPatch, TV_POWER_LOCK_MS } from '@/lib/tv-power';
 
 export function TVScreen() {
   const { st, setD, config, go } = useHC();
-  const onCount = config.tvs.filter(t => (st[t.id] as FlagState | undefined)?.on).length;
-  const allOff = () => config.tvs.forEach(t => setD(t.id, { on: false }));
+  const setPower = (t: (typeof config.tvs)[number], on: boolean) =>
+    setD(t.powerId, tvPowerPatch(t, on), TV_POWER_LOCK_MS);
+  const onCount = config.tvs.filter(t => tvIsOn(t, st)).length;
+  const allOff = () => config.tvs.forEach(t => { if (tvIsOn(t, st)) setPower(t, false); });
 
   return (
     <div>
@@ -22,7 +24,7 @@ export function TVScreen() {
       />
       <div className="hca-tile-grid">
         {config.tvs.map(t => {
-          const on = (st[t.id] as FlagState | undefined)?.on ?? false;
+          const on = tvIsOn(t, st);
           const hasRemote = !!t.remote;
           return (
             <Tile
@@ -39,7 +41,7 @@ export function TVScreen() {
               iconChip={hasRemote}
               inert={!hasRemote}
               data-control={deviceTag(t.name, t.id, config.controlStateIds)}
-              onToggle={(v) => setD(t.id, { on: v })}
+              onToggle={(v) => setPower(t, v)}
               onTap={hasRemote ? () => go(`remote:${t.id}`) : undefined}
             />
           );

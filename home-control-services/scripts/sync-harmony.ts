@@ -5,12 +5,12 @@
 //   npm run sync-harmony
 //
 // Writes two files:
-//   devices.json                        — merges in the harmony-device entries
+//   devices.json                        — merges in the harmony hub/device entries
 //   ../next-app/src/data/harmony.json   — the room→devices catalog the UI reads
 //
 // This MERGES rather than regenerates: devices.json also holds entries added by
 // hand (motion-sensor battery sub-nodes, per the note in export-devices), and a
-// full rebuild would silently drop them. Only harmony-device entries are touched.
+// full rebuild would silently drop them. Only harmony entries are touched.
 // =============================================================================
 
 import 'dotenv/config';
@@ -32,15 +32,17 @@ async function main() {
 
   const { devices, catalog } = await discoverHarmony(baseUrl, EISY_IDX);
 
-  const deviceCount = Object.keys(devices).length;
-  if (deviceCount === 0) {
+  const entryCount = Object.keys(devices).length;
+  const boxCount = Object.values(devices).filter(d => d.class === 'harmony-device').length;
+  if (boxCount === 0) {
     console.error('No button-capable Harmony devices found — refusing to write.');
     process.exit(1);
   }
 
-  console.log(`  ${catalog.hubs.length} hubs, ${deviceCount} button-capable devices`);
+  console.log(`  ${catalog.hubs.length} hubs, ${boxCount} button-capable devices`);
   for (const hub of catalog.hubs) {
     console.log(`    ${hub.name}: ${hub.devices.map(d => d.name).join(', ') || '(none)'}`);
+    console.log(`      activities: ${hub.activities.map(a => `${a.index}=${a.name}`).join(', ') || '(none — power off only)'}`);
   }
   for (const u of catalog.unprofiled) {
     console.warn(`  ~ ${u.hub} / ${u.name} (${u.address}) — no profile on the EISY; offered with every button until one is built`);
@@ -52,11 +54,14 @@ async function main() {
 
   let removed = 0;
   for (const [id, entry] of Object.entries(existing)) {
-    if (entry.class === 'harmony-device') { delete existing[id]; removed++; }
+    if (entry.class === 'harmony-device' || entry.class === 'harmony-hub') {
+      delete existing[id];
+      removed++;
+    }
   }
   Object.assign(existing, devices);
   writeFileSync(devicesPath, JSON.stringify(existing, null, 2));
-  console.log(`Written: ${devicesPath} (-${removed} +${deviceCount} harmony entries, ${Object.keys(existing).length} total)`);
+  console.log(`Written: ${devicesPath} (-${removed} +${entryCount} harmony entries, ${Object.keys(existing).length} total)`);
 
   // --- UI catalog -----------------------------------------------------------
   const catalogPath = join(__dirname, '..', '..', 'next-app', 'src', 'data', 'harmony.json');

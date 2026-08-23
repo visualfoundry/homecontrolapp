@@ -9,7 +9,7 @@ import { gqlAllControls, HOME_CONFIG_QUERY, GraphQLError } from '@/lib/graphql';
 
 import harmonyCatalog from '@/data/harmony.json';
 import { REMOTE_BUTTONS } from '@/types/config';
-import type { AppConfig, ControlNodeRaw, SceneRoomType, SceneRoomConfig, RemoteConfig, RemoteButton, RemoteDevice } from '@/types/config';
+import type { AppConfig, ControlNodeRaw, SceneRoomType, SceneRoomConfig, RemoteConfig, RemoteButton, RemoteDevice, RemoteActivity } from '@/types/config';
 
 /** Shape of src/data/harmony.json, written by home-control-services sync-harmony. */
 interface HarmonyCatalogRaw {
@@ -17,6 +17,7 @@ interface HarmonyCatalogRaw {
     id: string;
     name: string;
     devices: Array<{ id: string; name: string; buttons?: string[]; buttonsKnown?: boolean }>;
+    activities?: Array<{ index: number; name: string }>;
   }>;
   unprofiled: Array<{ name: string; hub: string; address: string }>;
 }
@@ -82,6 +83,18 @@ const NOT_A_TARGET = /light contr|projector screen|elite screens/i;
 /** Volume/mute go to the amp when there is one; everything else to the source box. */
 const VOLUME_GROUP: RemoteButton[] = ['VolumeUp', 'VolumeDown', 'Mute'];
 
+/** The activity a bare "on" starts. Every hub here has an Apple TV activity
+ *  except the Pergola, and the Library's other one is cable — so name it rather
+ *  than take the lowest index, which would put the Library on the DVR. */
+const POWER_ON_HINT = /apple ?tv/i;
+
+function pickPowerOnActivity(activities: RemoteActivity[]): number | null {
+  const a = activities.find(x => POWER_ON_HINT.test(x.name))
+    ?? activities.find(x => /^watch/i.test(x.name))
+    ?? activities[0];
+  return a?.index ?? null;
+}
+
 function remoteForPlace(place: string | null): RemoteConfig | undefined {
   if (!place) return undefined;
   const hubName = HUB_ALIASES[place] ?? place;
@@ -133,7 +146,17 @@ function remoteForPlace(place: string | null): RemoteConfig | undefined {
   // Every box present but not one usable key — no remote rather than a dead one.
   if (Object.keys(routes).length === 0) return undefined;
 
-  return { hubId: hub.id, hubName: hub.name, devices, routes };
+  const activities: RemoteActivity[] = (hub.activities ?? [])
+    .filter(a => Number.isFinite(a.index) && a.index > 0);
+
+  return {
+    hubId: hub.id,
+    hubName: hub.name,
+    devices,
+    routes,
+    activities,
+    powerOnActivity: pickPowerOnActivity(activities),
+  };
 }
 
 
@@ -286,15 +309,30 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   // --- TVs ----------------------------------------------------------------
-  // On/off runs through an EISY variable per room. The remote buttons are a
-  // separate, more direct path: straight to the Harmony device nodes on that
-  // room's hub (see home-control-services/src/harmony.ts). The two are joined on
+  // Everything about a TV — power, status and the remote keys — goes straight to
+  // that room's Harmony hub (see home-control-services/src/harmony.ts), joined on
   // the WP place matching the hub name the Harmony app reports.
+  //
+  // Power used to be written to a per-room EISY variable and read back from it,
+  // which meant the app only ever saw its own writes: a picture turned on with
+  // the physical remote never showed up, and an on/off that the EISY's own
+  // programs didn't act on looked like it had worked. The hub's activity is the
+  // real thing on both counts. The variable is left to the EISY, whose programs
+  // keep it in step with the hub for the rest of the house's automations.
   const tvs = controls
     .filter(n => (n.controlFields?.controlType?.nodes[0]?.title ?? '') === 'TV')
     .map(n => {
       const remote = remoteForPlace(getPlace(n));
-      return { id: toId(n), name: n.title, ...(remote ? { remote } : {}) };
+      // Without an activity to start there is no "on" to send, so such a room
+      // stays on its variable rather than getting a switch that only turns off.
+      const hubPower = remote?.powerOnActivity != null;
+      return {
+        id: toId(n),
+        name: n.title,
+        ...(remote ? { remote } : {}),
+        powerId: hubPower ? remote!.hubId : toId(n),
+        ...(hubPower ? { powerOnActivity: remote!.powerOnActivity! } : {}),
+      };
     });
 
   // --- Audio / music zones ------------------------------------------------

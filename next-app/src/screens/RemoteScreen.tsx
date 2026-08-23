@@ -7,8 +7,8 @@ import { Card } from '@/components/Card';
 import { LargeTitle } from '@/components/LargeTitle';
 import { RemoteButton } from '@/components/RemoteButton';
 import { Toggle } from '@/components/Toggle';
+import { tvIsOn, tvPowerPatch, TV_POWER_LOCK_MS } from '@/lib/tv-power';
 import type { RemoteButton as Btn, TvDevice } from '@/types/config';
-import type { FlagState } from '@/types/state';
 
 /** Key sizes. The pad and volume get the full-size key; the five transport keys
  *  have to sit on one row inside a card on a 375px phone (307px of usable width
@@ -39,7 +39,7 @@ export function RemoteScreen({ tvId }: { tvId?: string }) {
   }
 
   const { remote } = tv;
-  const on = (st[tv.id] as FlagState | undefined)?.on ?? false;
+  const on = tvIsOn(tv, st);
 
   // Each button carries its own target: volume belongs to the amp and the keys to
   // the source box, and a room can be split further still (the Studio's Apple TV
@@ -65,7 +65,13 @@ export function RemoteScreen({ tvId }: { tvId?: string }) {
       <LargeTitle
         title={tv.name.replace(/\s*TV\s*$/i, '') || tv.name}
         sub={on ? 'On' : 'Off'}
-        right={<Toggle on={on} onChange={(v) => setD(tv.id, { on: v })} aria-label={`${tv.name} power`} />}
+        right={
+          <Toggle
+            on={on}
+            onChange={(v) => setD(tv.powerId, tvPowerPatch(tv, v), TV_POWER_LOCK_MS)}
+            aria-label={`${tv.name} power`}
+          />
+        }
       />
 
       {/* D-pad — Back sits in the pad's bottom-right corner, where a real remote

@@ -233,6 +233,12 @@ export interface RemoteDevice {
   buttonsKnown: boolean;
 }
 
+/** One activity the hub can start. Index is this hub's SET_ACTIVITY value. */
+export interface RemoteActivity {
+  index: number;
+  name: string;
+}
+
 export interface RemoteConfig {
   /** Hub state id, e.g. "eisy0/n011_h1b97d7de5be5c". */
   hubId: string;
@@ -244,6 +250,11 @@ export interface RemoteConfig {
    *  no box in the room can perform, and the remote doesn't draw a key for it —
    *  the hub answers 404 for a button a device never learned. */
   routes: Partial<Record<RemoteButton, string>>;
+  /** Activities this hub can start, lowest index first. */
+  activities: RemoteActivity[];
+  /** The activity the room's power switch starts, or null when the hub
+   *  publishes none — off still works, on has nothing to start. */
+  powerOnActivity: number | null;
 }
 
 /** The 14 buttons the remote offers. Names match the Harmony button table. */
@@ -258,6 +269,13 @@ export type RemoteButton = typeof REMOTE_BUTTONS[number];
 export interface TvDevice extends SettingItem {
   /** Present when this room's TV has a Harmony hub behind it. */
   remote?: RemoteConfig;
+  /** Where power is read and written. The Harmony hub node where the room has
+   *  one — it is the only thing that knows the picture is actually on, and it
+   *  moves when the physical remote is used. Falls back to this TV's own
+   *  WP-authored EISY variable where there is no hub. */
+  powerId: string;
+  /** Activity to start when powering on. Set only when `powerId` is a hub. */
+  powerOnActivity?: number;
 }
 
 export type SceneRoomTypeKey = 'bedroom' | 'bath' | 'living' | 'utility' | 'hall';

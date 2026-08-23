@@ -33,7 +33,8 @@ export type DeviceClass =
   | 'leak-battery'
   | 'contact-battery'
   | 'pool-valve'
-  | 'harmony-device';
+  | 'harmony-device'
+  | 'harmony-hub';
 
 export interface DeviceEntry {
   /** 'device' = Insteon node; 'variable' = ISY integer/state variable */
@@ -47,8 +48,9 @@ export interface DeviceEntry {
   varId?: number;
   // contact-battery: stateId of the contact-sensor variable to patch with lowBattery
   linkedStateId?: string;
-  // harmony-device: friendly name and the hub (room) it hangs off, both straight
-  // from the Harmony plugin — these nodes have no WP control behind them.
+  // harmony-device / harmony-hub: friendly name and the hub (room) it hangs off,
+  // both straight from the Harmony plugin — these nodes have no WP control
+  // behind them.
   name?: string;
   hub?: string;
 }
@@ -118,6 +120,15 @@ export function nodeToState(
       // Write-only: IR is one-way, so a remote button has no readable state.
       // Reporting `on` here would invent a status the hub never confirms.
       return {};
+
+    case 'harmony-hub': {
+      // GV3 is the activity the hub is currently running (0 = Power Off). It is
+      // the one two-way signal the Harmony side gives us, and it moves whoever
+      // started the activity — the app, the physical remote, or the hub itself.
+      // Everything the room's power switch shows and sends hangs off it.
+      const activity = props.get('GV3') ?? 0;
+      return { on: activity > 0, activity };
+    }
 
     case 'pool-valve':
       return { on: st > 0 };
@@ -293,6 +304,22 @@ export function patchToNodeCommand(
     case 'pool-valve':
       if ('on' in patch) return { cmd: patch.on ? 'DON' : 'DOF' };
       return null;
+
+    case 'harmony-hub': {
+      // Power in Harmony is an activity, not a switch: starting one sequences
+      // the room's boxes and inputs, and the hub's own DOF ends whichever is
+      // running. `activity: 0` therefore means "power off", not "activity zero".
+      if ('activity' in patch) {
+        const idx = Number(patch.activity);
+        if (!Number.isFinite(idx)) return null;
+        return idx > 0 ? { cmd: 'SET_ACTIVITY', value: idx } : { cmd: 'DOF' };
+      }
+      // `on: false` is unambiguous on its own; `on: true` is not — which
+      // activity to start is the caller's to say, so it is dropped rather than
+      // guessed at.
+      if (patch.on === false) return { cmd: 'DOF' };
+      return null;
+    }
 
     case 'harmony-device': {
       // Momentary IR button — there is no state to converge on, so this is the

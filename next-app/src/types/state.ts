@@ -72,6 +72,13 @@ export interface FlagState {
   on: boolean;
 }
 
+/** A Harmony hub node. `activity` is the index it is running (0 = Power Off),
+ *  which is what `on` is derived from on both sides of the wire. */
+export interface HarmonyHubState {
+  on: boolean;
+  activity: number;
+}
+
 // ---------------------------------------------------------------------------
 // Pool controller node (PG3 Balboa plugin — EISY 0, n003_bow1)
 // ---------------------------------------------------------------------------
@@ -192,6 +199,7 @@ export type DeviceRecord =
   | MotionSensorState
   | OutdoorState
   | FlagState
+  | HarmonyHubState
   | PoolState
   | PoolNodeState
   | GlobalState
