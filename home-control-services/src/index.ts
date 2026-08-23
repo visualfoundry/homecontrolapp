@@ -260,6 +260,73 @@ async function checkLeakAlerts(): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// TV variables ⇄ Harmony hubs
+//
+// `_House_TV_<Room>_On` is how the rest of the house learns that a TV went on or
+// off — the room's lighting EISY gets it mirrored over a network resource, and
+// its programs work off that. The app used to write it, and does not any more:
+// power goes straight to the hub now, because the variable could not see a TV
+// turned on by hand and nothing guaranteed anything acted on a write to it.
+//
+// That leaves the variable with only the EISY's own `TV <Room> Harmony - On/Off`
+// programs behind it — sixteen of them, whose bodies aren't visible from here,
+// one per room per direction. Rather than trust all sixteen, converge the
+// variable on the hub we already poll every second. The variable stops being a
+// parallel belief about the room and becomes a restatement of the hub's own
+// answer, for every room at once.
+//
+// Writes go out only on a genuine disagreement, and only once the variable has
+// actually been read this run — never on the absence of information.
+// ---------------------------------------------------------------------------
+
+/** Hub state id → the value we last asked its variable to take, and when.
+ *  The EISY needs a poll cycle or two to report the write back; without this the
+ *  same command would be re-sent every second until it did. */
+const tvVarWrites = new Map<string, { want: boolean; at: number }>();
+
+/** How long to let a write settle before re-asserting it. Long enough to cover a
+ *  slow EISY, short enough that a genuinely lost write is retried. */
+const TV_VAR_SETTLE_MS = 15_000;
+
+async function syncTvVariables(): Promise<void> {
+  const snap = getSnapshot() as Record<string, Record<string, unknown> | undefined>;
+  const now = Date.now();
+
+  for (const [hubId, entry] of Object.entries(devices)) {
+    if (entry.class !== 'harmony-hub' || !entry.tvVarStateId) continue;
+
+    const hubOn = snap[hubId]?.on;
+    if (typeof hubOn !== 'boolean') continue; // hub not polled yet
+
+    const varEntry = devices[entry.tvVarStateId];
+    if (!varEntry || varEntry.varType == null || varEntry.varId == null) continue;
+
+    // A variable we have never read is not a variable we know disagrees.
+    const varOn = snap[entry.tvVarStateId]?.on;
+    if (typeof varOn !== 'boolean') continue;
+
+    if (varOn === hubOn) { tvVarWrites.delete(hubId); continue; }
+
+    const pending = tvVarWrites.get(hubId);
+    if (pending && pending.want === hubOn && now - pending.at < TV_VAR_SETTLE_MS) continue;
+
+    tvVarWrites.set(hubId, { want: hubOn, at: now });
+    const baseUrl = EISY_URLS[varEntry.eisyIdx];
+    try {
+      console.log(
+        `[tv-var] ${entry.name ?? hubId} is ${hubOn ? 'on' : 'off'} — setting ${entry.tvVarStateId} to ${hubOn ? 1 : 0}`,
+      );
+      await setVariable(baseUrl, varEntry.varType, varEntry.varId, hubOn ? 1 : 0);
+    } catch (err) {
+      // Clear the record so the next cycle retries rather than waiting out the
+      // settle window on a write that never left.
+      tvVarWrites.delete(hubId);
+      console.warn(`[tv-var] ${entry.tvVarStateId} FAILED:`, err instanceof Error ? err.message : err);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Polling loop
 // ---------------------------------------------------------------------------
 
@@ -344,6 +411,9 @@ async function pollAll(): Promise<void> {
   while (true) {
     const t0 = Date.now();
     await pollAll();
+    void syncTvVariables().catch((err: unknown) =>
+      console.warn('[tv-var] sync error:', err instanceof Error ? err.message : err),
+    );
     void checkBatteryAlerts();
     void checkLeakAlerts();
     const wait = Math.max(0, POLL_MS - (Date.now() - t0));

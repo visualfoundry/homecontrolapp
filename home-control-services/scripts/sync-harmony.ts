@@ -52,14 +52,26 @@ async function main() {
   const devicesPath = join(__dirname, '..', 'devices.json');
   const existing = JSON.parse(readFileSync(devicesPath, 'utf8')) as DevicesMap;
 
+  // The hub → TV-variable link is a WordPress join, and this script never reads
+  // WordPress. Carry it across the rewrite rather than dropping it, or a re-sync
+  // after a Harmony change would silently stop the variables tracking their hubs.
+  const tvVarByHub = new Map<string, string>();
   let removed = 0;
   for (const [id, entry] of Object.entries(existing)) {
     if (entry.class === 'harmony-device' || entry.class === 'harmony-hub') {
+      if (entry.tvVarStateId) tvVarByHub.set(id, entry.tvVarStateId);
       delete existing[id];
       removed++;
     }
   }
   Object.assign(existing, devices);
+
+  for (const [id, entry] of Object.entries(existing)) {
+    if (entry.class !== 'harmony-hub') continue;
+    const carried = tvVarByHub.get(id);
+    if (carried) entry.tvVarStateId = carried;
+    else console.warn(`  ~ hub "${entry.name ?? id}" has no TV variable linked — run: npm run export-devices`);
+  }
   writeFileSync(devicesPath, JSON.stringify(existing, null, 2));
   console.log(`Written: ${devicesPath} (-${removed} +${entryCount} harmony entries, ${Object.keys(existing).length} total)`);
 

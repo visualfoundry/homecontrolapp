@@ -53,6 +53,11 @@ export interface DeviceEntry {
   // behind them.
   name?: string;
   hub?: string;
+  // harmony-hub: state id of that room's `_House_TV_<Room>_On` variable, joined
+  // at export time on the WP place that matches the hub's name. The poller keeps
+  // it equal to the hub's activity so the rest of the EISY's automations can go
+  // on reading the variable. Absent when no WP TV control matches the hub.
+  tvVarStateId?: string;
 }
 
 export type DevicesMap = Record<string, DeviceEntry>;

@@ -2750,7 +2750,8 @@
     "eisyIdx": 0,
     "class": "harmony-hub",
     "address": "n011_h939cb7ca46ac7",
-    "name": "Studio"
+    "name": "Studio",
+    "tvVarStateId": "eisy0/var/19"
   },
   "eisy0/n011_d44381012": {
     "type": "device",
@@ -2773,7 +2774,8 @@
     "eisyIdx": 0,
     "class": "harmony-hub",
     "address": "n011_hbfeaaf3152cae",
-    "name": "Gym"
+    "name": "Gym",
+    "tvVarStateId": "eisy0/var/16"
   },
   "eisy0/n011_d52305979": {
     "type": "device",
@@ -2796,7 +2798,8 @@
     "eisyIdx": 0,
     "class": "harmony-hub",
     "address": "n011_h833a60c9aec88",
-    "name": "Cinema"
+    "name": "Cinema",
+    "tvVarStateId": "eisy0/var/20"
   },
   "eisy0/n011_d43720866": {
     "type": "device",
@@ -2867,7 +2870,8 @@
     "eisyIdx": 0,
     "class": "harmony-hub",
     "address": "n011_h4e08f566ecdbc",
-    "name": "Library"
+    "name": "Library",
+    "tvVarStateId": "eisy0/var/17"
   },
   "eisy0/n011_d48157575": {
     "type": "device",
@@ -2898,7 +2902,8 @@
     "eisyIdx": 0,
     "class": "harmony-hub",
     "address": "n011_h22cdb361d3f66",
-    "name": "Guest Room"
+    "name": "Guest Room",
+    "tvVarStateId": "eisy0/var/15"
   },
   "eisy0/n011_d48156545": {
     "type": "device",
@@ -2921,7 +2926,8 @@
     "eisyIdx": 0,
     "class": "harmony-hub",
     "address": "n011_h78ca68afcf62d",
-    "name": "Master Bedroom"
+    "name": "Master Bedroom",
+    "tvVarStateId": "eisy0/var/18"
   },
   "eisy0/n011_d48157329": {
     "type": "device",
@@ -2960,7 +2966,8 @@
     "eisyIdx": 0,
     "class": "harmony-hub",
     "address": "n011_h1b97d7de5be5c",
-    "name": "Living Room"
+    "name": "Living Room",
+    "tvVarStateId": "eisy0/var/21"
   },
   "eisy0/n011_d76709738": {
     "type": "device",
@@ -3007,7 +3014,8 @@
     "eisyIdx": 0,
     "class": "harmony-hub",
     "address": "n011_h6af922be8b827",
-    "name": "Pergola"
+    "name": "Pergola",
+    "tvVarStateId": "eisy0/var/22"
   },
   "eisy0/n011_d58422434": {
     "type": "device",

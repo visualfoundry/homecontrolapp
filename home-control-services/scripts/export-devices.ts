@@ -51,6 +51,13 @@ const CONTROLS_QUERY = /* GraphQL */ `
               }
             }
           }
+          controlPlace {
+            nodes {
+              ... on Place {
+                title
+              }
+            }
+          }
         }
       }
     }
@@ -68,6 +75,9 @@ interface ControlNode {
     controlVariableHardwareValueOpen: number | null;
     controlVariableHardwareValueClose: number | null;
     controlType: {
+      nodes: Array<{ title: string }>;
+    } | null;
+    controlPlace: {
       nodes: Array<{ title: string }>;
     } | null;
   } | null;
@@ -278,6 +288,50 @@ async function probeVariableTypes(
 }
 
 // ---------------------------------------------------------------------------
+// Harmony hub → that room's TV variable
+//
+// The hub knows the room by the name it carries in the Harmony app; WordPress
+// knows it by place. Joining the two is what lets the poller keep
+// `_House_TV_<Room>_On` equal to the hub's activity, which is the only reason
+// anything else on the EISYs still learns that a TV went on or off.
+// ---------------------------------------------------------------------------
+
+/** WP place → Harmony hub name, where the two don't match verbatim.
+ *  Mirrors HUB_ALIASES in next-app/src/lib/config.ts — separate packages, so the
+ *  table is stated twice; keep them in step. */
+const HUB_ALIASES: Record<string, string> = {
+  'Guest Bedroom': 'Guest Room',
+};
+
+function linkTvVariables(devices: DevicesMap, controls: ControlNode[]): void {
+  // Hub name → the state id of that place's TV control.
+  const tvVarByHubName = new Map<string, string>();
+  for (const c of controls) {
+    const cf = c.controlFields;
+    if ((cf?.controlType?.nodes[0]?.title ?? '') !== 'TV') continue;
+    const place = cf?.controlPlace?.nodes[0]?.title;
+    if (!place || cf?.controlVariableId == null) continue;
+    const eisyIdx = cf.controlIsy?.[0] ?? '0';
+    tvVarByHubName.set(HUB_ALIASES[place] ?? place, `eisy${eisyIdx}/var/${cf.controlVariableId}`);
+  }
+
+  for (const [hubId, entry] of Object.entries(devices)) {
+    if (entry.class !== 'harmony-hub' || !entry.name) continue;
+    const varStateId = tvVarByHubName.get(entry.name);
+    if (!varStateId) {
+      console.warn(`  ~ hub "${entry.name}" has no WP TV control — its variable won't be kept in step`);
+      continue;
+    }
+    if (!devices[varStateId]) {
+      console.warn(`  ~ hub "${entry.name}" → ${varStateId}, which is not in devices.json`);
+      continue;
+    }
+    entry.tvVarStateId = varStateId;
+    console.log(`    ${entry.name} → ${varStateId}`);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
@@ -302,6 +356,8 @@ async function main() {
     const { devices: harmony, catalog } = await discoverHarmony(EISY_URLS[0], 0);
     Object.assign(devices, harmony);
     console.log(`  ${Object.keys(harmony).length} harmony devices across ${catalog.hubs.length} hubs`);
+    console.log('  Linking hubs to their TV variables…');
+    linkTvVariables(devices, controls);
   } catch (err) {
     console.warn('  Harmony discovery failed (continuing):', err instanceof Error ? err.message : err);
   }
