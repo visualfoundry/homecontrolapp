@@ -12,6 +12,7 @@ import { Avatar } from '@/components/Avatar';
 import { getAvatarPhoto, setAvatarPhoto } from '@/lib/avatar-photos';
 import { LargeTitle } from '@/components/LargeTitle';
 import { LeakAlertBanner } from '@/components/LeakAlertBanner';
+import { ServiceHealthBanner } from '@/components/ServiceHealth';
 import { iconBtn, pillBtn, stepBtn } from '@/lib/styles';
 import { Slider } from '@/components/Slider';
 import { SceneRoomCard } from '@/components/SceneRoomCard';
@@ -798,6 +799,10 @@ export function HomeScreen() {
     <div>
       {/* Above the greeting on purpose — a leak outranks everything else here. */}
       <LeakAlertBanner />
+
+      {/* Under the leak, over everything else: it says the readings below may not
+          be true, which is worth knowing before reading them. */}
+      <ServiceHealthBanner />
 
       <LargeTitle title={greeting} titleSize={greetingSize} sub="The House"
         right={
