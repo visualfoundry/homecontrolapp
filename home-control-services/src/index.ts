@@ -24,6 +24,9 @@ import { dirname, join } from 'node:path';
 import { PORT, EISY_URLS, POLL_MS, NEXT_APP_URL, HCA_INTERNAL_KEY } from './config.js';
 import { getNodeStatus, getVariables, sendNodeCommand, setVariable } from './eisy-client.js';
 import { applyPatch, getSnapshot, subscribe } from './state-store.js';
+import {
+  notePollOk, notePollFailed, noteCommandFailed, noteCommandOk, publishHealth,
+} from './health.js';
 import { nodeToState, varToState, patchToNodeCommand, type DevicesMap } from './state-mapper.js';
 import { readFileSync } from 'node:fs';
 
@@ -397,8 +400,15 @@ async function pollEisy(eisyIdx: number): Promise<void> {
 async function pollAll(): Promise<void> {
   await Promise.allSettled(
     EISY_URLS.map((_, idx) =>
-      pollEisy(idx).catch((err: unknown) =>
-        console.warn(`[eisy${idx}] poll error:`, err instanceof Error ? err.message : err),
+      pollEisy(idx).then(
+        () => notePollOk(idx),
+        (err: unknown) => {
+          // A sweep that throws leaves this EISY's values in the cache exactly as
+          // the last good one left them, which is why the failure has to be
+          // recorded rather than only logged — see health.ts.
+          notePollFailed(idx, err);
+          console.warn(`[eisy${idx}] poll error:`, err instanceof Error ? err.message : err);
+        },
       ),
     ),
   );
@@ -411,6 +421,7 @@ async function pollAll(): Promise<void> {
   while (true) {
     const t0 = Date.now();
     await pollAll();
+    publishHealth();
     void syncTvVariables().catch((err: unknown) =>
       console.warn('[tv-var] sync error:', err instanceof Error ? err.message : err),
     );
@@ -533,7 +544,14 @@ app.post('/command', (req: Request, res: Response) => {
         await setVariable(baseUrl, entry.varType, entry.varId, val);
         console.log(`[command] var ${body.target} ✓`);
       }
+      // Nothing refused it, so retire any warning still standing for this device.
+      noteCommandOk(body.target);
     } catch (err) {
+      // The 202 has already gone out, so this is the only route back to the
+      // client — without it the optimistic value just expires and the control
+      // slides back with no reason given.
+      noteCommandFailed(body.target, err);
+      publishHealth();
       console.warn(
         `[command] ${body.target} FAILED:`,
         err instanceof Error ? err.message : err,

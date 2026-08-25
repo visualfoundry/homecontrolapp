@@ -72,6 +72,25 @@ export interface FlagState {
   on: boolean;
 }
 
+/**
+ * Service health, published by the state service under `_health`.
+ *
+ * Flat by necessity, not by preference — the service's patch store compares
+ * fields with `!==`, so a nested object would read as changed on every cycle.
+ */
+export interface HealthState {
+  /** Comma-joined EISY indexes with no complete sweep inside the stale window. */
+  staleEisys: string;
+  degraded: boolean;
+  /** Seconds since the worst-affected EISY last answered. */
+  staleSeconds: number;
+  /** Most recent command the EISY refused — state id, reason, ISO timestamp.
+   *  Empty strings when there is nothing outstanding. */
+  cmdErrTarget: string;
+  cmdErrReason: string;
+  cmdErrAt: string;
+}
+
 /** A Harmony hub node. `activity` is the index it is running (0 = Power Off),
  *  which is what `on` is derived from on both sides of the wire. */
 export interface HarmonyHubState {
@@ -200,6 +219,7 @@ export type DeviceRecord =
   | OutdoorState
   | FlagState
   | HarmonyHubState
+  | HealthState
   | PoolState
   | PoolNodeState
   | GlobalState

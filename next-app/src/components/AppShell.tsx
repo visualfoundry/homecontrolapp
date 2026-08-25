@@ -22,6 +22,7 @@ import { MiniPlayer } from '@/components/MiniPlayer';
 import { TabBar } from '@/components/TabBar';
 import { Sidebar } from '@/components/Sidebar';
 import { BackButton } from '@/components/BackButton';
+import { ServiceHealthBanner } from '@/components/ServiceHealthBanner';
 import { isTabSlot } from '@/lib/sections';
 import type { AppConfig } from '@/types/config';
 import { HomeScreen } from '@/screens/HomeScreen';
@@ -219,6 +220,11 @@ function Shell() {
         >
           <ScreenRenderer id={current} />
         </div>
+
+        {/* Below the scroll area on purpose: commands are sent from every screen,
+            so this has to be visible from every screen and must not be
+            scrollable out of sight while it still applies. */}
+        <ServiceHealthBanner />
 
         {/* Mini player — hidden on Music screen; MiniPlayer handles its own null state */}
         {current !== 'music' && <MiniPlayer />}

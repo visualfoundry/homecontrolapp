@@ -520,6 +520,13 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     if (sid) controlStateIds[toId(n)] = sid;
   }
 
+  // --- Config id → WP title -------------------------------------------------
+  // Names live on whichever section list a control ended up in, so there is no
+  // one place to ask "what is this id called". The health banner needs exactly
+  // that: it is handed a state id by the service and has to say which device.
+  const controlNames: Record<string, string> = {};
+  for (const n of controls) controlNames[toId(n)] = n.title;
+
   // --- House Status (time-of-day) variable ----------------------------------
   // Single numeric variable (WP post 473): value 1=Morning, 2=Day, 3=Evening, 4=Night.
   const houseStatusControl = controls.find(n => n.databaseId === 473);
@@ -656,6 +663,7 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     garageSceneId,
     controlPlaces,
     controlStateIds,
+    controlNames,
     weatherTempId:       weatherTempId       ?? null,
     weatherHighId:       weatherHighId       ?? null,
     weatherLowId:        weatherLowId        ?? null,

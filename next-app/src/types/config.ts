@@ -323,6 +323,8 @@ export interface AppConfig {
   favCatalog: FavGroup[];
   /** Device id → place (room) title. Used to assemble per-place room pages. */
   controlPlaces: Record<string, string>;
+  /** Config id → the control's WP title. Lets a bare state id be named in the UI. */
+  controlNames: Record<string, string>;
   /** Config id (databaseId) → state-service id (ISY device address or variable id).
    *  Used by the /api proxy to reconcile config ids with state ids. */
   controlStateIds: Record<string, string>;
