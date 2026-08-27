@@ -70,13 +70,54 @@ function ToggleList({ items }: { items: SettingItem[] }) {
   );
 }
 
-function InstallAppCard() {
+/** The house network, named so the Wi-Fi step can be followed without guessing.
+ *  Only used as copy — nothing keys off it. */
+const HOUSE_SSID = 'The Dixons Net';
+
+/** One numbered step of the setup walkthrough. */
+function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
+  return (
+    <li style={{ display: 'grid', gridTemplateColumns: '26px 1fr', gap: 12, alignItems: 'start' }}>
+      <span
+        aria-hidden
+        style={{
+          width: 26, height: 26, borderRadius: 13, background: 'var(--accent)', color: '#fff',
+          display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 700, marginTop: 1,
+        }}
+      >
+        {n}
+      </span>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 15, fontWeight: 620, color: 'var(--text)', marginBottom: 4 }}>{title}</div>
+        <div style={{ fontSize: 13.5, color: 'var(--text2)', lineHeight: 1.55 }}>{children}</div>
+      </div>
+    </li>
+  );
+}
+
+const B = ({ children }: { children: React.ReactNode }) => (
+  <strong style={{ color: 'var(--text)' }}>{children}</strong>
+);
+
+/**
+ * Everything a new phone needs, in the order it has to happen.
+ *
+ * This used to be two cards — certificate and install — and the two steps that
+ * actually cause trouble were in neither. The Wi-Fi address setting is first
+ * because it is the one that fails silently: skip it and the phone still works
+ * perfectly, but its address rotates within days and presence reports that person
+ * away with nothing to show why. The device assignment is last because it can only
+ * be done once the phone has joined the network at least once.
+ */
+function DeviceSetupCard() {
+  const [certUrl, setCertUrl] = React.useState('http://app.dixons.net/mkcert-ca.pem');
   const [installed, setInstalled] = React.useState(false);
   const [isIos, setIsIos] = React.useState(false);
   const [deferredPrompt, setDeferredPrompt] = React.useState<Event & { prompt(): Promise<void> } | null>(null);
   const [prompted, setPrompted] = React.useState(false);
 
   React.useEffect(() => {
+    setCertUrl(`http://${window.location.hostname}/mkcert-ca.pem`);
     setInstalled(window.matchMedia('(display-mode: standalone)').matches);
     setIsIos(/iphone|ipad|ipod/i.test(navigator.userAgent));
 
@@ -88,101 +129,90 @@ function InstallAppCard() {
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
-  if (installed) {
-    return (
-      <Card>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 22 }}>✓</span>
-          <span style={{ fontSize: 15, color: 'var(--text2)', lineHeight: 1.4 }}>
-            App is installed and running in standalone mode.
-          </span>
-        </div>
-      </Card>
-    );
-  }
-
-  if (isIos) {
-    return (
-      <Card>
-        <p style={{ margin: 0, fontSize: 14, color: 'var(--text2)', lineHeight: 1.6 }}>
-          In Safari, tap the{' '}
-          <strong style={{ color: 'var(--text)' }}>Share</strong> button
-          {' '}(the box with an arrow), then choose{' '}
-          <strong style={{ color: 'var(--text)' }}>Add to Home Screen</strong>.
-          The app will open full-screen without the browser bar.
-        </p>
-      </Card>
-    );
-  }
-
-  if (deferredPrompt && !prompted) {
-    return (
-      <Card>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <p style={{ margin: 0, fontSize: 14, color: 'var(--text2)', lineHeight: 1.5 }}>
-            Install Home Control as an app for quick access from your home screen.
-          </p>
-          <button
-            onClick={() => {
-              deferredPrompt.prompt();
-              setPrompted(true);
-            }}
-            style={{
-              padding: '10px 20px',
-              background: 'var(--accent)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 10,
-              fontSize: 15,
-              fontWeight: 600,
-              cursor: 'pointer',
-              alignSelf: 'center',
-            }}
-          >
-            Install App
-          </button>
-        </div>
-      </Card>
-    );
-  }
-
   return (
     <Card>
-      <p style={{ margin: 0, fontSize: 14, color: 'var(--text2)', lineHeight: 1.5 }}>
-        Open this page in your device&apos;s browser and use the browser menu to add it to your home screen.
-      </p>
-    </Card>
-  );
-}
+      <ol style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-function CertInstallCard() {
-  const [certUrl, setCertUrl] = React.useState('http://app.dixons.net/mkcert-ca.pem');
-  React.useEffect(() => {
-    setCertUrl(`http://${window.location.hostname}/mkcert-ca.pem`);
-  }, []);
+        <Step n={1} title="Turn off the private Wi-Fi address">
+          On the phone: <B>Settings → Wi-Fi</B>, tap the <B>ⓘ</B> beside{' '}
+          <B>{HOUSE_SSID}</B>, and set <B>Private Wi-Fi Address</B> to <B>Off</B>.
+          <div style={{ marginTop: 6 }}>
+            This is per-network — every other Wi-Fi network stays private, so nothing
+            changes in cafés or hotels. Without it the phone changes address every few
+            days and the house stops recognising it. Leave{' '}
+            <B>Limit IP Address Tracking</B> switched on; it is unrelated.
+          </div>
+          <div style={{ marginTop: 6 }}>
+            On Android: <B>Wi-Fi → {HOUSE_SSID} → Privacy → Use device MAC</B>.
+          </div>
+        </Step>
 
-  return (
-    <Card>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-        <p style={{ margin: 0, fontSize: 14, color: 'var(--text2)', textAlign: 'center', lineHeight: 1.5 }}>
-          To use this app on an iOS device, install the security certificate once in Safari.
-        </p>
-        <div style={{ padding: 12, background: '#fff', borderRadius: 10 }}>
-          <QRCodeSVG value={certUrl} size={160} />
-        </div>
-        <ol style={{ margin: 0, padding: '0 0 0 18px', fontSize: 13, color: 'var(--text2)', lineHeight: 1.7, alignSelf: 'stretch' }}>
-          <li>Scan the QR code with your camera, then tap the link to open it in <strong style={{ color: 'var(--text)' }}>Safari</strong>.</li>
-          <li>Tap <strong style={{ color: 'var(--text)' }}>Allow</strong> when prompted to download the profile.</li>
-          <li>Go to <strong style={{ color: 'var(--text)' }}>Settings → General → VPN &amp; Device Management</strong>, tap the profile, then tap <strong style={{ color: 'var(--text)' }}>Install</strong>.</li>
-          <li>Go to <strong style={{ color: 'var(--text)' }}>Settings → General → About → Certificate Trust Settings</strong> and enable full trust for the mkcert certificate.</li>
-        </ol>
-        <a
-          href={certUrl}
-          style={{ fontSize: 12, color: 'var(--accent)', fontFamily: 'monospace', wordBreak: 'break-all', textAlign: 'center' }}
-        >
-          {certUrl}
-        </a>
-      </div>
+        <Step n={2} title="Install the security certificate">
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, margin: '8px 0 10px' }}>
+            <div style={{ padding: 12, background: '#fff', borderRadius: 10 }}>
+              <QRCodeSVG value={certUrl} size={150} />
+            </div>
+            <a
+              href={certUrl}
+              style={{ fontSize: 11.5, color: 'var(--accent)', fontFamily: 'monospace', wordBreak: 'break-all', textAlign: 'center' }}
+            >
+              {certUrl}
+            </a>
+          </div>
+          <ol style={{ margin: 0, padding: '0 0 0 17px', lineHeight: 1.65 }}>
+            <li>Scan the code with the camera, then open the link in <B>Safari</B>.</li>
+            <li>Tap <B>Allow</B> to download the profile.</li>
+            <li><B>Settings → General → VPN &amp; Device Management</B>, tap the profile, tap <B>Install</B>.</li>
+            <li><B>Settings → General → About → Certificate Trust Settings</B>, and turn on full trust for mkcert.</li>
+          </ol>
+        </Step>
+
+        <Step n={3} title="Add the app to the home screen">
+          {installed ? (
+            <span style={{ color: 'var(--green)', fontWeight: 600 }}>✓ Already installed on this device.</span>
+          ) : isIos ? (
+            <>
+              In Safari, tap <B>Share</B> (the box with an arrow), then{' '}
+              <B>Add to Home Screen</B>. It opens full-screen with no browser bar, and
+              push notifications only work once it is installed.
+            </>
+          ) : deferredPrompt && !prompted ? (
+            <>
+              <div style={{ marginBottom: 10 }}>Install Home Control for quick access from the home screen.</div>
+              <button
+                onClick={() => { deferredPrompt.prompt(); setPrompted(true); }}
+                style={{
+                  padding: '9px 18px', background: 'var(--accent)', color: '#fff', border: 'none',
+                  borderRadius: 10, fontSize: 14.5, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                Install App
+              </button>
+            </>
+          ) : (
+            <>Open this page in the device&rsquo;s browser and use the browser menu to add it to the home screen.</>
+          )}
+        </Step>
+
+        <Step n={4} title="Sign in and turn on Face ID">
+          Open the installed app and sign in with the person&rsquo;s WordPress account.
+          It then offers to save a passkey — accept, and from then on it is Face ID
+          rather than a password. Passkeys belong to one device, so this happens again
+          on each new phone.
+        </Step>
+
+        <Step n={5} title="Assign the phone to a person">
+          Last, because the phone has to have joined the Wi-Fi at least once to appear.
+          In <B>Settings → Presence Links → Wi-Fi presence</B> on an account that can
+          reach it, tick the new phone against its owner — and untick the phone it
+          replaces, whose address is now dead.
+          <div style={{ marginTop: 6 }}>
+            Until this is done that person will read as away whenever they are out of
+            reach of the geofence, however well the rest of the setup went.
+          </div>
+        </Step>
+
+      </ol>
     </Card>
   );
 }
@@ -620,13 +650,8 @@ export function SettingsScreen() {
       </div>
 
       <div style={{ marginTop: 22 }}>
-        <SectionTitle>Install App</SectionTitle>
-        <InstallAppCard />
-      </div>
-
-      <div style={{ marginTop: 22 }}>
-        <SectionTitle>Install Certificate</SectionTitle>
-        <CertInstallCard />
+        <SectionTitle>Set Up a New Device</SectionTitle>
+        <DeviceSetupCard />
       </div>
 
       <div style={{ marginTop: 22 }}>
