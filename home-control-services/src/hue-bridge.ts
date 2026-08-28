@@ -292,12 +292,13 @@ export function startHueBridge(): void {
   const app = express();
   app.use(express.json({ type: () => true }));
 
-  // Hub chatter is the only way to see what it actually sends, and the shape of
-  // a brightness key press is the thing most likely to need tuning.
+  // Hub chatter is the only way to see what it actually sends. Log every
+  // request, not just writes: whether a hub fetches description.xml after an
+  // SSDP reply is the difference between "it never saw us" and "it saw us and
+  // walked away", and the volume is a handful of requests a minute at worst.
   app.use((req, _res, next) => {
-    if (req.method !== 'GET') {
-      console.log(`[hue] ${req.method} ${req.path} ${JSON.stringify(req.body ?? {})}`);
-    }
+    const body = req.method === 'GET' ? '' : ` ${JSON.stringify(req.body ?? {})}`;
+    console.log(`[hue] <- ${req.ip ?? '?'} ${req.method} ${req.originalUrl}${body}`);
     next();
   });
 
