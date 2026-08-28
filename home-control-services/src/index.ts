@@ -21,7 +21,8 @@ import cors from 'cors';
 import { createReadStream } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { PORT, EISY_URLS, POLL_MS, NEXT_APP_URL, HCA_INTERNAL_KEY } from './config.js';
+import { PORT, EISY_URLS, POLL_MS, NEXT_APP_URL, HCA_INTERNAL_KEY, HUE_ENABLED } from './config.js';
+import { startHueBridge, openLinkWindow, linkStatus } from './hue-bridge.js';
 import { getNodeStatus, getVariables, sendNodeCommand, setVariable } from './eisy-client.js';
 import { applyPatch, getSnapshot, subscribe } from './state-store.js';
 import {
@@ -560,9 +561,40 @@ app.post('/command', (req: Request, res: Response) => {
   })();
 });
 
+// ---------------------------------------------------------------------------
+// Hue bridge pairing
+//
+// The bridge itself answers on its own port; only the link window is exposed
+// here, because that port is unauthenticated by necessity — a Harmony hub has
+// no way to present a credential. Opening the window is the one privileged act,
+// so it sits behind the same door as everything else.
+// ---------------------------------------------------------------------------
+
+app.post('/hue/link', (_req: Request, res: Response) => {
+  if (!HUE_ENABLED) { res.status(404).json({ error: 'hue bridge disabled' }); return; }
+  const ms = openLinkWindow();
+  res.json({ ok: true, windowMs: ms, ...linkStatus() });
+});
+
+app.get('/hue/link', (_req: Request, res: Response) => {
+  if (!HUE_ENABLED) { res.status(404).json({ error: 'hue bridge disabled' }); return; }
+  res.json(linkStatus());
+});
+
 app.listen(PORT, () => {
   console.log(`home-control-service listening on :${PORT}`);
-  console.log(`  /state   GET  full snapshot`);
-  console.log(`  /stream  GET  SSE patch stream`);
-  console.log(`  /command POST device commands`);
+  console.log(`  /state    GET  full snapshot`);
+  console.log(`  /stream   GET  SSE patch stream`);
+  console.log(`  /command  POST device commands`);
+  console.log(`  /hue/link POST open Hue pairing window`);
 });
+
+// Never let the bridge take the house down with it: controlling the lights from
+// the app matters more than controlling them from the remote.
+if (HUE_ENABLED) {
+  try {
+    startHueBridge();
+  } catch (e) {
+    console.error('[hue] bridge failed to start — state service continues without it:', e);
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "//": "Lights this service presents to Harmony as a Philips Hue bridge.",
+  "//eisy": "eisy is the index into EISY_URLS (0-4). varType 1 = integer, 2 = state.",
+  "//steps": "Top value of the step scale; 0 is always off. Cinema is 0/1/2, Living Room 0-5.",
+  "lights": [
+    {
+      "id": 1,
+      "name": "Cinema Lights",
+      "eisy": 3,
+      "varType": 2,
+      "varId": 201,
+      "steps": 2
+    },
+    {
+      "id": 2,
+      "name": "Living Room Lights",
+      "eisy": 1,
+      "varType": 2,
+      "varId": 225,
+      "steps": 5
+    }
+  ]
+}
