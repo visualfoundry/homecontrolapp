@@ -107,7 +107,7 @@ const UUID = `2f402f80-da50-11e1-9b23-${MAC.replace(/:/g, '')}`;
 // hub.
 // ---------------------------------------------------------------------------
 
-const LINK_WINDOW_MS = 120_000;
+const LINK_WINDOW_MS = 300_000;
 const STATE_FILE = join(ROOT, 'hue-state.json');
 
 interface HueState { users: string[] }
@@ -441,6 +441,18 @@ function ssdpReply(st: string): Buffer {
   );
 }
 
+const SEARCH_LOG_MS = 60_000;
+const seenSearch = new Map<string, number>();
+
+/** Log an inbound M-SEARCH, at most once a minute per source and target. */
+function noteSearch(ip: string, st: string, matched: boolean): void {
+  const key = `${ip}|${st}`;
+  const now = Date.now();
+  if (now - (seenSearch.get(key) ?? 0) < SEARCH_LOG_MS) return;
+  seenSearch.set(key, now);
+  console.log(`[hue] M-SEARCH from ${ip} ST=${st || '(none)'} -> ${matched ? 'replied' : 'ignored'}`);
+}
+
 function startSsdp(): void {
   const sock = dgram.createSocket({ type: 'udp4', reuseAddr: true });
 
@@ -452,7 +464,9 @@ function startSsdp(): void {
     const text = msg.toString('utf8');
     if (!text.startsWith('M-SEARCH')) return;
     const st = (/^ST:[ \t]*(.+)$/im.exec(text)?.[1] ?? '').trim().toLowerCase();
-    if (!MATCHING_ST.has(st)) return;
+    const matched = MATCHING_ST.has(st);
+    noteSearch(rinfo.address, st, matched);
+    if (!matched) return;
 
     // Real bridges answer more than once — the multicast reply is cheap and UDP
     // loss during a hub's discovery burst is common.
