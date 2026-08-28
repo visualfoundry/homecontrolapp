@@ -1,4 +1,16 @@
-// Home Control App — Service Worker
+// Home Control App — Service Worker (SOURCE TEMPLATE)
+//
+// This is the file to edit. `scripts/build-sw.mjs` stamps __HCA_BUILD_ID__ with
+// the Next.js build id and writes the result to public/sw.js, which is generated
+// and git-ignored. Editing public/sw.js directly loses the change on next build.
+//
+// The stamp is the whole point: an installed PWA is resumed, never re-navigated,
+// so the only thing that can hand it a new build is a byte-changed service
+// worker (SwRegistrar calls reg.update() on every resume, and reloads the page
+// when the new worker claims it). A hand-written sw.js is identical on every
+// deploy, so update() finds nothing and the phone runs its original build until
+// someone force-quits it.
+//
 // Strategies:
 //   /_next/static/ → cache-first (immutable, content-hashed)
 //   /api/state     → network-first, cache offline fallback (last-known state)
@@ -7,12 +19,22 @@
 //   navigate       → network-first, fall back to cached shell
 //   everything else→ stale-while-revalidate
 
-const CACHE = 'hca-v1';
+// Stamped at build time — see the header.
+const BUILD = '__HCA_BUILD_ID__';
+// Naming the cache after the build is what makes `activate` below evict. A fixed
+// name meant the eviction filter never matched anything, so every build's
+// content-hashed chunks accumulated forever until iOS refused further writes.
+const CACHE = `hca-${BUILD}`;
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
+    // Precache the shell so the navigate fallback has something to serve, but
+    // never let that decide whether this worker installs. Failing the install
+    // (a deploy landing while the phone is off the network) would strand the
+    // app on its previous build — the exact thing the build stamp exists to fix.
     caches.open(CACHE)
       .then((c) => c.addAll(['/']))
+      .catch(() => {})
       .then(() => self.skipWaiting())
   );
 });
@@ -55,10 +77,18 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(
       fetch(e.request)
         .then((r) => {
-          if (r.ok) caches.open(CACHE).then((c) => c.put(e.request, r.clone()));
+          if (r.ok) void putSafe(e.request, r.clone());
           return r;
         })
-        .catch(() => caches.match('/'))
+        // Offline. The precached shell is this build's own, so its chunk URLs
+        // still resolve; resolving to undefined here would be a network error.
+        .catch(async () =>
+          (await caches.match('/')) ??
+          new Response('<!doctype html><meta charset="utf-8"><title>Offline</title>', {
+            status: 503,
+            headers: { 'Content-Type': 'text/html; charset=utf-8' },
+          })
+        )
     );
     return;
   }
@@ -91,11 +121,22 @@ async function cacheFirst(req) {
   const cached = await caches.match(req);
   if (cached) return cached;
   const r = await fetch(req);
-  if (r.ok) {
-    const c = await caches.open(CACHE);
-    c.put(req, r.clone());
-  }
+  // Storing is best-effort. The cache is never versioned, so it accumulates
+  // every build's chunks until iOS refuses the write — and an unguarded put()
+  // rejects the promise handed to respondWith, which fails the asset itself.
+  // A script that won't load is a blank app; a script that loads uncached isn't.
+  if (r.ok) await putSafe(req, r.clone());
   return r;
+}
+
+/** caches.put that never turns a storage failure into a failed response. */
+async function putSafe(req, res) {
+  try {
+    const c = await caches.open(CACHE);
+    await c.put(req, res);
+  } catch {
+    // Quota exceeded or storage evicted — serving the response still matters.
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -265,7 +306,7 @@ async function staleWhileRevalidate(req) {
   const c = await caches.open(CACHE);
   const cached = await c.match(req);
   const fresh = fetch(req).then((r) => {
-    if (r.ok) c.put(req, r.clone());
+    if (r.ok) void putSafe(req, r.clone());
     return r;
   });
   return cached ?? fresh;

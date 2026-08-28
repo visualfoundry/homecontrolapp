@@ -10,7 +10,8 @@
 // - optional leading icon that inverts color when fill is over it
 // =============================================================================
 
-import React, { useCallback, useRef } from 'react';
+
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 interface SliderProps {
   value: number;
@@ -26,6 +27,15 @@ interface SliderProps {
   disabled?: boolean;
   'aria-label'?: string;
 }
+
+/** Longest a drag may go without telling the parent. Without this the slider
+ *  emits a value per pointermove — dozens a second, and on every screen that
+ *  wires `onChange` straight to `setD` that is a command POST each. One drag of
+ *  the Music screen's global volume (which fans out to every active zone) has
+ *  put 38 commands on the wire inside two seconds. Beyond hammering the hub,
+ *  that floods the handful of connections Safari allows the origin over
+ *  HTTP/1.1, and requests caught by a suspend never give theirs back. */
+const EMIT_MS = 100;
 
 export function Slider({
   value,
@@ -44,19 +54,34 @@ export function Slider({
   const ref = useRef<HTMLDivElement>(null);
   const decimals = (String(step).split('.')[1] ?? '').length;
   const lastVal = useRef<number>(value);
+  const emitted = useRef<number>(value);
+  const emitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // What the track paints mid-drag. This leads the parent's `value` so the fill
+  // still follows the finger every move while `onChange` is rate-limited.
+  const [dragVal, setDragVal] = useState<number | null>(null);
 
-  const compute = useCallback(
-    (clientX: number) => {
+  const emit = useCallback((v: number) => {
+    if (emitTimer.current) { clearTimeout(emitTimer.current); emitTimer.current = null; }
+    if (emitted.current === v) return;
+    emitted.current = v;
+    onChange?.(v);
+  }, [onChange]);
+
+  useEffect(() => () => {
+    if (emitTimer.current) clearTimeout(emitTimer.current);
+  }, []);
+
+  /** Snap a pointer x to a value, clamped to the track. */
+  const valueAt = useCallback(
+    (clientX: number): number | null => {
       const el = ref.current;
-      if (!el) return;
+      if (!el) return null;
       const r = el.getBoundingClientRect();
       const p = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
       const raw = min + p * (max - min);
-      const snapped = Number((Math.round(raw / step) * step).toFixed(decimals));
-      lastVal.current = snapped;
-      onChange?.(snapped);
+      return Number((Math.round(raw / step) * step).toFixed(decimals));
     },
-    [onChange, min, max, step, decimals],
+    [min, max, step, decimals],
   );
 
   const handlePointerDown = useCallback(
@@ -64,53 +89,72 @@ export function Slider({
       if (disabled) return;
       e.preventDefault();
       e.stopPropagation();
-      compute(e.clientX);
 
-      const move = (ev: PointerEvent) => compute(ev.clientX);
+      const press = valueAt(e.clientX);
+      if (press === null) return;
+      lastVal.current = press;
+      setDragVal(press);
+      emit(press); // the press itself is a deliberate act — land it at once
+
+      const move = (ev: PointerEvent) => {
+        const v = valueAt(ev.clientX);
+        if (v === null || v === lastVal.current) return;
+        lastVal.current = v;
+        setDragVal(v);
+        if (emitTimer.current) return; // an emission is already due
+        emitTimer.current = setTimeout(() => {
+          emitTimer.current = null;
+          emit(lastVal.current);
+        }, EMIT_MS);
+      };
       const up = () => {
         window.removeEventListener('pointermove', move);
         window.removeEventListener('pointerup', up);
+        window.removeEventListener('pointercancel', up);
+        emit(lastVal.current); // whatever is under the finger at release wins
+        setDragVal(null);
         onCommit?.(lastVal.current);
       };
       window.addEventListener('pointermove', move);
       window.addEventListener('pointerup', up);
+      window.addEventListener('pointercancel', up);
     },
-    [disabled, compute, onCommit],
+    [disabled, valueAt, emit, onCommit],
   );
 
-  const pct = ((value - min) / (max - min)) * 100;
+  /** Arrow keys move by one step. Computed from `value` directly rather than by
+   *  mapping a synthetic x back through the track, which re-snapped and could
+   *  lose a step at either end. */
+  const nudge = useCallback(
+    (dir: 1 | -1) => {
+      const next = Number(
+        Math.max(min, Math.min(max, value + dir * step)).toFixed(decimals),
+      );
+      if (next === value) return;
+      lastVal.current = next;
+      emit(next);
+      onCommit?.(next);
+    },
+    [value, min, max, step, decimals, emit, onCommit],
+  );
+
+  const shown = dragVal ?? value;
+  const pct = ((shown - min) / (max - min)) * 100;
 
   return (
     <div
       ref={ref}
       role="slider"
       aria-label={ariaLabel}
-      aria-valuenow={value}
+      aria-valuenow={shown}
       aria-valuemin={min}
       aria-valuemax={max}
       tabIndex={disabled ? -1 : 0}
       onPointerDown={handlePointerDown}
       onKeyDown={(e) => {
         if (disabled) return;
-        if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
-          compute(
-            (() => {
-              const el = ref.current;
-              if (!el) return 0;
-              const r = el.getBoundingClientRect();
-              return r.left + ((value + step - min) / (max - min)) * r.width;
-            })()
-          );
-        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
-          compute(
-            (() => {
-              const el = ref.current;
-              if (!el) return 0;
-              const r = el.getBoundingClientRect();
-              return r.left + ((value - step - min) / (max - min)) * r.width;
-            })()
-          );
-        }
+        if (e.key === 'ArrowRight' || e.key === 'ArrowUp') nudge(1);
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') nudge(-1);
       }}
       style={{
         position: 'relative',

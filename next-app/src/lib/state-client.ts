@@ -19,7 +19,14 @@ const BASE = process.env.NEXT_PUBLIC_STATE_API_BASE_URL ?? '/api';
 
 /** Fetch the full device state map from /state. Strips the `ts` timestamp key. */
 export async function fetchState(): Promise<StateMap> {
-  const res = await fetch(`${BASE}/state`, { cache: 'no-store' });
+  const res = await fetch(`${BASE}/state`, {
+    cache: 'no-store',
+    // Every request needs a deadline. A GET caught mid-flight by a suspend can
+    // otherwise sit unresolved indefinitely, holding one of the six connections
+    // Safari allows this origin over HTTP/1.1 — lose all six and the app goes
+    // mute while still looking perfectly alive.
+    signal: AbortSignal.timeout(15_000),
+  });
   if (res.status === 401) { dispatchSessionExpired(); throw new Error('GET /state 401'); }
   if (!res.ok) throw new Error(`GET /state ${res.status}`);
   const { ts: _ts, ...state } = (await res.json()) as Record<string, unknown>;
@@ -43,6 +50,9 @@ export function postCommand(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ target, patch, action }),
+    // See fetchState — a command with no deadline is a connection slot the app
+    // may never get back.
+    signal: AbortSignal.timeout(15_000),
   }).then(res => {
     if (res.status === 401) dispatchSessionExpired();
   }).catch(() => {
@@ -96,19 +106,60 @@ export function connectSSE(
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   let lastSeen = Date.now();
   let lastRevalidate = 0;
+  // Every attempt to open a stream claims a generation, and anything left in
+  // flight by an older attempt — the auth probe below, a scheduled reconnect —
+  // checks its own generation before acting.
+  //
+  // Without that guard, resume orphans sockets. `onerror` fires for the socket
+  // the suspend killed and starts an auth probe; `revalidate` fires on the same
+  // resume and rebuilds the stream while that probe is still open; the probe
+  // then lands and reconnects *again*, overwriting `es` and leaving the stream
+  // it replaced open with nothing referencing it. Nothing can ever close that
+  // one — not even `close()`. Six of them exhausts Safari's per-host pool on
+  // HTTP/1.1, and from then on every request the app makes is queued behind a
+  // connection that will never free: the UI still renders from memory, but
+  // commands silently never leave the phone and only a force-quit clears it.
+  let gen = 0;
+
+  /** Drop the live socket and any scheduled reconnect. Safe to call repeatedly. */
+  function teardown() {
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+    if (es) {
+      es.onopen = null;
+      es.onerror = null;
+      es.close();
+      es = null;
+    }
+  }
+
+  function scheduleReconnect(myGen: number) {
+    if (closed || myGen !== gen) return;
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = null;
+      if (closed || myGen !== gen) return;
+      onReseed();
+      connect();
+    }, 3_000);
+  }
 
   function connect() {
     if (closed) return;
+    // Never leave the previous socket unreferenced but open.
+    teardown();
+    const myGen = ++gen;
     lastSeen = Date.now();
-    es = new EventSource(`${BASE}/stream`);
+    const src = new EventSource(`${BASE}/stream`);
+    es = src;
 
-    es.onopen = () => { lastSeen = Date.now(); };
+    src.onopen = () => { if (myGen === gen) lastSeen = Date.now(); };
 
     // Keepalive. Any traffic counts as proof of life, but the service's ping is
     // the only thing guaranteed to arrive on an idle house.
-    es.addEventListener('ping', () => { lastSeen = Date.now(); });
+    src.addEventListener('ping', () => { if (myGen === gen) lastSeen = Date.now(); });
 
-    es.addEventListener('patch', (e: MessageEvent) => {
+    src.addEventListener('patch', (e: MessageEvent) => {
+      if (myGen !== gen) return;
       lastSeen = Date.now();
       try {
         const { id, patch } = JSON.parse(e.data as string) as {
@@ -121,27 +172,26 @@ export function connectSSE(
       }
     });
 
-    es.onerror = () => {
-      es?.close();
-      es = null;
+    src.onerror = () => {
+      // Already superseded — this socket is nobody's stream now, just close it.
+      if (myGen !== gen) { src.close(); return; }
+      teardown();
       if (closed) return;
-      // Probe auth before reconnecting — 401 means session expired, not a transient error.
-      fetch('/api/auth/check').then(r => {
+      // Probe auth before reconnecting — 401 means the session expired, not a
+      // transient error. The timeout is not optional: an unanswered probe holds
+      // a connection slot for as long as the OS is willing to wait.
+      fetch('/api/auth/check', { signal: AbortSignal.timeout(6_000) }).then(r => {
+        if (closed || myGen !== gen) return;
         if (r.status === 401) {
           dispatchSessionExpired();
-          // Don't reconnect — AuthGate will re-auth and the app will remount.
+          // Don't reconnect here — AuthGate re-auths, and the watchdog below
+          // rebuilds the stream once the session is good again.
         } else {
-          reconnectTimer = setTimeout(() => {
-            onReseed();
-            connect();
-          }, 3_000);
+          scheduleReconnect(myGen);
         }
       }).catch(() => {
-        // Network unreachable — retry normally.
-        reconnectTimer = setTimeout(() => {
-          onReseed();
-          connect();
-        }, 3_000);
+        // Network unreachable (or the probe timed out) — retry normally.
+        scheduleReconnect(myGen);
       });
     };
   }
@@ -149,9 +199,9 @@ export function connectSSE(
   /** Drop the current connection and open a new one immediately. */
   function reconnectNow() {
     if (closed) return;
-    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
-    es?.close();
-    es = null;
+    // Release the socket before the reseed GET goes out, so the GET isn't
+    // queued behind the very connection we are replacing.
+    teardown();
     onReseed();
     connect();
   }
@@ -166,9 +216,9 @@ export function connectSSE(
   return {
     close() {
       closed = true;
+      gen++; // invalidate every callback still in flight
       clearInterval(watchdog);
-      if (reconnectTimer) clearTimeout(reconnectTimer);
-      es?.close();
+      teardown();
     },
     revalidate() {
       if (closed) return;
