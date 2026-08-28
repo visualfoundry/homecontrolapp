@@ -1,23 +1,17 @@
 {
   "//": "Lights this service presents to Harmony as a Philips Hue bridge.",
   "//eisy": "eisy is the index into EISY_URLS (0-4). varType 1 = integer, 2 = state.",
-  "//steps": "Top value of the step scale; 0 is always off. Cinema is 0/1/2, Living Room 0-5.",
+  "//steps": "Top value of the scale; 0 is always off. A WP 'Light Scene N Step' control means steps = N-1.",
+  "//ids": "Hue light ids are bound into each paired hub — never renumber an existing one.",
+  "//pergola": "eisy4 s131 Pergola_Lights is the real variable. WP's Pergola Lights Scene still points at s128, which is _pool_temperature — fix that in WP, not here.",
   "lights": [
-    {
-      "id": 1,
-      "name": "Cinema Lights",
-      "eisy": 3,
-      "varType": 2,
-      "varId": 201,
-      "steps": 2
-    },
-    {
-      "id": 2,
-      "name": "Living Room Lights",
-      "eisy": 1,
-      "varType": 2,
-      "varId": 225,
-      "steps": 5
-    }
+    { "id": 1, "name": "Cinema Lights",         "eisy": 3, "varType": 2, "varId": 201, "steps": 2 },
+    { "id": 2, "name": "Living Room Lights",    "eisy": 1, "varType": 2, "varId": 225, "steps": 5 },
+    { "id": 3, "name": "Studio Lights",         "eisy": 2, "varType": 2, "varId": 321, "steps": 2 },
+    { "id": 4, "name": "Gym Lights",            "eisy": 2, "varType": 2, "varId": 225, "steps": 2 },
+    { "id": 5, "name": "Library Lights",        "eisy": 2, "varType": 2, "varId": 257, "steps": 2 },
+    { "id": 6, "name": "Guest Room Lights",     "eisy": 2, "varType": 2, "varId": 217, "steps": 2 },
+    { "id": 7, "name": "Master Bedroom Lights", "eisy": 2, "varType": 2, "varId": 273, "steps": 2 },
+    { "id": 8, "name": "Pergola Lights",        "eisy": 4, "varType": 2, "varId": 131, "steps": 2 }
   ]
 }
