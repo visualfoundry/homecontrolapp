@@ -264,6 +264,116 @@ async function checkLeakAlerts(): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Pool chemistry alerts
+//
+// pH, ORP and salt are measured by the OmniLogic body-of-water sensor and
+// mirrored into eisy0 variables by the `Pool Vitals *` programs. Raw values
+// carry an implied precision — pH is stored ×10, so 76 is 7.6 — which is why
+// each band declares its own scale rather than assuming whole units.
+//
+// Two rules keep this from crying wolf, because a pool that nags gets muted and
+// then it may as well not exist:
+//
+//   * Nothing is judged unless the pump is moving water. A salt cell reads the
+//     water going past it; with no flow the last reading just sits there, and
+//     alerting on it would be alerting on yesterday's pool.
+//   * A reading has to stay out of range for POOL_HOLD_MS before it counts, and
+//     back inside a *tighter* band for the same span before it clears. Chemistry
+//     drifts over hours, so a lone spike is a sensor artefact — and the gap
+//     between the raise and clear bands stops a value resting on the threshold
+//     from alerting and clearing all afternoon.
+// ---------------------------------------------------------------------------
+
+interface PoolBand {
+  key: string;
+  label: string;
+  /** State id of the mirrored reading. */
+  stateId: string;
+  /** Divisor from the raw variable to the real figure. pH is stored ×10. */
+  scale: number;
+  unit: string;
+  decimals: number;
+  /** Outside this, an alert is raised. */
+  low: number;
+  high: number;
+  /** Back inside this — deliberately narrower — it clears. */
+  clearLow: number;
+  clearHigh: number;
+}
+
+const POOL_BANDS: PoolBand[] = [
+  { key: 'ph',   label: 'pH',         stateId: 'eisy0/var/172', scale: 10, unit: '',     decimals: 1,
+    low: 7.0,  high: 8.0,  clearLow: 7.1,  clearHigh: 7.9 },
+  { key: 'orp',  label: 'ORP',        stateId: 'eisy0/var/175', scale: 1,  unit: ' mV',  decimals: 0,
+    low: 600,  high: 850,  clearLow: 620,  clearHigh: 830 },
+  { key: 'salt', label: 'salt level', stateId: 'eisy0/var/178', scale: 1,  unit: ' ppm', decimals: 0,
+    low: 2500, high: 4500, clearLow: 2600, clearHigh: 4300 },
+];
+
+/** Pump power in watts — the only honest evidence that water is moving. */
+const POOL_FLOW_STATE_ID = 'eisy0/var/177';
+
+const POOL_HOLD_MS   = 15 * 60 * 1000;
+const POOL_RESEND_MS = 12 * 60 * 60 * 1000;
+
+const poolOutOfRangeSince = new Map<string, number>();
+const poolInRangeSince    = new Map<string, number>();
+
+async function checkPoolAlerts(): Promise<void> {
+  const snap = getSnapshot() as Record<string, Record<string, unknown>>;
+  const now = Date.now();
+
+  // No flow, no verdict — and no clear either. Absence of circulation is absence
+  // of information, not evidence the water is fine.
+  const watts = snap[POOL_FLOW_STATE_ID]?.value;
+  if (typeof watts !== 'number' || watts <= 0) {
+    for (const band of POOL_BANDS) poolOutOfRangeSince.delete(`pool:${band.key}`);
+    return;
+  }
+
+  for (const band of POOL_BANDS) {
+    const raw = snap[band.stateId]?.value;
+    if (typeof raw !== 'number') continue; // never judge a reading we don't have
+    const value = raw / band.scale;
+    const alertKey = `pool:${band.key}`;
+
+    if (value < band.low || value > band.high) {
+      poolInRangeSince.delete(alertKey);
+      const since = poolOutOfRangeSince.get(alertKey) ?? now;
+      poolOutOfRangeSince.set(alertKey, since);
+      if (now - since < POOL_HOLD_MS) continue;
+
+      const lastSent = alertSentAt.get(alertKey);
+      if (lastSent !== undefined && now - lastSent < POOL_RESEND_MS) continue;
+      alertSentAt.set(alertKey, now);
+
+      const direction = value < band.low ? 'low' : 'high';
+      const shown = `${value.toFixed(band.decimals)}${band.unit}`;
+      const range = `${band.low}–${band.high}${band.unit}`;
+      void sendPushAlert(
+        `Pool ${band.label} is ${direction}`,
+        `${shown} — outside the ${range} range.`,
+        {
+          alertKey,
+          url: '/?screen=pool',
+          category: 'pool',
+          resendMinutes: POOL_RESEND_MS / 60_000,
+        },
+      );
+    } else if (value >= band.clearLow && value <= band.clearHigh && alertSentAt.has(alertKey)) {
+      poolOutOfRangeSince.delete(alertKey);
+      const since = poolInRangeSince.get(alertKey) ?? now;
+      poolInRangeSince.set(alertKey, since);
+      if (now - since < POOL_HOLD_MS) continue;
+
+      poolInRangeSince.delete(alertKey);
+      alertSentAt.delete(alertKey);
+      void clearPushAlert(alertKey);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // TV variables ⇄ Harmony hubs
 //
 // `_House_TV_<Room>_On` is how the rest of the house learns that a TV went on or
@@ -428,6 +538,7 @@ async function pollAll(): Promise<void> {
     );
     void checkBatteryAlerts();
     void checkLeakAlerts();
+    void checkPoolAlerts();
     const wait = Math.max(0, POLL_MS - (Date.now() - t0));
     if (wait > 0) await new Promise<void>(r => setTimeout(r, wait));
   }
