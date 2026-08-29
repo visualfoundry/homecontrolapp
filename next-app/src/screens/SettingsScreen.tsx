@@ -148,13 +148,13 @@ function DeviceSetupCard() {
         </Step>
 
         <Step n={2} title="Install the security certificate">
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, margin: '8px 0 10px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10, margin: '8px 0 10px' }}>
             <div style={{ padding: 12, background: '#fff', borderRadius: 10 }}>
               <QRCodeSVG value={certUrl} size={150} />
             </div>
             <a
               href={certUrl}
-              style={{ fontSize: 11.5, color: 'var(--accent)', fontFamily: 'monospace', wordBreak: 'break-all', textAlign: 'center' }}
+              style={{ fontSize: 11.5, color: 'var(--accent)', fontFamily: 'monospace', wordBreak: 'break-all' }}
             >
               {certUrl}
             </a>
