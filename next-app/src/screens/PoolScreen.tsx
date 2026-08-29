@@ -16,6 +16,16 @@ import { poolStep } from '@/lib/styles';
 import type { PoolState, PoolNodeState, PumpScheduleItem, HeaterScheduleItem, OutdoorState, ValvePosState, PoolValveNodeState } from '@/types/state';
 import type { PoolValveDevice } from '@/types/config';
 
+/** The bands the service alerts on. These mirror POOL_BANDS in
+ *  home-control-services/src/index.ts, which is where the alerts are actually
+ *  decided — change them there first, then here, or the page will describe
+ *  limits the house does not use. */
+const ALERT_BANDS = [
+  { label: 'pH',   low: 7.0,  high: 8.0,  unit: '',     decimals: 1 },
+  { label: 'ORP',  low: 600,  high: 850,  unit: ' mV',  decimals: 0 },
+  { label: 'Salt', low: 2500, high: 4500, unit: ' ppm', decimals: 0 },
+] as const;
+
 const POOL_DEFAULT: PoolState = {
   pumpOn: false, pumpSpeed: 65,
   heaterOn: false, heaterRunning: false,
@@ -665,6 +675,57 @@ export function PoolScreen() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, paddingTop: 14, borderTop: '0.5px solid var(--sep)' }}>
             <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>Average salt</span>
             <span style={{ fontSize: 15, fontWeight: 680, color: 'var(--text)' }}>{saltAvgLive != null ? `${saltLevelAvg.toLocaleString()} ppm` : '—'}</span>
+          </div>
+        </Card>
+        <SectionTitle>Alert Ranges</SectionTitle>
+        <Card pad={false}>
+          {ALERT_BANDS.map((b, i) => {
+            const live =
+              b.label === 'pH'   ? (phLive   != null ? ph        : null)
+            : b.label === 'ORP'  ? (orpLive  != null ? orp       : null)
+            :                      (saltLive != null ? saltLevel : null);
+            // Out of range is only meaningful against a live reading, and only
+            // while the pump is moving water — the same gate the service uses
+            // before it will alert on anything.
+            const out = live != null && pumpOn && (live < b.low || live > b.high);
+            const judged = live != null && pumpOn;
+            return (
+              <div key={b.label} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                gap: 12, padding: '12px 16px',
+                borderTop: i === 0 ? 'none' : '0.5px solid var(--sep)',
+              }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>{b.label}</div>
+                  <div style={{ fontSize: 12.5, color: 'var(--text3)', fontWeight: 540, marginTop: 1 }}>
+                    Alerts outside {b.low}–{b.high}{b.unit}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right', flex: 'none' }}>
+                  <div style={{
+                    fontSize: 15, fontWeight: 680,
+                    color: out ? 'var(--red)' : 'var(--text)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}>
+                    {live != null ? `${live.toFixed(b.decimals)}${b.unit}` : '—'}
+                  </div>
+                  <div style={{
+                    fontSize: 12, fontWeight: 600, marginTop: 1,
+                    color: !judged ? 'var(--text3)' : out ? 'var(--red)' : 'var(--green)',
+                  }}>
+                    {!judged ? 'Not checked' : out ? 'Out of range' : 'In range'}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          <div style={{
+            padding: '11px 16px', borderTop: '0.5px solid var(--sep)',
+            fontSize: 12.5, lineHeight: 1.5, color: 'var(--text3)',
+          }}>
+            {pumpOn
+              ? 'Checked while the pump is running. A reading must stay out of range for 15 minutes before it alerts, and repeats every 12 hours until it recovers.'
+              : 'Nothing is checked while the pump is off — the sensors read the water going past them, so a still pool reports whatever it last saw.'}
           </div>
         </Card>
         <div style={{ height: 8 }} />
