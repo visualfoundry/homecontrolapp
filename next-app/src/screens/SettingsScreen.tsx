@@ -148,18 +148,18 @@ function DeviceSetupCard() {
         </Step>
 
         <Step n={2} title="Install the security certificate">
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10, margin: '8px 0 10px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, margin: '8px 0 10px' }}>
             <div style={{ padding: 12, background: '#fff', borderRadius: 10 }}>
               <QRCodeSVG value={certUrl} size={150} />
             </div>
             <a
               href={certUrl}
-              style={{ fontSize: 11.5, color: 'var(--accent)', fontFamily: 'monospace', wordBreak: 'break-all' }}
+              style={{ fontSize: 11.5, color: 'var(--accent)', fontFamily: 'monospace', wordBreak: 'break-all', textAlign: 'center' }}
             >
               {certUrl}
             </a>
           </div>
-          <ol style={{ margin: 0, padding: '0 0 0 17px', lineHeight: 1.65 }}>
+          <ol style={{ margin: 0, padding: 0, listStylePosition: 'inside', lineHeight: 1.65 }}>
             <li>Scan the code with the camera, then open the link in <B>Safari</B>.</li>
             <li>Tap <B>Allow</B> to download the profile.</li>
             <li><B>Settings → General → VPN &amp; Device Management</B>, tap the profile, tap <B>Install</B>.</li>
