@@ -74,14 +74,21 @@ function ToggleList({ items }: { items: SettingItem[] }) {
  *  Only used as copy — nothing keys off it. */
 const HOUSE_SSID = 'The Dixons Net';
 
+/** Width of a step's numbered badge, and the gap to its body. The body is inset
+ *  by their sum, so anything that must centre on the card rather than on the
+ *  text column has to reclaim STEP_INDENT. */
+const STEP_MARKER = 26;
+const STEP_GAP = 12;
+const STEP_INDENT = STEP_MARKER + STEP_GAP;
+
 /** One numbered step of the setup walkthrough. */
 function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
   return (
-    <li style={{ display: 'grid', gridTemplateColumns: '26px 1fr', gap: 12, alignItems: 'start' }}>
+    <li style={{ display: 'grid', gridTemplateColumns: `${STEP_MARKER}px 1fr`, gap: STEP_GAP, alignItems: 'start' }}>
       <span
         aria-hidden
         style={{
-          width: 26, height: 26, borderRadius: 13, background: 'var(--accent)', color: '#fff',
+          width: STEP_MARKER, height: STEP_MARKER, borderRadius: STEP_MARKER / 2, background: 'var(--accent)', color: '#fff',
           display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 700, marginTop: 1,
         }}
       >
@@ -148,7 +155,13 @@ function DeviceSetupCard() {
         </Step>
 
         <Step n={2} title="Install the security certificate">
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, margin: '8px 0 10px' }}>
+          <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+            margin: '8px 0 10px',
+            // Reclaim the badge inset so the code centres on the card.
+            marginLeft: -STEP_INDENT,
+            width: `calc(100% + ${STEP_INDENT}px)`,
+          }}>
             <div style={{ padding: 12, background: '#fff', borderRadius: 10 }}>
               <QRCodeSVG value={certUrl} size={150} />
             </div>
