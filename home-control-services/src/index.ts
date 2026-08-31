@@ -303,7 +303,7 @@ interface PoolBand {
 
 const POOL_BANDS: PoolBand[] = [
   { key: 'ph',   label: 'pH',         stateId: 'eisy0/var/172', scale: 10, unit: '',     decimals: 1,
-    low: 7.0,  high: 8.0,  clearLow: 7.1,  clearHigh: 7.9 },
+    low: 6.5,  high: 8.5,  clearLow: 6.6,  clearHigh: 8.4 },
   { key: 'orp',  label: 'ORP',        stateId: 'eisy0/var/175', scale: 1,  unit: ' mV',  decimals: 0,
     low: 600,  high: 850,  clearLow: 620,  clearHigh: 830 },
   { key: 'salt', label: 'salt level', stateId: 'eisy0/var/178', scale: 1,  unit: ' ppm', decimals: 0,
