@@ -4,3 +4,6 @@ dist/
 
 # Hue bridge pairing keys — per-install, not source
 hue-state.json
+
+# Ring-ignition captures — per-install diagnostics, not source
+ring-captures/

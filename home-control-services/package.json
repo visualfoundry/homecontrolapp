@@ -9,7 +9,8 @@
     "start": "node dist/index.js",
     "build": "tsc",
     "export-devices": "tsx scripts/export-devices.ts",
-    "sync-harmony": "tsx scripts/sync-harmony.ts"
+    "sync-harmony": "tsx scripts/sync-harmony.ts",
+    "watch-ring": "tsx scripts/watch-cinema-ring.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
