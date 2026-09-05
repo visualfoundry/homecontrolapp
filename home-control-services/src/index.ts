@@ -303,7 +303,7 @@ interface PoolBand {
 
 const POOL_BANDS: PoolBand[] = [
   { key: 'ph',   label: 'pH',         stateId: 'eisy0/var/172', scale: 10, unit: '',     decimals: 1,
-    low: 6.5,  high: 8.5,  clearLow: 6.6,  clearHigh: 8.4 },
+    low: 6.0,  high: 8.5,  clearLow: 6.1,  clearHigh: 8.4 },
   { key: 'orp',  label: 'ORP',        stateId: 'eisy0/var/175', scale: 1,  unit: ' mV',  decimals: 0,
     low: 600,  high: 850,  clearLow: 620,  clearHigh: 830 },
   { key: 'salt', label: 'salt level', stateId: 'eisy0/var/178', scale: 1,  unit: ' ppm', decimals: 0,
@@ -327,15 +327,29 @@ async function checkPoolAlerts(): Promise<void> {
   // of information, not evidence the water is fine.
   const watts = snap[POOL_FLOW_STATE_ID]?.value;
   if (typeof watts !== 'number' || watts <= 0) {
-    for (const band of POOL_BANDS) poolOutOfRangeSince.delete(`pool:${band.key}`);
+    for (const band of POOL_BANDS) {
+      poolOutOfRangeSince.delete(`pool:${band.key}`);
+      poolInRangeSince.delete(`pool:${band.key}`);
+    }
     return;
   }
 
   for (const band of POOL_BANDS) {
     const raw = snap[band.stateId]?.value;
-    if (typeof raw !== 'number') continue; // never judge a reading we don't have
-    const value = raw / band.scale;
     const alertKey = `pool:${band.key}`;
+    // A cell with no water to read reports a sentinel, not a measurement: pH
+    // comes back 0 and ORP -1. That is the same absence of information as a
+    // missing variable, so it neither raises nor clears, and it must not count
+    // toward either hold — the pump-power guard above cannot catch these on its
+    // own, because the readings go sentinel about half a minute before the
+    // wattage does, and a pump turning too slowly to make the cell read leaves
+    // the wattage positive indefinitely.
+    if (typeof raw !== 'number' || raw <= 0) {
+      poolOutOfRangeSince.delete(alertKey);
+      poolInRangeSince.delete(alertKey);
+      continue;
+    }
+    const value = raw / band.scale;
 
     if (value < band.low || value > band.high) {
       poolInRangeSince.delete(alertKey);
