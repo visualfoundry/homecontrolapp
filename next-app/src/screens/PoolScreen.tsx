@@ -21,7 +21,7 @@ import type { PoolValveDevice } from '@/types/config';
  *  decided — change them there first, then here, or the page will describe
  *  limits the house does not use. */
 const ALERT_BANDS = [
-  { label: 'pH',   low: 6.5,  high: 8.5,  unit: '',     decimals: 1 },
+  { label: 'pH',   low: 6.0,  high: 8.5,  unit: '',     decimals: 1 },
   { label: 'ORP',  low: 600,  high: 850,  unit: ' mV',  decimals: 0 },
   { label: 'Salt', low: 2500, high: 4500, unit: ' ppm', decimals: 0 },
 ] as const;
