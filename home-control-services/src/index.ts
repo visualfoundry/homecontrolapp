@@ -374,15 +374,32 @@ async function checkPoolAlerts(): Promise<void> {
           resendMinutes: POOL_RESEND_MS / 60_000,
         },
       );
-    } else if (value >= band.clearLow && value <= band.clearHigh && alertSentAt.has(alertKey)) {
+    } else if (value >= band.clearLow && value <= band.clearHigh) {
       poolOutOfRangeSince.delete(alertKey);
       const since = poolInRangeSince.get(alertKey) ?? now;
       poolInRangeSince.set(alertKey, since);
       if (now - since < POOL_HOLD_MS) continue;
 
+      // Clearing must not depend on remembering the raise. `alertSentAt` is
+      // in-memory, but the alert it raised is persisted by the app and re-sent
+      // from that stored copy every POOL_RESEND_MS whether this service is
+      // involved or not. So a restart while an alert stood used to orphan it for
+      // good: the raise was forgotten here, the clear was gated on remembering
+      // it, and the app went on repeating a reading that had long since come
+      // back into range. Retry on the same footing as the battery clears —
+      // whenever a raise is on record, and otherwise no more than hourly.
+      const lastClear = alertClearedAt.get(alertKey);
+      const due = alertSentAt.has(alertKey)
+        || lastClear === undefined
+        || now - lastClear >= CLEAR_RECHECK_MS;
+      if (!due) continue;
+
       poolInRangeSince.delete(alertKey);
-      alertSentAt.delete(alertKey);
-      void clearPushAlert(alertKey);
+      void clearPushAlert(alertKey).then(cleared => {
+        if (!cleared) return;
+        alertSentAt.delete(alertKey);
+        alertClearedAt.set(alertKey, now);
+      });
     }
   }
 }
