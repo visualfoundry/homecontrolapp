@@ -131,7 +131,12 @@ function titleToClass(ctTitle: string): DeviceClass {
   if (t === 'speaker')                            return 'speaker';
   if (t === 'audio speaker volume')               return 'speaker';
   if (t === 'door exterior')                      return 'lock';
-  if (t === 'door lock')                          return 'flag';       // auto-lock toggle
+  // Both real WP control types are spelled out. A rule for a bare 'door lock'
+  // matched neither, so both fell through to the 'flag' fallback below — and a
+  // flag emits { on }, while ExteriorDoorRow reads { value }. That made every
+  // exterior door read as locked forever, whatever the EISY said.
+  if (t === 'door lock status')                   return 'lock';       // locked/unlocked, read as { value }
+  if (t === 'door lock auto lock')                return 'flag';       // auto-lock toggle, read as { on }
   if (t === 'door interior')                      return 'contact-sensor';
   if (t === 'garage car door')                    return 'contact-sensor';
   if (t === 'water leak sensor')                  return 'leak-sensor';

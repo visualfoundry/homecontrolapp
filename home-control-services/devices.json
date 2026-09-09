@@ -2133,7 +2133,7 @@
   "eisy0/var/201": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "flag",
+    "class": "lock",
     "varId": 201,
     "varType": 2
   },
@@ -2147,7 +2147,7 @@
   "eisy0/var/212": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "flag",
+    "class": "lock",
     "varId": 212,
     "varType": 2
   },
@@ -2161,7 +2161,7 @@
   "eisy0/var/210": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "flag",
+    "class": "lock",
     "varId": 210,
     "varType": 2
   },
@@ -2175,7 +2175,7 @@
   "eisy0/var/208": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "flag",
+    "class": "lock",
     "varId": 208,
     "varType": 2
   },
@@ -2189,7 +2189,7 @@
   "eisy0/var/204": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "flag",
+    "class": "lock",
     "varId": 204,
     "varType": 2
   },
@@ -2203,7 +2203,7 @@
   "eisy0/var/206": {
     "type": "variable",
     "eisyIdx": 0,
-    "class": "flag",
+    "class": "lock",
     "varId": 206,
     "varType": 2
   },
