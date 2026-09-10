@@ -1,4 +1,23 @@
 {
+  "eisy0/var/14": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 14,
+    "varType": 2
+  },
+  "eisy4/4E 19 F2 1": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "leak-sensor",
+    "address": "4E 19 F2 1"
+  },
+  "eisy4/4E 19 F2 4": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "leak-battery",
+    "address": "4E 19 F2 4"
+  },
   "eisy4/23 8A BA 7": {
     "type": "device",
     "eisyIdx": 4,
@@ -46,13 +65,6 @@
     "eisyIdx": 4,
     "class": "pool-valve",
     "address": "23 8A BA 6"
-  },
-  "eisy0/var/181": {
-    "type": "variable",
-    "eisyIdx": 0,
-    "class": "flag",
-    "varId": 181,
-    "varType": 2
   },
   "eisy0/var/180": {
     "type": "variable",
@@ -802,6 +814,12 @@
     "class": "thermostat",
     "address": "34 53 6C 1"
   },
+  "eisy1/3D 68 4F 1": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "thermostat",
+    "address": "3D 68 4F 1"
+  },
   "eisy1/34 52 DD 1": {
     "type": "device",
     "eisyIdx": 1,
@@ -1452,13 +1470,6 @@
     "varId": 120,
     "varType": 2
   },
-  "eisy0/var/14": {
-    "type": "variable",
-    "eisyIdx": 0,
-    "class": "flag",
-    "varId": 14,
-    "varType": 2
-  },
   "eisy0/var/2": {
     "type": "variable",
     "eisyIdx": 0,
@@ -2046,11 +2057,11 @@
     "varId": 171,
     "varType": 2
   },
-  "eisy4/var/58": {
+  "eisy0/var/181": {
     "type": "variable",
-    "eisyIdx": 4,
+    "eisyIdx": 0,
     "class": "flag",
-    "varId": 58,
+    "varId": 181,
     "varType": 2
   },
   "eisy4/var/126": {
@@ -2317,11 +2328,23 @@
     "class": "leak-sensor",
     "address": "37 86 69 1"
   },
+  "eisy4/37 86 69 4": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "leak-battery",
+    "address": "37 86 69 4"
+  },
   "eisy4/37 83 D8 1": {
     "type": "device",
     "eisyIdx": 4,
     "class": "leak-sensor",
     "address": "37 83 D8 1"
+  },
+  "eisy4/37 83 D8 4": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "leak-battery",
+    "address": "37 83 D8 4"
   },
   "eisy4/37 85 74 1": {
     "type": "device",
@@ -2329,11 +2352,23 @@
     "class": "leak-sensor",
     "address": "37 85 74 1"
   },
+  "eisy4/37 85 74 4": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "leak-battery",
+    "address": "37 85 74 4"
+  },
   "eisy4/37 84 4A 1": {
     "type": "device",
     "eisyIdx": 4,
     "class": "leak-sensor",
     "address": "37 84 4A 1"
+  },
+  "eisy4/37 84 4A 4": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "leak-battery",
+    "address": "37 84 4A 4"
   },
   "eisy4/37 6F E8 1": {
     "type": "device",
@@ -2341,11 +2376,11 @@
     "class": "leak-sensor",
     "address": "37 6F E8 1"
   },
-  "eisy4/54 9A 61 1": {
+  "eisy4/37 6F E8 4": {
     "type": "device",
     "eisyIdx": 4,
-    "class": "leak-sensor",
-    "address": "54 9A 61 1"
+    "class": "leak-battery",
+    "address": "37 6F E8 4"
   },
   "eisy4/54 9C 23 1": {
     "type": "device",
@@ -2353,11 +2388,23 @@
     "class": "leak-sensor",
     "address": "54 9C 23 1"
   },
-  "eisy4/4E 19 F2 1": {
+  "eisy4/54 9C 23 4": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "leak-battery",
+    "address": "54 9C 23 4"
+  },
+  "eisy4/71 EB 52 1": {
     "type": "device",
     "eisyIdx": 4,
     "class": "leak-sensor",
-    "address": "4E 19 F2 1"
+    "address": "71 EB 52 1"
+  },
+  "eisy4/71 EB 52 4": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "leak-battery",
+    "address": "71 EB 52 4"
   },
   "eisy4/4E 2B 66 1": {
     "type": "device",
@@ -2365,11 +2412,23 @@
     "class": "leak-sensor",
     "address": "4E 2B 66 1"
   },
+  "eisy4/4E 2B 66 4": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "leak-battery",
+    "address": "4E 2B 66 4"
+  },
   "eisy4/47 B3 16 1": {
     "type": "device",
     "eisyIdx": 4,
     "class": "leak-sensor",
     "address": "47 B3 16 1"
+  },
+  "eisy4/47 B3 16 4": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "leak-battery",
+    "address": "47 B3 16 4"
   },
   "eisy4/37 8B A6 1": {
     "type": "device",
@@ -2377,11 +2436,23 @@
     "class": "leak-sensor",
     "address": "37 8B A6 1"
   },
+  "eisy4/37 8B A6 4": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "leak-battery",
+    "address": "37 8B A6 4"
+  },
   "eisy4/37 83 B0 1": {
     "type": "device",
     "eisyIdx": 4,
     "class": "leak-sensor",
     "address": "37 83 B0 1"
+  },
+  "eisy4/37 83 B0 4": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "leak-battery",
+    "address": "37 83 B0 4"
   },
   "eisy4/37 A9 3D 1": {
     "type": "device",
@@ -2395,11 +2466,11 @@
     "class": "motion-sensor",
     "address": "37 B3 DC 1"
   },
-  "eisy4/36 7A 56 1": {
+  "eisy4/55 A7 13 1": {
     "type": "device",
     "eisyIdx": 4,
     "class": "motion-sensor",
-    "address": "36 7A 56 1"
+    "address": "55 A7 13 1"
   },
   "eisy4/37 B9 21 1": {
     "type": "device",
@@ -2556,194 +2627,6 @@
     "eisyIdx": 1,
     "class": "motion-sensor",
     "address": "37 BF E7 1"
-  },
-  "eisy4/37 86 69 4": {
-    "type": "device",
-    "eisyIdx": 4,
-    "class": "leak-battery",
-    "address": "37 86 69 4"
-  },
-  "eisy4/37 83 D8 4": {
-    "type": "device",
-    "eisyIdx": 4,
-    "class": "leak-battery",
-    "address": "37 83 D8 4"
-  },
-  "eisy4/37 85 74 4": {
-    "type": "device",
-    "eisyIdx": 4,
-    "class": "leak-battery",
-    "address": "37 85 74 4"
-  },
-  "eisy4/37 84 4A 4": {
-    "type": "device",
-    "eisyIdx": 4,
-    "class": "leak-battery",
-    "address": "37 84 4A 4"
-  },
-  "eisy4/37 6F E8 4": {
-    "type": "device",
-    "eisyIdx": 4,
-    "class": "leak-battery",
-    "address": "37 6F E8 4"
-  },
-  "eisy4/54 9A 61 4": {
-    "type": "device",
-    "eisyIdx": 4,
-    "class": "leak-battery",
-    "address": "54 9A 61 4"
-  },
-  "eisy4/54 9C 23 4": {
-    "type": "device",
-    "eisyIdx": 4,
-    "class": "leak-battery",
-    "address": "54 9C 23 4"
-  },
-  "eisy4/4E 19 F2 4": {
-    "type": "device",
-    "eisyIdx": 4,
-    "class": "leak-battery",
-    "address": "4E 19 F2 4"
-  },
-  "eisy4/4E 2B 66 4": {
-    "type": "device",
-    "eisyIdx": 4,
-    "class": "leak-battery",
-    "address": "4E 2B 66 4"
-  },
-  "eisy4/47 B3 16 4": {
-    "type": "device",
-    "eisyIdx": 4,
-    "class": "leak-battery",
-    "address": "47 B3 16 4"
-  },
-  "eisy4/37 8B A6 4": {
-    "type": "device",
-    "eisyIdx": 4,
-    "class": "leak-battery",
-    "address": "37 8B A6 4"
-  },
-  "eisy4/37 83 B0 4": {
-    "type": "device",
-    "eisyIdx": 4,
-    "class": "leak-battery",
-    "address": "37 83 B0 4"
-  },
-  "eisy1/3D 68 4F 1": {
-    "type": "device",
-    "eisyIdx": 1,
-    "class": "thermostat",
-    "address": "3D 68 4F 1"
-  },
-  "eisy4/4F 86 27 3": {
-    "type": "device",
-    "eisyIdx": 4,
-    "class": "motion-battery",
-    "address": "4F 86 27 3"
-  },
-  "eisy4/37 A9 3D 3": {
-    "type": "device",
-    "eisyIdx": 4,
-    "class": "motion-battery",
-    "address": "37 A9 3D 3"
-  },
-  "eisy4/37 B3 DC 3": {
-    "type": "device",
-    "eisyIdx": 4,
-    "class": "motion-battery",
-    "address": "37 B3 DC 3"
-  },
-  "eisy4/36 7A 56 3": {
-    "type": "device",
-    "eisyIdx": 4,
-    "class": "motion-battery",
-    "address": "36 7A 56 3"
-  },
-  "eisy4/37 B9 21 3": {
-    "type": "device",
-    "eisyIdx": 4,
-    "class": "motion-battery",
-    "address": "37 B9 21 3"
-  },
-  "eisy3/37 B1 65 3": {
-    "type": "device",
-    "eisyIdx": 3,
-    "class": "motion-battery",
-    "address": "37 B1 65 3"
-  },
-  "eisy2/36 A7 A8 3": {
-    "type": "device",
-    "eisyIdx": 2,
-    "class": "motion-battery",
-    "address": "36 A7 A8 3"
-  },
-  "eisy2/37 B1 97 3": {
-    "type": "device",
-    "eisyIdx": 2,
-    "class": "motion-battery",
-    "address": "37 B1 97 3"
-  },
-  "eisy2/37 B1 86 3": {
-    "type": "device",
-    "eisyIdx": 2,
-    "class": "motion-battery",
-    "address": "37 B1 86 3"
-  },
-  "eisy2/32 A0 5C 4": {
-    "type": "device",
-    "eisyIdx": 2,
-    "class": "contact-battery",
-    "address": "32 A0 5C 4",
-    "linkedStateId": "eisy2/var/53"
-  },
-  "eisy2/32 A2 39 4": {
-    "type": "device",
-    "eisyIdx": 2,
-    "class": "contact-battery",
-    "address": "32 A2 39 4",
-    "linkedStateId": "eisy2/var/68"
-  },
-  "eisy2/3B 1A 98 4": {
-    "type": "device",
-    "eisyIdx": 2,
-    "class": "contact-battery",
-    "address": "3B 1A 98 4",
-    "linkedStateId": "eisy2/var/71"
-  },
-  "eisy2/4D DB 9A 4": {
-    "type": "device",
-    "eisyIdx": 2,
-    "class": "contact-battery",
-    "address": "4D DB 9A 4",
-    "linkedStateId": "eisy2/var/86"
-  },
-  "eisy2/55 8E 8A 4": {
-    "type": "device",
-    "eisyIdx": 2,
-    "class": "contact-battery",
-    "address": "55 8E 8A 4",
-    "linkedStateId": "eisy2/var/89"
-  },
-  "eisy2/54 5F 5D 4": {
-    "type": "device",
-    "eisyIdx": 2,
-    "class": "contact-battery",
-    "address": "54 5F 5D 4",
-    "linkedStateId": "eisy2/var/98"
-  },
-  "eisy2/3B 1A 13 4": {
-    "type": "device",
-    "eisyIdx": 2,
-    "class": "contact-battery",
-    "address": "3B 1A 13 4",
-    "linkedStateId": "eisy2/var/119"
-  },
-  "eisy2/55 AB F1 4": {
-    "type": "device",
-    "eisyIdx": 2,
-    "class": "contact-battery",
-    "address": "55 AB F1 4",
-    "linkedStateId": "eisy2/var/122"
   },
   "eisy0/n011_h939cb7ca46ac7": {
     "type": "device",
@@ -3040,5 +2923,115 @@
     "address": "n011_d58423283",
     "name": "JBL Nebula Mars",
     "hub": "Pergola"
+  },
+  "eisy4/4F 86 27 3": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "motion-battery",
+    "address": "4F 86 27 3"
+  },
+  "eisy4/37 A9 3D 3": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "motion-battery",
+    "address": "37 A9 3D 3"
+  },
+  "eisy4/37 B3 DC 3": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "motion-battery",
+    "address": "37 B3 DC 3"
+  },
+  "eisy4/36 7A 56 3": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "motion-battery",
+    "address": "36 7A 56 3"
+  },
+  "eisy4/37 B9 21 3": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "motion-battery",
+    "address": "37 B9 21 3"
+  },
+  "eisy3/37 B1 65 3": {
+    "type": "device",
+    "eisyIdx": 3,
+    "class": "motion-battery",
+    "address": "37 B1 65 3"
+  },
+  "eisy2/36 A7 A8 3": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-battery",
+    "address": "36 A7 A8 3"
+  },
+  "eisy2/37 B1 97 3": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-battery",
+    "address": "37 B1 97 3"
+  },
+  "eisy2/37 B1 86 3": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-battery",
+    "address": "37 B1 86 3"
+  },
+  "eisy2/32 A0 5C 4": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "contact-battery",
+    "address": "32 A0 5C 4",
+    "linkedStateId": "eisy2/var/53"
+  },
+  "eisy2/32 A2 39 4": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "contact-battery",
+    "address": "32 A2 39 4",
+    "linkedStateId": "eisy2/var/68"
+  },
+  "eisy2/3B 1A 98 4": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "contact-battery",
+    "address": "3B 1A 98 4",
+    "linkedStateId": "eisy2/var/71"
+  },
+  "eisy2/4D DB 9A 4": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "contact-battery",
+    "address": "4D DB 9A 4",
+    "linkedStateId": "eisy2/var/86"
+  },
+  "eisy2/55 8E 8A 4": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "contact-battery",
+    "address": "55 8E 8A 4",
+    "linkedStateId": "eisy2/var/89"
+  },
+  "eisy2/54 5F 5D 4": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "contact-battery",
+    "address": "54 5F 5D 4",
+    "linkedStateId": "eisy2/var/98"
+  },
+  "eisy2/3B 1A 13 4": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "contact-battery",
+    "address": "3B 1A 13 4",
+    "linkedStateId": "eisy2/var/119"
+  },
+  "eisy2/55 AB F1 4": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "contact-battery",
+    "address": "55 AB F1 4",
+    "linkedStateId": "eisy2/var/122"
   }
 }
