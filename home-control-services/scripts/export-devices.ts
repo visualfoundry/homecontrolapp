@@ -12,11 +12,13 @@
 //   3. For variable controls: probes each EISY to determine variable type (1=int, 2=state).
 //   4. Writes devices.json — the aggregator service reads this at startup.
 //
-// Re-run whenever devices are added/changed in WordPress.
+// Re-run whenever devices are added/changed in WordPress. Hand-added battery
+// sub-nodes are carried over from the previous file, and every added/removed
+// entry is printed — this must never rewrite devices.json silently.
 // =============================================================================
 
 import 'dotenv/config';
-import { writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getVariables } from '../src/eisy-client.js';
@@ -368,6 +370,40 @@ async function main() {
   }
 
   const outPath = join(__dirname, '..', 'devices.json');
+
+  // Battery sub-nodes for motion and contact sensors are added by hand (see the
+  // note in buildDevicesMap) and, unlike the Harmony devices above, cannot be
+  // rediscovered — so carry them over from the file being replaced. Without
+  // this, a regeneration drops every one of them and low-battery alerting goes
+  // quiet with no error at all: 17 entries were lost this way on 2026-09-09.
+  const MANUAL_CLASSES = new Set<DeviceClass>(['motion-battery', 'contact-battery']);
+  let previous: DevicesMap = {};
+  if (existsSync(outPath)) {
+    try {
+      previous = JSON.parse(readFileSync(outPath, 'utf8')) as DevicesMap;
+    } catch {
+      console.warn('  existing devices.json is unreadable — nothing to carry over');
+    }
+  }
+  let carried = 0;
+  for (const [id, entry] of Object.entries(previous)) {
+    if (MANUAL_CLASSES.has(entry.class) && devices[id] === undefined) {
+      devices[id] = entry;
+      carried += 1;
+    }
+  }
+  if (carried > 0) console.log(`  ${carried} hand-added battery entries carried over`);
+
+  // Never change this file silently. A wrong class or a dropped id surfaces as
+  // "the app stopped updating" days later, so name everything that moves.
+  const added = Object.keys(devices).filter((k) => previous[k] === undefined);
+  const removed = Object.keys(previous).filter((k) => devices[k] === undefined);
+  if (Object.keys(previous).length > 0 && (added.length > 0 || removed.length > 0)) {
+    console.log(`Changes vs the existing devices.json (+${added.length} / -${removed.length}):`);
+    for (const k of added) console.log(`  + ${k} (${devices[k]!.class})`);
+    for (const k of removed) console.log(`  - ${k} (${previous[k]!.class})`);
+  }
+
   writeFileSync(outPath, JSON.stringify(devices, null, 2));
   console.log(`Written: ${outPath}`);
   console.log(`Done — ${Object.keys(devices).length} devices exported.`);
