@@ -29,6 +29,19 @@ function authHeader(): string {
   return 'Basic ' + Buffer.from(`${EISY_USER}:${EISY_PASS}`).toString('base64');
 }
 
+/**
+ * The `reason` out of an IoX `RestResponse`, as a trailing clause for an error
+ * message. IoX explains a refusal in the body it sends with the status — reading
+ * only the code threw away the half that says why, which is most of what made
+ * the Harmony 404s unreadable.
+ */
+function restReason(body: string): string {
+  const m = /<reason\b[^>]*?code="([^"]*)"[^>]*?(?:\/>|>([^<]*)<)/.exec(body);
+  if (!m) return '';
+  const text = (m[2] ?? '').trim();
+  return ` (reason ${m[1]}${text ? `: ${text}` : ''})`;
+}
+
 async function eisyGet(url: string, timeoutMs = 5_000): Promise<string> {
   const res = await fetch(url, {
     headers: {
@@ -38,7 +51,10 @@ async function eisyGet(url: string, timeoutMs = 5_000): Promise<string> {
     },
     signal: AbortSignal.timeout(timeoutMs),
   });
-  if (!res.ok) throw new Error(`EISY GET ${url}: HTTP ${res.status}`);
+  if (!res.ok) {
+    const reason = await res.text().then(restReason, () => '');
+    throw new Error(`EISY GET ${url}: HTTP ${res.status}${reason}`);
+  }
   return res.text();
 }
 

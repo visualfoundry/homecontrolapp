@@ -79,6 +79,10 @@ function nameFor(stateId: string, config: AppConfig): string {
     if (sid === stateId) return config.controlNames[configId] ?? 'That device';
   }
   for (const tv of config.tvs) {
+    // Where the room's power is written. The hub is in neither list above — it
+    // has no WP control behind it, and it is not one of the remote's boxes —
+    // which is how a refused power command came out as "That device".
+    if (tv.powerId === stateId || tv.remote?.hubId === stateId) return tv.name;
     const box = tv.remote?.devices.find(d => d.id === stateId);
     if (box) return box.name;
   }

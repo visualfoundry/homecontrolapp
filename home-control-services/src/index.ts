@@ -28,7 +28,10 @@ import { applyPatch, getSnapshot, subscribe } from './state-store.js';
 import {
   notePollOk, notePollFailed, noteCommandFailed, noteCommandOk, publishHealth,
 } from './health.js';
-import { nodeToState, varToState, patchToNodeCommand, type DevicesMap } from './state-mapper.js';
+import {
+  nodeToState, varToState, patchToNodeCommand,
+  type DevicesMap, type NodeCommand,
+} from './state-mapper.js';
 import { readFileSync } from 'node:fs';
 
 // ---------------------------------------------------------------------------
@@ -620,6 +623,75 @@ app.get('/stream', (req: Request, res: Response) => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Harmony 404s — IoX answers for the plugin, and it answers wrong
+//
+// A command to a PG3 node comes back `HTTP 404` in a few milliseconds while the
+// hub goes on to run it. On 2026-09-11 a `DOF` to the Living Room hub was
+// refused 8 ms after it was sent and the room was off a second later; the
+// `SET_ACTIVITY` that turned it on twenty minutes earlier was refused the same
+// way. It is rare (13 of 1271 node commands) and it does not repeat: seven
+// identical Back presses in two seconds, only the first refused.
+//
+// So a 404 from a Harmony node is not evidence of anything on its own, and
+// raising the banner on one tells the user their TV didn't respond while they
+// are watching it respond. The two classes need different treatment, because
+// only one of them has a state to check against.
+// ---------------------------------------------------------------------------
+
+function isNotFound(err: unknown): boolean {
+  return err instanceof Error && err.message.includes('HTTP 404');
+}
+
+/** How long to give GV3 to arrive where a refused hub command aimed. The poll
+ *  is 1 s and both observed confirmations landed inside 1.3 s, so this is four
+ *  cycles of headroom rather than a guess at the hub's pace. */
+const HUB_CONFIRM_MS = 4_000;
+
+/**
+ * Whether the hub ended up running the activity the command asked for. Reads the
+ * same GV3 the poller already maintains — there is no second request to the
+ * EISY here, so a hub that is genuinely unreachable costs nothing but the wait.
+ *
+ * A hub already sitting on the requested activity answers true immediately, which
+ * is the right answer for the wrong-looking reason: powering off a room that is
+ * already off has nothing left to fail at.
+ */
+async function hubReachedActivity(target: string, want: number): Promise<boolean> {
+  const deadline = Date.now() + HUB_CONFIRM_MS;
+  for (;;) {
+    const snap = getSnapshot() as Record<string, Record<string, unknown> | undefined>;
+    if (snap[target]?.activity === want) return true;
+    if (Date.now() >= deadline) return false;
+    await new Promise<void>(r => setTimeout(r, 250));
+  }
+}
+
+/**
+ * Consecutive refusals per Harmony button.
+ *
+ * An IR button is momentary and has no state to converge on, so the hub trick
+ * above has nothing to read. Retrying would fire the IR twice — Back twice,
+ * volume twice — so the only safe signal left is repetition: a button the box
+ * never learned is refused on every press, while this flake is not. An isolated
+ * refusal is therefore forgotten rather than held against the next press an
+ * hour later.
+ */
+const irRefusals = new Map<string, { count: number; at: number }>();
+const IR_REFUSAL_TTL_MS = 10 * 60 * 1000;
+
+function irKey(target: string, cmd: NodeCommand): string {
+  return `${target}:${cmd.cmd}/${cmd.value ?? ''}`;
+}
+
+function noteIrRefusal(key: string): number {
+  const prev = irRefusals.get(key);
+  const now = Date.now();
+  const count = prev && now - prev.at < IR_REFUSAL_TTL_MS ? prev.count + 1 : 1;
+  irRefusals.set(key, { count, at: now });
+  return count;
+}
+
 // POST /command
 interface CommandBody {
   target: string;
@@ -655,6 +727,9 @@ app.post('/command', (req: Request, res: Response) => {
 
   // Forward to EISY asynchronously
   const baseUrl = EISY_URLS[entry.eisyIdx];
+  // Held outside the try so the catch can see what was actually attempted — a
+  // refusal is only readable next to the command it refused.
+  let nodeCmd: NodeCommand | null = null;
   void (async () => {
     try {
       if (body.action === 'query' && entry.type === 'device' && entry.address) {
@@ -668,7 +743,7 @@ app.post('/command', (req: Request, res: Response) => {
         }
         console.log(`[command] query ${body.target} ✓`);
       } else if (entry.type === 'device' && entry.address) {
-        const nodeCmd = patchToNodeCommand(entry.class, body.patch ?? {}, body.action);
+        nodeCmd = patchToNodeCommand(entry.class, body.patch ?? {}, body.action);
         if (nodeCmd) {
           console.log(`[command] node ${body.target} → ${baseUrl} ${nodeCmd.cmd}${nodeCmd.value !== undefined ? '/' + nodeCmd.value : ''}`);
           await sendNodeCommand(baseUrl, entry.address, nodeCmd.cmd, nodeCmd.value);
@@ -689,7 +764,31 @@ app.post('/command', (req: Request, res: Response) => {
       }
       // Nothing refused it, so retire any warning still standing for this device.
       noteCommandOk(body.target);
+      if (nodeCmd) irRefusals.delete(irKey(body.target, nodeCmd));
     } catch (err) {
+      if (isNotFound(err) && nodeCmd) {
+        // A hub that ran the command regardless — the common case, and the one
+        // the user watches happen while the app claims it didn't.
+        if (entry.class === 'harmony-hub'
+            && (nodeCmd.cmd === 'SET_ACTIVITY' || nodeCmd.cmd === 'DOF')) {
+          const want = nodeCmd.cmd === 'DOF' ? 0 : nodeCmd.value ?? 0;
+          if (await hubReachedActivity(body.target, want)) {
+            noteCommandOk(body.target);
+            console.log(
+              `[command] ${body.target} refused (404) but the hub ran it — activity ${want}`,
+            );
+            return;
+          }
+        }
+        // First refusal for this button: say nothing and wait to be shown a
+        // second. A box that never learned it will oblige on the next press.
+        if (entry.class === 'harmony-device' && noteIrRefusal(irKey(body.target, nodeCmd)) < 2) {
+          console.warn(
+            `[command] ${body.target} ${nodeCmd.cmd}/${nodeCmd.value ?? ''} refused (404) once — not reporting yet`,
+          );
+          return;
+        }
+      }
       // The 202 has already gone out, so this is the only route back to the
       // client — without it the optimistic value just expires and the control
       // slides back with no reason given.
