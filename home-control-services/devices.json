@@ -2134,6 +2134,20 @@
     "varId": 36,
     "varType": 2
   },
+  "eisy0/var/123": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 123,
+    "varType": 2
+  },
+  "eisy0/var/124": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 124,
+    "varType": 2
+  },
   "eisy0/var/213": {
     "type": "variable",
     "eisyIdx": 0,
