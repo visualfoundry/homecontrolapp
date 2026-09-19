@@ -207,8 +207,11 @@ function buildDevicesMap(controls: ControlNode[]): {
         }
       } else {
         // Standard Insteon device: WP stores the 3-byte base address; primary node is sub-node 1.
+        // The EISY does not zero-pad, so a byte below 0x10 shows as one digit
+        // ("3D B 1" is 3D.0B.01) — must match the same regex in next-app's
+        // config.ts, or the two planes key the same device differently.
         // PG3/plugin nodes use a different format (e.g. "n003_bow1") — keep as-is.
-        const isInsteon = /^[0-9A-F]{2}( [0-9A-F]{2}){2}$/i.test(cf.controlAddress.trim());
+        const isInsteon = /^[0-9A-F]{1,2}( [0-9A-F]{1,2}){2}$/i.test(cf.controlAddress.trim());
         const address = isInsteon ? `${cf.controlAddress} 1` : cf.controlAddress;
         const stateId = `eisy${eisyIdx}/${address}`;
         devices[stateId] = { type: 'device', eisyIdx, class: cls, address };
