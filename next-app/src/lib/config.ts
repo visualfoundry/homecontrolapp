@@ -505,8 +505,11 @@ function toAppConfig(controls: ControlNodeRaw[]): AppConfig {
     if (cf.controlIsyControlType === 'Device') {
       if (!cf.controlAddress) return null;
       // Insteon addresses are 3 hex bytes ("3D 13 C6") — primary nodes are sub-node 1.
+      // The EISY does not zero-pad, so a byte below 0x10 shows as one digit
+      // ("3D B 1" is 3D.0B.01). Requiring two digits silently dropped the " 1"
+      // for 22 controls, pointing them at a node that exists on no hub.
       // PG3/plugin nodes use a different format (e.g. "n003_bow1") — no sub-node suffix.
-      const isInsteon = /^[0-9A-F]{2}( [0-9A-F]{2}){2}$/i.test(cf.controlAddress.trim());
+      const isInsteon = /^[0-9A-F]{1,2}( [0-9A-F]{1,2}){2}$/i.test(cf.controlAddress.trim());
       return `${ns}/${cf.controlAddress}${isInsteon ? ' 1' : ''}`;
     }
     if (cf.controlIsyControlType === 'Variable') {

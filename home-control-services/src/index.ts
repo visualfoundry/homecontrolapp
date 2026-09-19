@@ -129,6 +129,11 @@ async function clearPushAlert(alertKey: string): Promise<boolean> {
 }
 
 // One consolidated alert per sensor type, sent after each poll cycle.
+// Motion Sensor II reports battery as a percentage rather than a low/normal
+// flag, so where the line falls is our call, not the device's. 20% leaves room
+// to replace the cell before the sensor starts missing reports.
+const BATTERY_LOW_PCT = 20;
+
 const BATTERY_TYPES = [
   { class: 'motion-sensor',  alertKey: 'low-battery:motion', screen: 'motion', category: 'motion', label: 'motion sensor' },
   { class: 'leak-sensor',    alertKey: 'low-battery:leak',   screen: 'leak',   category: 'leak',   label: 'water leak sensor' },
@@ -517,7 +522,16 @@ async function pollEisy(eisyIdx: number): Promise<void> {
     // Motion sensors: node 1 = motion, node 2 = dawn/dusk, node 3 = battery.
     if (entry.class === 'motion-sensor' && address.endsWith(' 1')) {
       const battAddr = address.slice(0, -1) + '3';
-      if (devices[`eisy${eisyIdx}/${battAddr}`]?.class === 'motion-battery') {
+      // Motion Sensor II (2844-222, nodeDef PIR2844_ADV) has no low-battery
+      // sub-node at all — its only sub-nodes are Enabled (D) and Tamper (10).
+      // It reports BATLVL, a percentage, on the sensor node itself. Read that
+      // first; only the older PIR (node 3 = "Low Bat", ST 255) uses battAddr.
+      // getNodeStatus drops properties that don't parse, so an unreported
+      // BATLVL is absent here rather than 0 — never a false "flat battery".
+      const battLevel = props.get('BATLVL');
+      if (battLevel !== undefined) {
+        (state as Record<string, unknown>).lowBattery = battLevel <= BATTERY_LOW_PCT;
+      } else if (devices[`eisy${eisyIdx}/${battAddr}`]?.class === 'motion-battery') {
         const battProps = nodeStatus.get(battAddr);
         const isLow = (battProps?.get('ST') ?? 0) > 0;
         (state as Record<string, unknown>).lowBattery = isLow;
@@ -742,8 +756,13 @@ app.post('/command', (req: Request, res: Response) => {
         console.log(`[command] query ${body.target} → ${baseUrl} ST`);
         await sendNodeCommand(baseUrl, entry.address, 'ST');
         if (entry.class === 'motion-sensor' && entry.address.endsWith(' 1')) {
+          // Only the older PIR has a battery sub-node. A 2844 has none, and
+          // querying its node 3 asks the hub for an address that isn't there;
+          // the node-1 query above already refreshes that sensor's BATLVL.
           const battAddr = entry.address.slice(0, -1) + '3';
-          await sendNodeCommand(baseUrl, battAddr, 'ST');
+          if (devices[`eisy${entry.eisyIdx}/${battAddr}`]?.class === 'motion-battery') {
+            await sendNodeCommand(baseUrl, battAddr, 'ST');
+          }
         }
         console.log(`[command] query ${body.target} ✓`);
       } else if (entry.type === 'device' && entry.address) {

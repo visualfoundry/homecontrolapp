@@ -248,11 +248,17 @@
     "varId": 105,
     "varType": 2
   },
-  "eisy4/4F 83 8": {
+  "eisy4/4F 83 8 1": {
     "type": "device",
     "eisyIdx": 4,
     "class": "motion-sensor",
-    "address": "4F 83 8"
+    "address": "4F 83 8 1"
+  },
+  "eisy4/4F 83 8 3": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "motion-battery",
+    "address": "4F 83 8 3"
   },
   "eisy4/4F 86 27 1": {
     "type": "device",
@@ -439,17 +445,17 @@
     "varId": 39,
     "varType": 2
   },
-  "eisy4/46 9 38": {
+  "eisy4/46 9 38 1": {
     "type": "device",
     "eisyIdx": 4,
     "class": "light-switch",
-    "address": "46 9 38"
+    "address": "46 9 38 1"
   },
-  "eisy4/3D 40 6": {
+  "eisy4/3D 40 6 1": {
     "type": "device",
     "eisyIdx": 4,
     "class": "light-switch",
-    "address": "3D 40 6"
+    "address": "3D 40 6 1"
   },
   "eisy4/48 80 BC 1": {
     "type": "device",
@@ -1546,17 +1552,17 @@
     "class": "light-switch",
     "address": "3D 13 AB 1"
   },
-  "eisy4/45 C4 B": {
+  "eisy4/45 C4 B 1": {
     "type": "device",
     "eisyIdx": 4,
     "class": "light-switch",
-    "address": "45 C4 B"
+    "address": "45 C4 B 1"
   },
-  "eisy4/3D 4 CE": {
+  "eisy4/3D 4 CE 1": {
     "type": "device",
     "eisyIdx": 4,
     "class": "light-dimmer",
-    "address": "3D 4 CE"
+    "address": "3D 4 CE 1"
   },
   "eisy4/3D 3C C1 1": {
     "type": "device",
@@ -1666,11 +1672,11 @@
     "class": "light-switch",
     "address": "3D 46 40 1"
   },
-  "eisy2/3D E 86": {
+  "eisy2/3D E 86 1": {
     "type": "device",
     "eisyIdx": 2,
     "class": "light-dimmer",
-    "address": "3D E 86"
+    "address": "3D E 86 1"
   },
   "eisy2/39 A8 2B 1": {
     "type": "device",
@@ -1744,29 +1750,29 @@
     "class": "light-dimmer",
     "address": "3C EB 71 1"
   },
-  "eisy2/3D A B8": {
+  "eisy2/3D A B8 1": {
     "type": "device",
     "eisyIdx": 2,
     "class": "light-dimmer",
-    "address": "3D A B8"
+    "address": "3D A B8 1"
   },
-  "eisy2/3D C 8D": {
+  "eisy2/3D C 8D 1": {
     "type": "device",
     "eisyIdx": 2,
     "class": "light-dimmer",
-    "address": "3D C 8D"
+    "address": "3D C 8D 1"
   },
-  "eisy2/3D 0 EC": {
+  "eisy2/3D 0 EC 1": {
     "type": "device",
     "eisyIdx": 2,
     "class": "light-dimmer",
-    "address": "3D 0 EC"
+    "address": "3D 0 EC 1"
   },
-  "eisy2/3D C 30": {
+  "eisy2/3D C 30 1": {
     "type": "device",
     "eisyIdx": 2,
     "class": "light-dimmer",
-    "address": "3D C 30"
+    "address": "3D C 30 1"
   },
   "eisy2/3D 1C 50 1": {
     "type": "device",
@@ -1786,23 +1792,23 @@
     "class": "light-switch",
     "address": "3D 3F 6D 1"
   },
-  "eisy2/3D 0 E2": {
+  "eisy2/3D 0 E2 1": {
     "type": "device",
     "eisyIdx": 2,
     "class": "light-dimmer",
-    "address": "3D 0 E2"
+    "address": "3D 0 E2 1"
   },
-  "eisy2/3C E9 3": {
+  "eisy2/3C E9 3 1": {
     "type": "device",
     "eisyIdx": 2,
     "class": "light-dimmer",
-    "address": "3C E9 3"
+    "address": "3C E9 3 1"
   },
-  "eisy2/3C D9 D": {
+  "eisy2/3C D9 D 1": {
     "type": "device",
     "eisyIdx": 2,
     "class": "light-dimmer",
-    "address": "3C D9 D"
+    "address": "3C D9 D 1"
   },
   "eisy2/3B CD C5 1": {
     "type": "device",
@@ -1846,17 +1852,17 @@
     "class": "light-dimmer",
     "address": "3C DE FF 1"
   },
-  "eisy2/3D 1 74": {
+  "eisy2/3D 1 74 1": {
     "type": "device",
     "eisyIdx": 2,
     "class": "light-dimmer",
-    "address": "3D 1 74"
+    "address": "3D 1 74 1"
   },
-  "eisy2/3D C 3A": {
+  "eisy2/3D C 3A 1": {
     "type": "device",
     "eisyIdx": 2,
     "class": "light-dimmer",
-    "address": "3D C 3A"
+    "address": "3D C 3A 1"
   },
   "eisy2/3C EF CD 1": {
     "type": "device",
@@ -1888,11 +1894,11 @@
     "class": "light-dimmer",
     "address": "3C EB 65 1"
   },
-  "eisy2/3D 32 0": {
+  "eisy2/3D 32 0 1": {
     "type": "device",
     "eisyIdx": 2,
     "class": "light-switch",
-    "address": "3D 32 0"
+    "address": "3D 32 0 1"
   },
   "eisy2/3C E2 17 1": {
     "type": "device",
@@ -1900,17 +1906,17 @@
     "class": "light-dimmer",
     "address": "3C E2 17 1"
   },
-  "eisy2/3D A C3": {
+  "eisy2/3D A C3 1": {
     "type": "device",
     "eisyIdx": 2,
     "class": "light-dimmer",
-    "address": "3D A C3"
+    "address": "3D A C3 1"
   },
-  "eisy1/3C EA A": {
+  "eisy1/3C EA A 1": {
     "type": "device",
     "eisyIdx": 1,
     "class": "light-dimmer",
-    "address": "3C EA A"
+    "address": "3C EA A 1"
   },
   "eisy1/3C E5 34 1": {
     "type": "device",
@@ -1960,11 +1966,11 @@
     "class": "light-dimmer",
     "address": "39 A4 84 1"
   },
-  "eisy1/32 99 B": {
+  "eisy1/32 99 B 1": {
     "type": "device",
     "eisyIdx": 1,
     "class": "light-dimmer",
-    "address": "32 99 B"
+    "address": "32 99 B 1"
   },
   "eisy1/3D 13 C6 1": {
     "type": "device",
@@ -1990,17 +1996,17 @@
     "class": "light-dimmer",
     "address": "3C DF CE 1"
   },
-  "eisy1/3D B 1": {
+  "eisy1/3D B 1 1": {
     "type": "device",
     "eisyIdx": 1,
     "class": "light-dimmer",
-    "address": "3D B 1"
+    "address": "3D B 1 1"
   },
-  "eisy1/3D 1 A8": {
+  "eisy1/3D 1 A8 1": {
     "type": "device",
     "eisyIdx": 1,
     "class": "light-dimmer",
-    "address": "3D 1 A8"
+    "address": "3D 1 A8 1"
   },
   "eisy1/3C D9 47 1": {
     "type": "device",
@@ -2044,11 +2050,11 @@
     "class": "light-dimmer",
     "address": "39 A4 D5 1"
   },
-  "eisy1/3D 8 2": {
+  "eisy1/3D 8 2 1": {
     "type": "device",
     "eisyIdx": 1,
     "class": "light-dimmer",
-    "address": "3D 8 2"
+    "address": "3D 8 2 1"
   },
   "eisy1/39 A6 60 1": {
     "type": "device",
