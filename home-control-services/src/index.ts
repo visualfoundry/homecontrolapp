@@ -521,9 +521,13 @@ async function pollEisy(eisyIdx: number): Promise<void> {
         const battProps = nodeStatus.get(battAddr);
         const isLow = (battProps?.get('ST') ?? 0) > 0;
         (state as Record<string, unknown>).lowBattery = isLow;
-      } else {
-        (state as Record<string, unknown>).lowBattery = false;
       }
+      // No battery sub-node mapped: leave lowBattery undefined rather than
+      // asserting false. Writing false here claims "battery healthy" for a
+      // sensor nobody is reading, which is how 21 sensors silently stopped
+      // reporting after their entries were removed from devices.json. The
+      // alert bookkeeping below already treats undefined as "has not
+      // reported" and skips such sensors, so unmapped is now visibly unknown.
     }
     applyPatch(stateId, state);
   }
