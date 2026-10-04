@@ -105,6 +105,10 @@ export interface ActiveAlert {
   /** Per-alert resend window. Absent = the default 24 h. A leak repeats far more
    *  often than a low battery, so the interval belongs to the alert, not the app. */
   resendMs?: number;
+  /** Local hour (0–23) of a once-a-day delivery. When set, the alert is never
+   *  sent on arrival — the scheduler sends it at this hour each day for as long
+   *  as it stands, and `resendMs` is ignored. */
+  dailyHour?: number;
 }
 
 const ALERTS_FILE = process.env.PUSH_ALERTS_FILE ?? '/tmp/hca-push-alerts.json';
@@ -141,16 +145,23 @@ export function isAlertRateLimited(key: string, resendMs?: number): boolean {
 
 /** Record or update a persistent alert. Pass didSend=false to update the record
  *  without resetting the lastSent timestamp (used when the send was skipped). */
-export function setActiveAlert(key: string, payload: PushPayload, didSend = true, resendMs?: number): void {
+export function setActiveAlert(
+  key: string, payload: PushPayload, didSend = true, resendMs?: number, dailyHour?: number,
+): void {
   const now = Date.now();
   const alerts = readAlerts();
   const existing = alerts.find(a => a.key === key);
   if (existing) {
     existing.payload = payload;
     if (resendMs !== undefined) existing.resendMs = resendMs;
+    if (dailyHour !== undefined) existing.dailyHour = dailyHour;
     if (didSend) existing.lastSent = now;
   } else {
-    alerts.push({ key, payload, firstSent: now, lastSent: didSend ? now : 0, ...(resendMs !== undefined ? { resendMs } : {}) });
+    alerts.push({
+      key, payload, firstSent: now, lastSent: didSend ? now : 0,
+      ...(resendMs !== undefined ? { resendMs } : {}),
+      ...(dailyHour !== undefined ? { dailyHour } : {}),
+    });
   }
   writeAlerts(alerts);
   console.log(`[push] active alert ${didSend ? 'sent' : 'recorded (rate-limited)'}: ${key}`);
@@ -162,6 +173,25 @@ export function clearActiveAlert(key: string): void {
   console.log(`[push] active alert cleared: ${key}`);
 }
 
+/** The most recent `hour`:00 in server-local time, at or before `now`. */
+function lastDailySlot(hour: number, now: number): number {
+  const slot = new Date(now);
+  slot.setHours(hour, 0, 0, 0);
+  if (slot.getTime() > now) slot.setDate(slot.getDate() - 1);
+  return slot.getTime();
+}
+
+/** Whether an alert is owed a send now. A daily alert is owed one when it
+ *  already stood at the latest slot and nothing has gone out since — so one
+ *  raised at 3 pm waits for tomorrow morning rather than going out at once. */
+function isDue(alert: ActiveAlert, now: number): boolean {
+  if (alert.dailyHour !== undefined) {
+    const slot = lastDailySlot(alert.dailyHour, now);
+    return alert.firstSent <= slot && alert.lastSent < slot;
+  }
+  return now - alert.lastSent >= (alert.resendMs ?? RESEND_MS);
+}
+
 /** Re-send any alert that hasn't been sent within the resend window. */
 export async function checkAndResendAlerts(): Promise<void> {
   if (!vapidPublicKey || !vapidPrivateKey) return;
@@ -169,7 +199,7 @@ export async function checkAndResendAlerts(): Promise<void> {
   const alerts = readAlerts();
   let changed = false;
   for (const alert of alerts) {
-    if (now - alert.lastSent >= (alert.resendMs ?? RESEND_MS)) {
+    if (isDue(alert, now)) {
       console.log(`[push] re-sending persistent alert: ${alert.key}`);
       await sendToAll(alert.payload);
       alert.lastSent = now;

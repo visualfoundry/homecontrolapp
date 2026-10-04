@@ -72,6 +72,10 @@ interface PushAlertOpts {
   /** State id of the device. The app substitutes `{device}` in the title/body
    *  with its config-plane name — names are WP's job, not this service's. */
   deviceId?: string;
+  /** Local hour (0–23) to deliver at, once a day, instead of immediately. The
+   *  app records the alert and its scheduler sends whatever it says at that
+   *  hour — so re-posting with a new body updates the morning's message. */
+  dailyHour?: number;
 }
 
 /** Returns false when the app couldn't be reached, so the caller can retry.
@@ -82,7 +86,7 @@ async function sendPushAlert(
   opts: PushAlertOpts = {},
 ): Promise<boolean> {
   if (!HCA_INTERNAL_KEY || !NEXT_APP_URL) return false;
-  const { alertKey, url = '/', category, urgent, resendMinutes, deviceId } = opts;
+  const { alertKey, url = '/', category, urgent, resendMinutes, deviceId, dailyHour } = opts;
   try {
     await fetch(`${NEXT_APP_URL}/api/push/notify`, {
       method: 'POST',
@@ -97,6 +101,7 @@ async function sendPushAlert(
         ...(urgent ? { urgent: true } : {}),
         ...(resendMinutes ? { resendMinutes } : {}),
         ...(deviceId ? { deviceId } : {}),
+        ...(dailyHour !== undefined ? { dailyHour } : {}),
       }),
       signal: AbortSignal.timeout(5_000),
     });
@@ -128,17 +133,33 @@ async function clearPushAlert(alertKey: string): Promise<boolean> {
   }
 }
 
-// One consolidated alert per sensor type, sent after each poll cycle.
-// Motion Sensor II reports battery as a percentage rather than a low/normal
+// One consolidated alert across every sensor type, delivered once a day in the
+// morning. A battery that runs low at 2 am can wait for breakfast, and one
+// message listing everything beats three arriving at whatever hour each class
+// happened to cross the line. Motion Sensor II reports battery as a percentage rather than a low/normal
 // flag, so where the line falls is our call, not the device's. 20% leaves room
 // to replace the cell before the sensor starts missing reports.
 const BATTERY_LOW_PCT = 20;
 
 const BATTERY_TYPES = [
-  { class: 'motion-sensor',  alertKey: 'low-battery:motion', screen: 'motion', category: 'motion', label: 'motion sensor' },
-  { class: 'leak-sensor',    alertKey: 'low-battery:leak',   screen: 'leak',   category: 'leak',   label: 'water leak sensor' },
-  { class: 'contact-sensor', alertKey: 'low-battery:door',   screen: 'doors',  category: 'doors',  label: 'door sensor' },
+  { class: 'motion-sensor',  screen: 'motion', category: 'motion', label: 'motion sensor' },
+  { class: 'leak-sensor',    screen: 'leak',   category: 'leak',   label: 'water leak sensor' },
+  { class: 'contact-sensor', screen: 'doors',  category: 'doors',  label: 'door sensor' },
 ] as const;
+
+const BATTERY_ALERT_KEY = 'low-battery';
+/** Local hour the daily low-battery digest goes out. */
+const BATTERY_DIGEST_HOUR = 8;
+
+// The per-class alerts this digest replaced. The app persists alerts and repeats
+// them on its own, so any still on record there must be cleared explicitly or
+// they go on firing daily alongside the digest. Removed once the clear lands.
+const legacyBatteryKeys = new Set(['low-battery:motion', 'low-battery:leak', 'low-battery:door']);
+
+// The body last recorded with the app. The digest is re-posted whenever it
+// changes, so the morning send describes the morning, not the first sensor to
+// go low.
+let batteryPostedBody: string | undefined;
 
 // In-memory map: alertKey → timestamp of last sendPushAlert call.
 // Prevents hammering the notify endpoint every poll cycle.
@@ -173,59 +194,90 @@ const alertInFlight = new Set<string>();
 async function checkBatteryAlerts(): Promise<void> {
   const snap = getSnapshot() as Record<string, Record<string, unknown>>;
   const now = Date.now();
+  const key = BATTERY_ALERT_KEY;
+
+  const lows: { bt: typeof BATTERY_TYPES[number]; count: number }[] = [];
+  // The digest can only clear once no class is still filling in — a sensor that
+  // hasn't reported yet in any class could be the low one.
+  let settled = true;
+  let anyReporter = false;
   for (const bt of BATTERY_TYPES) {
     // All device IDs of this class across all EISYs (from devices.json).
     const knownIds = Object.keys(devices).filter(id => devices[id]?.class === bt.class);
     if (knownIds.length === 0) continue;
 
-    const lowCount = knownIds.filter(id => snap[id]?.lowBattery === true).length;
+    const count = knownIds.filter(id => snap[id]?.lowBattery === true).length;
+    if (count > 0) lows.push({ bt, count });
 
     let reporters = batteryReporters.get(bt.class);
     if (!reporters) { reporters = new Set(); batteryReporters.set(bt.class, reporters); }
     for (const id of knownIds) {
       if (snap[id]?.lowBattery !== undefined) reporters.add(id);
     }
-    const settled = reporters.size > 0 && reporters.size === batteryReportersLastSize.get(bt.class);
+    if (reporters.size !== batteryReportersLastSize.get(bt.class)) settled = false;
+    if (reporters.size > 0) anyReporter = true;
     batteryReportersLastSize.set(bt.class, reporters.size);
+  }
 
-    if (lowCount > 0) {
-      // Only call the API on first detection or after 24h — not every poll cycle.
-      const lastSent = alertSentAt.get(bt.alertKey);
-      const dueToSend = lastSent === undefined || now - lastSent >= ALERT_RESEND_MS;
-      if (dueToSend && !alertInFlight.has(bt.alertKey)) {
-        alertInFlight.add(bt.alertKey);
-        const noun = bt.label + (lowCount > 1 ? 's' : '');
-        const verb = lowCount > 1 ? 'need' : 'needs';
-        // Only record the send once it has actually left, so a failed POST is
-        // retried next cycle instead of muting the alert for a day.
-        void sendPushAlert(
-          'Low Battery',
-          `${lowCount} ${noun} ${verb} a new battery.`,
-          { alertKey: bt.alertKey, url: `/?screen=${bt.screen}`, category: bt.category },
-        ).then(sent => {
-          alertInFlight.delete(bt.alertKey);
-          if (!sent) return;
-          alertSentAt.set(bt.alertKey, now);
-          alertClearedAt.delete(bt.alertKey);
-        });
-      }
-    } else if (settled) {
-      // Keep the raise on record until the clear lands — a dropped one would
-      // leave the app re-sending this alert daily with nothing behind it.
-      const lastClear = alertClearedAt.get(bt.alertKey);
-      const due = alertSentAt.has(bt.alertKey)
-        || lastClear === undefined
-        || now - lastClear >= CLEAR_RECHECK_MS;
-      if (due && !alertInFlight.has(bt.alertKey)) {
-        alertInFlight.add(bt.alertKey);
-        void clearPushAlert(bt.alertKey).then(cleared => {
-          alertInFlight.delete(bt.alertKey);
-          if (!cleared) return;
-          alertSentAt.delete(bt.alertKey);
-          alertClearedAt.set(bt.alertKey, now);
-        });
-      }
+  if (lows.length > 0) {
+    const total = lows.reduce((n, l) => n + l.count, 0);
+    const parts = lows.map(({ bt, count }) => `${count} ${bt.label}${count > 1 ? 's' : ''}`);
+    const list = parts.length > 1
+      ? `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`
+      : parts[0];
+    const body = `${list} ${total > 1 ? 'need new batteries' : 'needs a new battery'}.`;
+
+    // Re-post when the list changes, and daily as a refresh of the app's record.
+    // Posting doesn't deliver anything — the app holds it for the morning.
+    const lastSent = alertSentAt.get(key);
+    const due = body !== batteryPostedBody
+      || lastSent === undefined
+      || now - lastSent >= ALERT_RESEND_MS;
+    if (due && !alertInFlight.has(key)) {
+      alertInFlight.add(key);
+      // Tap goes to the screen with the most to replace.
+      const top = lows.reduce((a, b) => (b.count > a.count ? b : a)).bt;
+      // Only record the post once it has actually landed, so a failed POST is
+      // retried next cycle instead of being forgotten.
+      void sendPushAlert('Low Battery', body, {
+        alertKey: key,
+        url: `/?screen=${top.screen}`,
+        category: lows.length === 1 ? top.category : 'other',
+        dailyHour: BATTERY_DIGEST_HOUR,
+      }).then(sent => {
+        alertInFlight.delete(key);
+        if (!sent) return;
+        batteryPostedBody = body;
+        alertSentAt.set(key, now);
+        alertClearedAt.delete(key);
+      });
     }
+  } else if (settled && anyReporter) {
+    // Keep the raise on record until the clear lands — a dropped one would
+    // leave the app re-sending this alert daily with nothing behind it.
+    const lastClear = alertClearedAt.get(key);
+    const due = alertSentAt.has(key)
+      || lastClear === undefined
+      || now - lastClear >= CLEAR_RECHECK_MS;
+    if (due && !alertInFlight.has(key)) {
+      alertInFlight.add(key);
+      void clearPushAlert(key).then(cleared => {
+        alertInFlight.delete(key);
+        if (!cleared) return;
+        batteryPostedBody = undefined;
+        alertSentAt.delete(key);
+        alertClearedAt.set(key, now);
+      });
+    }
+  }
+
+  for (const legacy of legacyBatteryKeys) {
+    if (alertInFlight.has(legacy)) continue;
+    alertInFlight.add(legacy);
+    void clearPushAlert(legacy).then(cleared => {
+      alertInFlight.delete(legacy);
+      if (cleared) legacyBatteryKeys.delete(legacy);
+    });
   }
 }
 
@@ -307,11 +359,15 @@ interface PoolBand {
   /** Back inside this — deliberately narrower — it clears. */
   clearLow: number;
   clearHigh: number;
+  /** Never raise on a low reading — only high. A low reading also counts as
+   *  in range for clearing, so an alert raised before this was set clears. */
+  ignoreLow?: boolean;
 }
 
 const POOL_BANDS: PoolBand[] = [
+  // Low pH deliberately doesn't alert — only high does.
   { key: 'ph',   label: 'pH',         stateId: 'eisy0/var/172', scale: 10, unit: '',     decimals: 1,
-    low: 6.0,  high: 8.5,  clearLow: 6.1,  clearHigh: 8.4 },
+    low: 6.0,  high: 8.5,  clearLow: 6.1,  clearHigh: 8.4, ignoreLow: true },
   { key: 'orp',  label: 'ORP',        stateId: 'eisy0/var/175', scale: 1,  unit: ' mV',  decimals: 0,
     low: 600,  high: 850,  clearLow: 620,  clearHigh: 830 },
   { key: 'salt', label: 'salt level', stateId: 'eisy0/var/178', scale: 1,  unit: ' ppm', decimals: 0,
@@ -359,7 +415,8 @@ async function checkPoolAlerts(): Promise<void> {
     }
     const value = raw / band.scale;
 
-    if (value < band.low || value > band.high) {
+    const low = value < band.low && !band.ignoreLow;
+    if (low || value > band.high) {
       poolInRangeSince.delete(alertKey);
       const since = poolOutOfRangeSince.get(alertKey) ?? now;
       poolOutOfRangeSince.set(alertKey, since);
@@ -369,7 +426,7 @@ async function checkPoolAlerts(): Promise<void> {
       if (lastSent !== undefined && now - lastSent < POOL_RESEND_MS) continue;
       alertSentAt.set(alertKey, now);
 
-      const direction = value < band.low ? 'low' : 'high';
+      const direction = low ? 'low' : 'high';
       const shown = `${value.toFixed(band.decimals)}${band.unit}`;
       const range = `${band.low}–${band.high}${band.unit}`;
       void sendPushAlert(
@@ -382,7 +439,7 @@ async function checkPoolAlerts(): Promise<void> {
           resendMinutes: POOL_RESEND_MS / 60_000,
         },
       );
-    } else if (value >= band.clearLow && value <= band.clearHigh) {
+    } else if ((band.ignoreLow || value >= band.clearLow) && value <= band.clearHigh) {
       poolOutOfRangeSince.delete(alertKey);
       const since = poolInRangeSince.get(alertKey) ?? now;
       poolInRangeSince.set(alertKey, since);

@@ -42,6 +42,7 @@ async function deviceNameFor(stateId: string): Promise<string | null> {
  *   resendMinutes?: number // override the 24 h repeat interval for this alert
  *   deviceId?: string      // state-service id; fills `{device}` in title/body with
  *                          // the device's name from the config plane
+ *   dailyHour?: number     // deliver once a day at this local hour instead of now
  * }
  *
  * Copy rule: bodies must read correctly both as a system banner and as a row in
@@ -54,8 +55,9 @@ async function deviceNameFor(stateId: string): Promise<string | null> {
  *     the service POSTs { alertKey, clear: true }.
  *
  * Service-side contract (home-control service must implement):
- *   — Battery low:  POST { body: "...", alertKey: "low-battery:<deviceId>" }
- *   — Battery ok:   POST { alertKey: "low-battery:<deviceId>", clear: true }
+ *   — Battery low:  POST { body: "...", alertKey: "low-battery", dailyHour: 8 }
+ *                   (one digest for every sensor type; re-posted when it changes)
+ *   — Battery ok:   POST { alertKey: "low-battery", clear: true }
  *   — Leak:         POST { body: "Water detected by {device}.", deviceId: "<stateId>",
  *                          alertKey: "leak:<stateId>", urgent: true, resendMinutes: 30 }
  *   — Leak cleared: POST { alertKey: "leak:<sensorId>", clear: true }
@@ -68,6 +70,7 @@ export async function POST(req: NextRequest) {
 
   const data = await req.json() as Partial<PushPayload> & {
     alertKey?: string; clear?: boolean; resendMinutes?: number; deviceId?: string;
+    dailyHour?: number;
   };
 
   // ── Clear a persistent alert (condition resolved) ─────────────────────────
@@ -98,6 +101,14 @@ export async function POST(req: NextRequest) {
   const resendMs = data.resendMinutes != null && data.resendMinutes > 0
     ? data.resendMinutes * 60 * 1000
     : undefined;
+
+  // A daily alert is only recorded here — the scheduler delivers it at its hour,
+  // carrying whatever the latest post said.
+  if (data.alertKey && data.dailyHour != null
+      && Number.isInteger(data.dailyHour) && data.dailyHour >= 0 && data.dailyHour <= 23) {
+    setActiveAlert(data.alertKey, payload, false, undefined, data.dailyHour);
+    return NextResponse.json({ ok: true, action: 'scheduled' });
+  }
 
   // If this is a persistent alert that was already sent within the resend window,
   // record the condition without re-sending. Prevents alert spam on service restart
