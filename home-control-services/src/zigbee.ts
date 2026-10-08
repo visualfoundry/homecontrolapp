@@ -3,22 +3,27 @@
 //
 // Zigbee2MQTT (PM2 `hca-zigbee`, same host) owns the Sonoff coordinator and
 // publishes each device's state to `zigbee2mqtt/<friendly name>`. This module
-// subscribes, and for every sensor listed in zigbee-sensors.json mirrors its
-// `presence` onto an EISY variable — the same variable the room's Insteon motion
-// programs already drive, so existing EISY logic acts on it unchanged.
+// subscribes and, for every space in zigbee-sensors.json, keeps one EISY
+// presence variable equal to "is anyone in this space":
 //
-// It also patches `zigbee/<ieee>` into the state store, so presence and link
-// quality are visible on /state and /stream.
+//   1 while ANY of the space's sensors reports presence,
+//   0 once ALL of them report clear.
+//
+// So a large room can have several sensors and the EISY still sees a single
+// variable; its programs don't change with the sensor count. The variable is
+// this service's alone — the room's lights/motion variables stay with the EISY
+// programs, which trigger on this one.
 //
 // Write rules:
-//   * presence on  → write 1, on every rising edge (including the first report
-//     after this service starts).
-//   * presence off → write 0, but only after this service has itself seen the
-//     sensor go on. Zigbee2MQTT doesn't retain state, so the first message after
-//     a restart says nothing about who set the variable last; writing 0 then
-//     would switch off lights an Insteon sensor had just turned on.
-//   * Unchanged reports write nothing — the FP1E reports linkquality and
-//     target_distance far more often than presence changes.
+//   * Writes only when the space's combined value differs from what this service
+//     last wrote, so the FP1E's frequent linkquality/target_distance reports
+//     cost the EISY nothing.
+//   * Before the first write after startup, every sensor in the space must have
+//     reported — unless one already reports presence, which settles it. Z2M
+//     doesn't retain state, so on connect each sensor is asked for its presence.
+//
+// Each sensor (`zigbee/<ieee>`) and space (`zigbee/space/<key>`) is also patched
+// into the state store, so presence and link quality show on /state and /stream.
 // =============================================================================
 
 import mqtt from 'mqtt';
@@ -32,77 +37,107 @@ import { applyPatch } from './state-store.js';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SENSORS_FILE = join(HERE, '..', 'zigbee-sensors.json');
 
-interface ZigbeeSensor {
-  ieee: string;
+interface PresenceSpace {
+  key: string;
   name: string;
   eisy: number;
   varType: 1 | 2;
   varId: number;
+  /** IEEE addresses of the presence sensors covering this space. */
+  sensors: string[];
 }
 
-function loadSensors(): ZigbeeSensor[] {
+function loadSpaces(): PresenceSpace[] {
   if (!existsSync(SENSORS_FILE)) return [];
-  const raw = JSON.parse(readFileSync(SENSORS_FILE, 'utf8')) as { sensors?: ZigbeeSensor[] };
-  return (raw.sensors ?? []).filter(s => EISY_URLS[s.eisy] !== undefined);
+  const raw = JSON.parse(readFileSync(SENSORS_FILE, 'utf8')) as { spaces?: PresenceSpace[] };
+  return (raw.spaces ?? [])
+    .filter(s => EISY_URLS[s.eisy] !== undefined && s.sensors.length > 0)
+    .map(s => ({ ...s, sensors: s.sensors.map(i => i.toLowerCase()) }));
 }
 
 const WRITE_ATTEMPTS = 3;
 const RETRY_MS = 2_000;
 
 export function startZigbee(): void {
-  const sensors = loadSensors();
-  if (sensors.length === 0) {
-    console.log('[zigbee] no sensors configured — not started');
+  const spaces = loadSpaces();
+  if (spaces.length === 0) {
+    console.log('[zigbee] no presence spaces configured — not started');
     return;
   }
-  const byIeee = new Map(sensors.map(s => [s.ieee.toLowerCase(), s]));
 
-  /** friendly name → IEEE, from Z2M's retained bridge/devices list. */
-  const ieeeByName = new Map<string, string>();
-  /** Last presence this service saw per sensor; absent until the first report. */
-  const lastPresence = new Map<string, boolean>();
-  /** Bumped per sensor on each new target value, so a stale retry gives up. */
-  const writeSeq = new Map<string, number>();
-
-  async function writeVar(sensor: ZigbeeSensor, value: 0 | 1): Promise<void> {
-    const seq = (writeSeq.get(sensor.ieee) ?? 0) + 1;
-    writeSeq.set(sensor.ieee, seq);
-    for (let attempt = 1; attempt <= WRITE_ATTEMPTS; attempt++) {
-      if (writeSeq.get(sensor.ieee) !== seq) return; // superseded by a newer reading
-      try {
-        await setVariable(EISY_URLS[sensor.eisy]!, sensor.varType, sensor.varId, value);
-        console.log(`[zigbee] ${sensor.name}: presence ${value ? 'on' : 'off'} → eisy${sensor.eisy} var ${sensor.varType}/${sensor.varId} = ${value}`);
-        return;
-      } catch (e) {
-        console.error(`[zigbee] ${sensor.name}: variable write failed (attempt ${attempt}/${WRITE_ATTEMPTS}):`, e);
-        if (attempt < WRITE_ATTEMPTS) await new Promise(r => setTimeout(r, RETRY_MS));
-      }
+  /** sensor IEEE → the spaces it covers (one sensor may sit between two). */
+  const spacesBySensor = new Map<string, PresenceSpace[]>();
+  for (const space of spaces) {
+    for (const ieee of space.sensors) {
+      spacesBySensor.set(ieee, [...(spacesBySensor.get(ieee) ?? []), space]);
     }
   }
 
-  function onDeviceState(ieee: string, payload: Record<string, unknown>): void {
-    const linkquality = typeof payload.linkquality === 'number' ? payload.linkquality : undefined;
-    const presence = typeof payload.presence === 'boolean' ? payload.presence : undefined;
+  /** friendly name → IEEE, and back, from Z2M's retained bridge/devices list. */
+  const ieeeByName = new Map<string, string>();
+  const nameByIeee = new Map<string, string>();
+  /** Latest presence per sensor; absent until it first reports. */
+  const presenceBySensor = new Map<string, boolean>();
+  /** Value this service last wrote (or is writing) per space. */
+  const written = new Map<string, 0 | 1>();
+  /** Bumped per space on each new target value, so a stale retry gives up. */
+  const writeSeq = new Map<string, number>();
 
+  async function writeVar(space: PresenceSpace, value: 0 | 1): Promise<void> {
+    const seq = (writeSeq.get(space.key) ?? 0) + 1;
+    writeSeq.set(space.key, seq);
+    for (let attempt = 1; attempt <= WRITE_ATTEMPTS; attempt++) {
+      if (writeSeq.get(space.key) !== seq) return; // superseded by a newer value
+      try {
+        await setVariable(EISY_URLS[space.eisy]!, space.varType, space.varId, value);
+        console.log(`[zigbee] ${space.name}: ${value ? 'occupied' : 'clear'} → eisy${space.eisy} var ${space.varType}/${space.varId} = ${value}`);
+        return;
+      } catch (e) {
+        console.error(`[zigbee] ${space.name}: variable write failed (attempt ${attempt}/${WRITE_ATTEMPTS}):`, e);
+        if (attempt < WRITE_ATTEMPTS) await new Promise(r => setTimeout(r, RETRY_MS));
+      }
+    }
+    // Every attempt failed: forget the value so the next sensor report retries.
+    if (writeSeq.get(space.key) === seq) written.delete(space.key);
+  }
+
+  function evaluate(space: PresenceSpace): void {
+    const readings = space.sensors.map(i => presenceBySensor.get(i));
+    let value: 0 | 1;
+    if (readings.some(r => r === true)) value = 1;
+    else if (readings.every(r => r === false)) value = 0;
+    else return; // a sensor hasn't reported yet and none sees anyone — undecided
+
+    applyPatch(`zigbee/space/${space.key}`, { presence: value === 1 });
+    if (written.get(space.key) === value) return;
+    written.set(space.key, value);
+    void writeVar(space, value);
+  }
+
+  function onDeviceState(ieee: string, payload: Record<string, unknown>): void {
     const patch: Record<string, unknown> = {};
-    if (presence !== undefined) patch.presence = presence;
-    if (linkquality !== undefined) patch.linkquality = linkquality;
+    if (typeof payload.presence === 'boolean') patch.presence = payload.presence;
+    if (typeof payload.linkquality === 'number') patch.linkquality = payload.linkquality;
     if (Object.keys(patch).length) applyPatch(`zigbee/${ieee}`, patch);
 
-    const sensor = byIeee.get(ieee);
-    if (!sensor || presence === undefined) return;
-    const prev = lastPresence.get(ieee);
-    lastPresence.set(ieee, presence);
-    if (prev === presence) return;
-    if (presence) void writeVar(sensor, 1);
-    else if (prev === true) void writeVar(sensor, 0);
+    if (typeof payload.presence !== 'boolean') return;
+    presenceBySensor.set(ieee, payload.presence);
+    for (const space of spacesBySensor.get(ieee) ?? []) evaluate(space);
   }
 
   const client = mqtt.connect(MQTT_URL, { reconnectPeriod: 5_000 });
   const devicesTopic = `${ZIGBEE_BASE_TOPIC}/bridge/devices`;
 
+  /** Ask each configured sensor for its presence — Z2M doesn't retain state. */
+  function requestPresence(): void {
+    for (const ieee of spacesBySensor.keys()) {
+      const name = nameByIeee.get(ieee);
+      if (name) client.publish(`${ZIGBEE_BASE_TOPIC}/${name}/get`, JSON.stringify({ presence: '' }));
+    }
+  }
+
   client.on('connect', () => {
-    console.log(`[zigbee] connected to ${MQTT_URL}; watching ${sensors.length} sensor(s)`);
+    console.log(`[zigbee] connected to ${MQTT_URL}; ${spaces.length} space(s), ${spacesBySensor.size} sensor(s)`);
     client.subscribe(`${ZIGBEE_BASE_TOPIC}/#`);
   });
   client.on('error', e => console.error('[zigbee] mqtt error:', e.message));
@@ -111,10 +146,16 @@ export function startZigbee(): void {
     if (topic === devicesTopic) {
       try {
         const devices = JSON.parse(buf.toString()) as { ieee_address?: string; friendly_name?: string }[];
+        const firstList = nameByIeee.size === 0;
         ieeeByName.clear();
+        nameByIeee.clear();
         for (const d of devices) {
-          if (d.ieee_address && d.friendly_name) ieeeByName.set(d.friendly_name, d.ieee_address.toLowerCase());
+          if (!d.ieee_address || !d.friendly_name) continue;
+          const ieee = d.ieee_address.toLowerCase();
+          ieeeByName.set(d.friendly_name, ieee);
+          nameByIeee.set(ieee, d.friendly_name);
         }
+        if (firstList) requestPresence();
       } catch (e) {
         console.error('[zigbee] bad bridge/devices payload:', e);
       }

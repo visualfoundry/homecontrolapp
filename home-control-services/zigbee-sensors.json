@@ -1,9 +1,15 @@
 {
-  "//": "Zigbee presence sensors (via Zigbee2MQTT) and the EISY variable each one drives.",
-  "//ieee": "Keyed by IEEE address, not Zigbee2MQTT friendly name, so renaming a device in the Z2M UI doesn't unwire it.",
+  "//": "Presence spaces: each space's EISY variable is 1 while ANY of its Zigbee2MQTT sensors sees someone, 0 once ALL are clear.",
+  "//sensors": "IEEE addresses, not Z2M friendly names, so renaming a device in the Z2M UI doesn't unwire it. Add a sensor to a large space by appending its address.",
   "//eisy": "eisy is the index into EISY_URLS (0-4). varType 1 = integer, 2 = state.",
-  "//writes": "Presence on writes 1; presence off writes 0, but only after this service has itself seen presence on. A service restart therefore never turns a room's motion lights off.",
-  "sensors": [
-    { "ieee": "0x54ef4410014bfc15", "name": "Kitchen Presence (FP1E)", "eisy": 1, "varType": 2, "varId": 218 }
+  "//var": "The presence variable belongs to this service alone. EISY programs trigger on it; they must not write it.",
+  "spaces": [
+    {
+      "key": "kitchen",
+      "name": "Kitchen",
+      "eisy": 1, "varType": 2, "varId": 223,
+      "//varId": "eisy1 s223 Room_Kitchen_Presence (was RESERVED).",
+      "sensors": ["0x54ef4410014bfc15"]
+    }
   ]
 }
