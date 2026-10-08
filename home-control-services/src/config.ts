@@ -33,6 +33,16 @@ export const HUE_HOST_IP = process.env.HUE_HOST_IP ?? '';
 /** Hue bridge emulation on/off. */
 export const HUE_ENABLED = (process.env.HUE_ENABLED ?? 'true') !== 'false';
 
+/** Zigbee presence bridge (Zigbee2MQTT → EISY variables) on/off. Sensors are
+ *  defined in zigbee-sensors.json. */
+export const ZIGBEE_ENABLED = (process.env.ZIGBEE_ENABLED ?? 'true') !== 'false';
+
+/** Mosquitto broker Zigbee2MQTT publishes to — local-only on the server. */
+export const MQTT_URL = process.env.MQTT_URL ?? 'mqtt://localhost:1883';
+
+/** Zigbee2MQTT's `mqtt.base_topic`. */
+export const ZIGBEE_BASE_TOPIC = process.env.ZIGBEE_BASE_TOPIC ?? 'zigbee2mqtt';
+
 /** WPGraphQL endpoint — used by the export-devices script only. */
 export const WP_GRAPHQL_URL = process.env.WP_GRAPHQL_URL ?? '';
 

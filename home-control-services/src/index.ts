@@ -21,7 +21,8 @@ import cors from 'cors';
 import { createReadStream } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { PORT, EISY_URLS, POLL_MS, NEXT_APP_URL, HCA_INTERNAL_KEY, HUE_ENABLED } from './config.js';
+import { PORT, EISY_URLS, POLL_MS, NEXT_APP_URL, HCA_INTERNAL_KEY, HUE_ENABLED, ZIGBEE_ENABLED } from './config.js';
+import { startZigbee } from './zigbee.js';
 import { startHueBridge, openLinkWindow, linkStatus } from './hue-bridge.js';
 import { getNodeStatus, getVariables, sendNodeCommand, setVariable } from './eisy-client.js';
 import { applyPatch, getSnapshot, subscribe } from './state-store.js';
@@ -917,5 +918,15 @@ if (HUE_ENABLED) {
     startHueBridge();
   } catch (e) {
     console.error('[hue] bridge failed to start — state service continues without it:', e);
+  }
+}
+
+// Same rule for Zigbee: a broker that's down or a bad sensors file must not stop
+// the state service. mqtt.js keeps retrying the connection on its own.
+if (ZIGBEE_ENABLED) {
+  try {
+    startZigbee();
+  } catch (e) {
+    console.error('[zigbee] presence bridge failed to start — state service continues without it:', e);
   }
 }
