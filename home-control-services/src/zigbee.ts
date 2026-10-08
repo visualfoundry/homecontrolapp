@@ -22,6 +22,11 @@
 //     reported — unless one already reports presence, which settles it. Z2M
 //     doesn't retain state, so on connect each sensor is asked for its presence.
 //
+// Each space is also published, retained, to `hca/presence/<key>` — the feed the
+// EISY plugin (udi-zigbee-presence-poly) builds its nodes from, so which sensors
+// cover which space is configured here once, not on every EISY. `presence` is
+// null until the space is decided.
+//
 // Each sensor (`zigbee/<ieee>`) and space (`zigbee/space/<key>`) is also patched
 // into the state store, so presence and link quality show on /state and /stream.
 // =============================================================================
@@ -55,6 +60,7 @@ function loadSpaces(): PresenceSpace[] {
     .map(s => ({ ...s, sensors: s.sensors.map(i => i.toLowerCase()) }));
 }
 
+const PRESENCE_TOPIC = 'hca/presence';
 const WRITE_ATTEMPTS = 3;
 const RETRY_MS = 2_000;
 
@@ -109,6 +115,7 @@ export function startZigbee(): void {
     else return; // a sensor hasn't reported yet and none sees anyone — undecided
 
     applyPatch(`zigbee/space/${space.key}`, { presence: value === 1 });
+    publishSpace(space, value === 1);
     if (written.get(space.key) === value) return;
     written.set(space.key, value);
     void writeVar(space, value);
@@ -128,6 +135,22 @@ export function startZigbee(): void {
   const client = mqtt.connect(MQTT_URL, { reconnectPeriod: 5_000 });
   const devicesTopic = `${ZIGBEE_BASE_TOPIC}/bridge/devices`;
 
+  /** Last presence published per space, so unchanged reports publish nothing. */
+  const published = new Map<string, boolean | null>();
+
+  function publishSpace(space: PresenceSpace, presence: boolean | null): void {
+    if (published.get(space.key) === presence) return;
+    published.set(space.key, presence);
+    const body = {
+      key: space.key,
+      name: space.name,
+      eisy: space.eisy,
+      presence,
+      sensors: space.sensors,
+    };
+    client.publish(`${PRESENCE_TOPIC}/${space.key}`, JSON.stringify(body), { retain: true, qos: 1 });
+  }
+
   /** Ask each configured sensor for its presence — Z2M doesn't retain state. */
   function requestPresence(): void {
     for (const ieee of spacesBySensor.keys()) {
@@ -139,6 +162,11 @@ export function startZigbee(): void {
   client.on('connect', () => {
     console.log(`[zigbee] connected to ${MQTT_URL}; ${spaces.length} space(s), ${spacesBySensor.size} sensor(s)`);
     client.subscribe(`${ZIGBEE_BASE_TOPIC}/#`);
+    // Announce every space so the EISY plugins can create its node before the
+    // first reading; re-sent on each reconnect in case the broker restarted.
+    published.clear();
+    for (const space of spaces) publishSpace(space, null);
+    for (const space of spaces) evaluate(space);
   });
   client.on('error', e => console.error('[zigbee] mqtt error:', e.message));
 
