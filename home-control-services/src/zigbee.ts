@@ -1,20 +1,21 @@
 // =============================================================================
-// Zigbee presence → EISY variables
+// Zigbee presence spaces
 //
 // Zigbee2MQTT (PM2 `hca-zigbee`, same host) owns the Sonoff coordinator and
 // publishes each device's state to `zigbee2mqtt/<friendly name>`. This module
-// subscribes and, for every space in zigbee-sensors.json, keeps one EISY
-// presence variable equal to "is anyone in this space":
+// subscribes and, for every space in zigbee-sensors.json, works out "is anyone
+// in this space":
 //
-//   1 while ANY of the space's sensors reports presence,
-//   0 once ALL of them report clear.
+//   on  while ANY of the space's sensors reports presence,
+//   off once ALL of them report clear.
 //
-// So a large room can have several sensors and the EISY still sees a single
-// variable; its programs don't change with the sensor count. The variable is
-// this service's alone — the room's lights/motion variables stay with the EISY
-// programs, which trigger on this one.
+// So a large room can have several sensors and the EISY still sees one thing;
+// its programs don't change with the sensor count. EISYs normally get it from
+// the Zigbee Presence plugin (see below), as a node that sends DON/DOF. A space
+// may also name an EISY variable (`varType` + `varId`) for this service to keep
+// equal to 1/0 — the original wiring, kept for spaces not yet on the plugin.
 //
-// Write rules:
+// Variable write rules:
 //   * Writes only when the space's combined value differs from what this service
 //     last wrote, so the FP1E's frequent linkquality/target_distance reports
 //     cost the EISY nothing.
@@ -46,8 +47,9 @@ interface PresenceSpace {
   key: string;
   name: string;
   eisy: number;
-  varType: 1 | 2;
-  varId: number;
+  /** Optional EISY variable to mirror presence into (1/0). */
+  varType?: 1 | 2;
+  varId?: number;
   /** IEEE addresses of the presence sensors covering this space. */
   sensors: string[];
 }
@@ -95,7 +97,7 @@ export function startZigbee(): void {
     for (let attempt = 1; attempt <= WRITE_ATTEMPTS; attempt++) {
       if (writeSeq.get(space.key) !== seq) return; // superseded by a newer value
       try {
-        await setVariable(EISY_URLS[space.eisy]!, space.varType, space.varId, value);
+        await setVariable(EISY_URLS[space.eisy]!, space.varType!, space.varId!, value);
         console.log(`[zigbee] ${space.name}: ${value ? 'occupied' : 'clear'} → eisy${space.eisy} var ${space.varType}/${space.varId} = ${value}`);
         return;
       } catch (e) {
@@ -116,6 +118,7 @@ export function startZigbee(): void {
 
     applyPatch(`zigbee/space/${space.key}`, { presence: value === 1 });
     publishSpace(space, value === 1);
+    if (space.varType === undefined || space.varId === undefined) return;
     if (written.get(space.key) === value) return;
     written.set(space.key, value);
     void writeVar(space, value);

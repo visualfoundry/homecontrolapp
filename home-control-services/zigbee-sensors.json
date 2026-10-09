@@ -1,14 +1,13 @@
 {
-  "//": "Presence spaces: each space's EISY variable is 1 while ANY of its Zigbee2MQTT sensors sees someone, 0 once ALL are clear.",
+  "//": "Presence spaces: a space is occupied while ANY of its Zigbee2MQTT sensors sees someone, clear once ALL are.",
   "//sensors": "IEEE addresses, not Z2M friendly names, so renaming a device in the Z2M UI doesn't unwire it. Add a sensor to a large space by appending its address.",
-  "//eisy": "eisy is the index into EISY_URLS (0-4). varType 1 = integer, 2 = state.",
-  "//var": "The presence variable belongs to this service alone. EISY programs trigger on it; they must not write it.",
+  "//eisy": "eisy is the index into EISY_URLS (0-4): the EISY whose Zigbee Presence plugin shows this space as a node.",
+  "//var": "Optional: varType (1 = integer, 2 = state) + varId make this service also keep that EISY variable at 1/0. Only for spaces whose programs still read a variable instead of the plugin node.",
   "spaces": [
     {
       "key": "kitchen",
       "name": "Kitchen",
-      "eisy": 1, "varType": 2, "varId": 223,
-      "//varId": "eisy1 s223 Room_Kitchen_Presence (was RESERVED).",
+      "eisy": 1,
       "sensors": ["0x54ef4410014bfc15"]
     }
   ]
