@@ -2032,6 +2032,12 @@
     "class": "light-dimmer",
     "address": "3C FC B9 1"
   },
+  "eisy1/4F 83 6B 1": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "motion-sensor",
+    "address": "4F 83 6B 1"
+  },
   "eisy1/3C D9 6A 1": {
     "type": "device",
     "eisyIdx": 1,
