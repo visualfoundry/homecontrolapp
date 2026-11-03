@@ -56,3 +56,26 @@ export type ScreenId = typeof SCREEN_IDS[number];
 export function isTabSlot(id: string, tabs: string[]): boolean {
   return tabs.includes(id) || id === 'more';
 }
+
+/**
+ * The sections that are not on the tab bar, in the order the More screen shows
+ * them: alphabetical by display name, with Docs then Settings pinned last.
+ * The tablet sidebar fills its spare height from the front of this list.
+ */
+export function moreOrder(
+  sections: Record<string, { name: string }>,
+  tabs: string[],
+): string[] {
+  const PINNED_BOTTOM = ['docs', 'settings'];
+  return Object.keys(sections)
+    .filter((id) => !tabs.includes(id))
+    .sort((a, b) => {
+      const ai = PINNED_BOTTOM.indexOf(a);
+      const bi = PINNED_BOTTOM.indexOf(b);
+      if (ai !== -1 || bi !== -1) {
+        if (ai !== -1 && bi !== -1) return ai - bi;
+        return ai !== -1 ? 1 : -1;
+      }
+      return sections[a].name.localeCompare(sections[b].name);
+    });
+}

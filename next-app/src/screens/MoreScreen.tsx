@@ -5,23 +5,12 @@ import { useHC } from '@/lib/store';
 import { Icon } from '@/components/Icon';
 import { Card } from '@/components/Card';
 import { LargeTitle } from '@/components/LargeTitle';
+import { moreOrder } from '@/lib/sections';
 import type { IconName } from '@/components/Icon';
 
 export function MoreScreen() {
   const { go, prefs, sections } = useHC();
-  // Alpha order by display name, but keep Docs then Settings pinned at the bottom.
-  const PINNED_BOTTOM = ['docs', 'settings'];
-  const ids = Object.keys(sections)
-    .filter(id => !prefs.tabs.includes(id))
-    .sort((a, b) => {
-      const ai = PINNED_BOTTOM.indexOf(a);
-      const bi = PINNED_BOTTOM.indexOf(b);
-      if (ai !== -1 || bi !== -1) {
-        if (ai !== -1 && bi !== -1) return ai - bi;
-        return ai !== -1 ? 1 : -1;
-      }
-      return sections[a].name.localeCompare(sections[b].name);
-    });
+  const ids = moreOrder(sections, prefs.tabs);
 
   return (
     <div>
