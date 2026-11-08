@@ -71,8 +71,8 @@ export function OutdoorsScreen() {
 
       <SectionTitle action="More" onAction={() => go('pool')}>Pool</SectionTitle>
       <div className="hca-tile-grid" style={{ marginBottom: 4 }}>
-        {config.outdoorsPool.map(o => <OutdoorTile key={o.id} o={o} />)}
         <PoolPumpTile />
+        {config.outdoorsPool.map(o => <OutdoorTile key={o.id} o={o} />)}
       </div>
 
       <div style={{ marginTop: 22 }}>
