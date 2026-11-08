@@ -9,7 +9,7 @@ import { Tile } from '@/components/Tile';
 import { LargeTitle } from '@/components/LargeTitle';
 import { SceneRoomCard } from '@/components/SceneRoomCard';
 import { deviceTag } from '@/lib/debug';
-import type { OutdoorState, AutomationState, GlobalState } from '@/types/state';
+import type { OutdoorState, AutomationState, GlobalState, PoolState } from '@/types/state';
 import type { OutdoorDevice, SceneRoomConfig, SceneRoomTypeKey, TimeOfDayKey } from '@/types/config';
 
 function OutdoorTile({ o }: { o: OutdoorDevice }) {
@@ -22,6 +22,29 @@ function OutdoorTile({ o }: { o: OutdoorDevice }) {
       data-control={deviceTag(o.name, o.id, config.controlStateIds)}
       onTap={() => setD(o.id, { on: !s.on })}
       control={<Toggle on={s.on} onChange={(v) => setD(o.id, { on: v })} accent="rgba(255,255,255,0.45)" size={0.78} />}
+    />
+  );
+}
+
+// Pool pump: same source of truth as the Pool screen — the EISY pump variable
+// ({value: 1} = on), falling back to the pool state when it isn't tracked.
+function PoolPumpTile() {
+  const { st, setD, config } = useHC();
+  const pool = st['pool'] as PoolState | undefined;
+  const node = config.poolPumpNodeId
+    ? (st[config.poolPumpNodeId] as { on?: boolean; value?: number } | undefined)
+    : undefined;
+  const on = (node?.value ?? 0) > 0 || (node?.on ?? false) || (pool?.pumpOn ?? false);
+  const rawSpeed = config.poolPumpSpeedId
+    ? (st[config.poolPumpSpeedId] as { value?: number } | undefined)?.value
+    : undefined;
+  const status = on ? (rawSpeed != null && rawSpeed > 0 ? `On · ${rawSpeed}%` : 'On') : 'Off';
+  const set = (v: boolean) =>
+    config.poolPumpNodeId ? setD(config.poolPumpNodeId, { on: v }) : setD('pool', { pumpOn: v });
+  return (
+    <Tile icon="pool" name="Pool Pump" status={status} active={on}
+      onTap={() => set(!on)}
+      control={<Toggle on={on} onChange={set} accent="rgba(255,255,255,0.45)" size={0.78} />}
     />
   );
 }
@@ -49,6 +72,7 @@ export function OutdoorsScreen() {
       <SectionTitle action="More" onAction={() => go('pool')}>Pool</SectionTitle>
       <div className="hca-tile-grid" style={{ marginBottom: 4 }}>
         {config.outdoorsPool.map(o => <OutdoorTile key={o.id} o={o} />)}
+        <PoolPumpTile />
       </div>
 
       <div style={{ marginTop: 22 }}>
