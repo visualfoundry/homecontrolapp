@@ -3185,5 +3185,12 @@
     "class": "contact-battery",
     "address": "55 AB F1 4",
     "linkedStateId": "eisy2/var/122"
+  },
+  "eisy4/var/51": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "flag",
+    "varId": 51,
+    "varType": 2
   }
 }
