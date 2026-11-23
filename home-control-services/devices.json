@@ -1,4 +1,18 @@
 {
+  "eisy0/var/124": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 124,
+    "varType": 2
+  },
+  "eisy0/var/123": {
+    "type": "variable",
+    "eisyIdx": 0,
+    "class": "flag",
+    "varId": 123,
+    "varType": 2
+  },
   "eisy0/var/14": {
     "type": "variable",
     "eisyIdx": 0,
@@ -253,12 +267,6 @@
     "eisyIdx": 4,
     "class": "motion-sensor",
     "address": "4F 83 8 1"
-  },
-  "eisy4/4F 83 8 3": {
-    "type": "device",
-    "eisyIdx": 4,
-    "class": "motion-battery",
-    "address": "4F 83 8 3"
   },
   "eisy4/4F 86 27 1": {
     "type": "device",
@@ -585,12 +593,6 @@
     "eisyIdx": 1,
     "class": "motion-sensor",
     "address": "37 B8 EB 1"
-  },
-  "eisy1/37 B8 EB 3": {
-    "type": "device",
-    "eisyIdx": 1,
-    "class": "motion-battery",
-    "address": "37 B8 EB 3"
   },
   "eisy0/var/168": {
     "type": "variable",
@@ -1482,6 +1484,13 @@
     "varId": 120,
     "varType": 2
   },
+  "eisy4/var/51": {
+    "type": "variable",
+    "eisyIdx": 4,
+    "class": "flag",
+    "varId": 51,
+    "varType": 2
+  },
   "eisy0/var/2": {
     "type": "variable",
     "eisyIdx": 0,
@@ -2032,12 +2041,6 @@
     "class": "light-dimmer",
     "address": "3C FC B9 1"
   },
-  "eisy1/4F 83 6B 1": {
-    "type": "device",
-    "eisyIdx": 1,
-    "class": "motion-sensor",
-    "address": "4F 83 6B 1"
-  },
   "eisy1/3C D9 6A 1": {
     "type": "device",
     "eisyIdx": 1,
@@ -2082,18 +2085,18 @@
     "varId": 181,
     "varType": 2
   },
-  "eisy4/var/126": {
+  "eisy4/var/133": {
     "type": "variable",
     "eisyIdx": 4,
     "class": "flag",
-    "varId": 126,
+    "varId": 133,
     "varType": 2
   },
-  "eisy4/var/125": {
+  "eisy4/var/132": {
     "type": "variable",
     "eisyIdx": 4,
     "class": "flag",
-    "varId": 125,
+    "varId": 132,
     "varType": 2
   },
   "eisy1/var/141": {
@@ -2150,20 +2153,6 @@
     "eisyIdx": 0,
     "class": "flag",
     "varId": 36,
-    "varType": 2
-  },
-  "eisy0/var/123": {
-    "type": "variable",
-    "eisyIdx": 0,
-    "class": "flag",
-    "varId": 123,
-    "varType": 2
-  },
-  "eisy0/var/124": {
-    "type": "variable",
-    "eisyIdx": 0,
-    "class": "flag",
-    "varId": 124,
     "varType": 2
   },
   "eisy0/var/213": {
@@ -2522,23 +2511,11 @@
     "class": "motion-sensor",
     "address": "37 BF F4 1"
   },
-  "eisy2/37 BF F4 3": {
-    "type": "device",
-    "eisyIdx": 2,
-    "class": "motion-battery",
-    "address": "37 BF F4 3"
-  },
   "eisy2/37 B1 87 1": {
     "type": "device",
     "eisyIdx": 2,
     "class": "motion-sensor",
     "address": "37 B1 87 1"
-  },
-  "eisy2/37 B1 87 3": {
-    "type": "device",
-    "eisyIdx": 2,
-    "class": "motion-battery",
-    "address": "37 B1 87 3"
   },
   "eisy2/36 82 65 1": {
     "type": "device",
@@ -2546,23 +2523,11 @@
     "class": "motion-sensor",
     "address": "36 82 65 1"
   },
-  "eisy2/36 82 65 3": {
-    "type": "device",
-    "eisyIdx": 2,
-    "class": "motion-battery",
-    "address": "36 82 65 3"
-  },
   "eisy2/37 BF D7 1": {
     "type": "device",
     "eisyIdx": 2,
     "class": "motion-sensor",
     "address": "37 BF D7 1"
-  },
-  "eisy2/37 BF D7 3": {
-    "type": "device",
-    "eisyIdx": 2,
-    "class": "motion-battery",
-    "address": "37 BF D7 3"
   },
   "eisy2/37 B1 97 1": {
     "type": "device",
@@ -2576,23 +2541,11 @@
     "class": "motion-sensor",
     "address": "37 C1 F4 1"
   },
-  "eisy2/37 C1 F4 3": {
-    "type": "device",
-    "eisyIdx": 2,
-    "class": "motion-battery",
-    "address": "37 C1 F4 3"
-  },
   "eisy2/37 B7 4E 1": {
     "type": "device",
     "eisyIdx": 2,
     "class": "motion-sensor",
     "address": "37 B7 4E 1"
-  },
-  "eisy2/37 B7 4E 3": {
-    "type": "device",
-    "eisyIdx": 2,
-    "class": "motion-battery",
-    "address": "37 B7 4E 3"
   },
   "eisy2/36 A7 A8 1": {
     "type": "device",
@@ -2606,23 +2559,11 @@
     "class": "motion-sensor",
     "address": "37 B1 93 1"
   },
-  "eisy2/37 B1 93 3": {
-    "type": "device",
-    "eisyIdx": 2,
-    "class": "motion-battery",
-    "address": "37 B1 93 3"
-  },
   "eisy2/37 BF D9 1": {
     "type": "device",
     "eisyIdx": 2,
     "class": "motion-sensor",
     "address": "37 BF D9 1"
-  },
-  "eisy2/37 BF D9 3": {
-    "type": "device",
-    "eisyIdx": 2,
-    "class": "motion-battery",
-    "address": "37 BF D9 3"
   },
   "eisy2/55 AA B5 1": {
     "type": "device",
@@ -2636,23 +2577,11 @@
     "class": "motion-sensor",
     "address": "37 B1 7C 1"
   },
-  "eisy2/37 B1 7C 3": {
-    "type": "device",
-    "eisyIdx": 2,
-    "class": "motion-battery",
-    "address": "37 B1 7C 3"
-  },
   "eisy2/37 B1 AC 1": {
     "type": "device",
     "eisyIdx": 2,
     "class": "motion-sensor",
     "address": "37 B1 AC 1"
-  },
-  "eisy2/37 B1 AC 3": {
-    "type": "device",
-    "eisyIdx": 2,
-    "class": "motion-battery",
-    "address": "37 B1 AC 3"
   },
   "eisy3/37 B1 65 1": {
     "type": "device",
@@ -2666,23 +2595,11 @@
     "class": "motion-sensor",
     "address": "37 A7 B9 1"
   },
-  "eisy2/37 A7 B9 3": {
-    "type": "device",
-    "eisyIdx": 2,
-    "class": "motion-battery",
-    "address": "37 A7 B9 3"
-  },
   "eisy1/4F 83 AA 1": {
     "type": "device",
     "eisyIdx": 1,
     "class": "motion-sensor",
     "address": "4F 83 AA 1"
-  },
-  "eisy1/4F 83 AA 3": {
-    "type": "device",
-    "eisyIdx": 1,
-    "class": "motion-battery",
-    "address": "4F 83 AA 3"
   },
   "eisy2/37 BF F6 1": {
     "type": "device",
@@ -2690,23 +2607,11 @@
     "class": "motion-sensor",
     "address": "37 BF F6 1"
   },
-  "eisy2/37 BF F6 3": {
-    "type": "device",
-    "eisyIdx": 2,
-    "class": "motion-battery",
-    "address": "37 BF F6 3"
-  },
   "eisy1/37 C3 CE 1": {
     "type": "device",
     "eisyIdx": 1,
     "class": "motion-sensor",
     "address": "37 C3 CE 1"
-  },
-  "eisy1/37 C3 CE 3": {
-    "type": "device",
-    "eisyIdx": 1,
-    "class": "motion-battery",
-    "address": "37 C3 CE 3"
   },
   "eisy1/37 C1 F5 1": {
     "type": "device",
@@ -2714,23 +2619,11 @@
     "class": "motion-sensor",
     "address": "37 C1 F5 1"
   },
-  "eisy1/37 C1 F5 3": {
-    "type": "device",
-    "eisyIdx": 1,
-    "class": "motion-battery",
-    "address": "37 C1 F5 3"
-  },
-  "eisy1/37 C1 FB 1": {
+  "eisy1/4F 83 6B 1": {
     "type": "device",
     "eisyIdx": 1,
     "class": "motion-sensor",
-    "address": "37 C1 FB 1"
-  },
-  "eisy1/37 C1 FB 3": {
-    "type": "device",
-    "eisyIdx": 1,
-    "class": "motion-battery",
-    "address": "37 C1 FB 3"
+    "address": "4F 83 6B 1"
   },
   "eisy1/37 B1 64 1": {
     "type": "device",
@@ -2738,23 +2631,11 @@
     "class": "motion-sensor",
     "address": "37 B1 64 1"
   },
-  "eisy1/37 B1 64 3": {
-    "type": "device",
-    "eisyIdx": 1,
-    "class": "motion-battery",
-    "address": "37 B1 64 3"
-  },
   "eisy1/37 C3 E7 1": {
     "type": "device",
     "eisyIdx": 1,
     "class": "motion-sensor",
     "address": "37 C3 E7 1"
-  },
-  "eisy1/37 C3 E7 3": {
-    "type": "device",
-    "eisyIdx": 1,
-    "class": "motion-battery",
-    "address": "37 C3 E7 3"
   },
   "eisy1/37 BF F8 1": {
     "type": "device",
@@ -2762,23 +2643,11 @@
     "class": "motion-sensor",
     "address": "37 BF F8 1"
   },
-  "eisy1/37 BF F8 3": {
-    "type": "device",
-    "eisyIdx": 1,
-    "class": "motion-battery",
-    "address": "37 BF F8 3"
-  },
   "eisy1/37 BF E7 1": {
     "type": "device",
     "eisyIdx": 1,
     "class": "motion-sensor",
     "address": "37 BF E7 1"
-  },
-  "eisy1/37 BF E7 3": {
-    "type": "device",
-    "eisyIdx": 1,
-    "class": "motion-battery",
-    "address": "37 BF E7 3"
   },
   "eisy0/n011_h939cb7ca46ac7": {
     "type": "device",
@@ -3076,6 +2945,138 @@
     "name": "JBL Nebula Mars",
     "hub": "Pergola"
   },
+  "eisy4/4F 83 8 3": {
+    "type": "device",
+    "eisyIdx": 4,
+    "class": "motion-battery",
+    "address": "4F 83 8 3"
+  },
+  "eisy1/37 B8 EB 3": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "motion-battery",
+    "address": "37 B8 EB 3"
+  },
+  "eisy2/37 BF F4 3": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-battery",
+    "address": "37 BF F4 3"
+  },
+  "eisy2/37 B1 87 3": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-battery",
+    "address": "37 B1 87 3"
+  },
+  "eisy2/36 82 65 3": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-battery",
+    "address": "36 82 65 3"
+  },
+  "eisy2/37 BF D7 3": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-battery",
+    "address": "37 BF D7 3"
+  },
+  "eisy2/37 C1 F4 3": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-battery",
+    "address": "37 C1 F4 3"
+  },
+  "eisy2/37 B7 4E 3": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-battery",
+    "address": "37 B7 4E 3"
+  },
+  "eisy2/37 B1 93 3": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-battery",
+    "address": "37 B1 93 3"
+  },
+  "eisy2/37 BF D9 3": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-battery",
+    "address": "37 BF D9 3"
+  },
+  "eisy2/37 B1 7C 3": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-battery",
+    "address": "37 B1 7C 3"
+  },
+  "eisy2/37 B1 AC 3": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-battery",
+    "address": "37 B1 AC 3"
+  },
+  "eisy2/37 A7 B9 3": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-battery",
+    "address": "37 A7 B9 3"
+  },
+  "eisy1/4F 83 AA 3": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "motion-battery",
+    "address": "4F 83 AA 3"
+  },
+  "eisy2/37 BF F6 3": {
+    "type": "device",
+    "eisyIdx": 2,
+    "class": "motion-battery",
+    "address": "37 BF F6 3"
+  },
+  "eisy1/37 C3 CE 3": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "motion-battery",
+    "address": "37 C3 CE 3"
+  },
+  "eisy1/37 C1 F5 3": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "motion-battery",
+    "address": "37 C1 F5 3"
+  },
+  "eisy1/37 C1 FB 3": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "motion-battery",
+    "address": "37 C1 FB 3"
+  },
+  "eisy1/37 B1 64 3": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "motion-battery",
+    "address": "37 B1 64 3"
+  },
+  "eisy1/37 C3 E7 3": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "motion-battery",
+    "address": "37 C3 E7 3"
+  },
+  "eisy1/37 BF F8 3": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "motion-battery",
+    "address": "37 BF F8 3"
+  },
+  "eisy1/37 BF E7 3": {
+    "type": "device",
+    "eisyIdx": 1,
+    "class": "motion-battery",
+    "address": "37 BF E7 3"
+  },
   "eisy4/4F 86 27 3": {
     "type": "device",
     "eisyIdx": 4,
@@ -3185,12 +3186,5 @@
     "class": "contact-battery",
     "address": "55 AB F1 4",
     "linkedStateId": "eisy2/var/122"
-  },
-  "eisy4/var/51": {
-    "type": "variable",
-    "eisyIdx": 4,
-    "class": "flag",
-    "varId": 51,
-    "varType": 2
   }
 }
