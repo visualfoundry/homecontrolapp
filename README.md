@@ -9,7 +9,7 @@ For full architecture details see `CLAUDE.md`. For server setup and deployment s
 ## Repo structure
 
 ```
-homecontrolapp/
+app-frontend/   (repo: github.com/visualfoundry/homecontrolapp)
 ├── next-app/               Next.js App Router (TypeScript + Tailwind)
 │   ├── src/app/            Pages, API routes, layout
 │   ├── src/screens/        One file per screen (HomeScreen, LightsScreen, …)
@@ -177,7 +177,7 @@ git commit -m "..."
 git push
 
 # Then on the server (ssh in)
-cd ~/homecontrolapp/next-app
+cd /var/www/html/wordpress/app-frontend/next-app
 git pull
 npm install          # only needed if package.json changed
 npm run build
@@ -187,7 +187,7 @@ pm2 restart hca-next --update-env
 If only `home-control-services` changed (no UI rebuild needed):
 
 ```bash
-cd ~/homecontrolapp
+cd /var/www/html/wordpress/app-frontend
 git pull
 pm2 restart hca-state
 ```

@@ -3,17 +3,17 @@
 ## Next.js app
 
 ```bash
-cd '/Volumes/Project Local/Development/Local Sites/home-control-app/app/public/wp-content/themes/homecontrolapp/next-app' && npm run dev
+cd '/Volumes/Project Local/Development/Local Sites/homecontrol/app-frontend/next-app' && npm run dev
 ```
 
 ## Home-control service
 
 ```bash
-cd '/Volumes/Project Local/Development/Local Sites/home-control-app/app/public/wp-content/themes/homecontrolapp/home-control-services' && npm run dev
+cd '/Volumes/Project Local/Development/Local Sites/homecontrol/app-frontend/home-control-services' && npm run dev
 ```
 
 ## Browser
 
 ```
-http://localhost:3000/
+https://homecontrol.ddev.site:3000/
 ```

@@ -1,3 +1,5 @@
+> **Out of date (2026-11-24):** this guide describes the original setup. Today the app repo is at `/var/www/html/wordpress/app-frontend` (not `~/homecontrolapp`), PM2 runs from there, and the WordPress theme is in the website repo (`github.com/visualfoundry/homecontrol`, `wp-content/themes/homecontrolapp/`), deployed with `bin/push.sh`. The commands below still use the old paths; `scripts/backup.sh` and `scripts/restore.sh` are current.
+
 # Home Control App — Dedicated Linux Server Deployment
 
 This guide covers wiping Windows and installing Ubuntu Server 24.04 LTS, then deploying all three components of the app.

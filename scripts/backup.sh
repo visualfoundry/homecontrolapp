@@ -2,7 +2,7 @@
 # backup.sh — Full disaster-recovery backup for app.dixons.net
 #
 # Run as: administrator@192.168.1.91
-#   bash ~/homecontrolapp/scripts/backup.sh
+#   bash /var/www/html/wordpress/app-frontend/scripts/backup.sh
 #
 # Creates: ~/hca-backup-YYYYMMDD-HHMMSS.tar.gz
 # Contains everything needed to restore from scratch — see restore.sh.
@@ -18,6 +18,8 @@ fi
 # SUDO_USER is the original non-root user; use it to find the real home directory
 REAL_USER="${SUDO_USER:-administrator}"
 REAL_HOME=$(eval echo "~$REAL_USER")
+# The app repo lives inside the WordPress root (moved from ~/homecontrolapp on 2026-11-23).
+APP_DIR="/var/www/html/wordpress/app-frontend"
 
 STAMP=$(date +%Y%m%d-%H%M%S)
 WORKDIR="/tmp/hca-backup-$STAMP"
@@ -45,7 +47,7 @@ mkdir -p "$WORKDIR/wordpress"
 cp /var/www/html/wordpress/wp-config.php "$WORKDIR/wordpress/wp-config.php"
 cp /var/www/html/wordpress/.htaccess     "$WORKDIR/wordpress/.htaccess" 2>/dev/null || true
 
-# wp-content: uploads (media) + plugins. Skip themes (in git). Skip cache.
+# wp-content: uploads (media) + plugins. Skip themes (in the website repo, github.com/visualfoundry/homecontrol). Skip cache.
 echo "    Copying wp-content/uploads..."
 mkdir -p "$WORKDIR/wordpress/wp-content/uploads"
 rsync -a --quiet \
@@ -64,16 +66,16 @@ echo "    WordPress files: $(du -sh "$WORKDIR/wordpress" | cut -f1)"
 echo "==> Backing up app env files..."
 mkdir -p "$WORKDIR/app"
 
-cp "$REAL_HOME/homecontrolapp/next-app/.env.local" \
+cp "$APP_DIR/next-app/.env.local" \
    "$WORKDIR/app/next-app.env.local"
 
-if [[ -f "$REAL_HOME/homecontrolapp/home-control-services/.env" ]]; then
-  cp "$REAL_HOME/homecontrolapp/home-control-services/.env" \
+if [[ -f "$APP_DIR/home-control-services/.env" ]]; then
+  cp "$APP_DIR/home-control-services/.env" \
      "$WORKDIR/app/home-control-services.env"
 fi
 
-if [[ -f "$REAL_HOME/homecontrolapp/ecosystem.config.js" ]]; then
-  cp "$REAL_HOME/homecontrolapp/ecosystem.config.js" \
+if [[ -f "$APP_DIR/ecosystem.config.js" ]]; then
+  cp "$APP_DIR/ecosystem.config.js" \
      "$WORKDIR/app/ecosystem.config.js"
 fi
 
@@ -137,13 +139,13 @@ Contents:
   pm2/dump.pm2                  PM2 saved process list
 
 What is NOT included (re-clone or re-download):
-  ~/homecontrolapp/             App code — git clone from GitHub
+  /var/www/html/wordpress/app-frontend/   App code — git clone from GitHub
   /var/www/html/wordpress/      WordPress core — download from wordpress.org
   node_modules/                 Run npm install after clone
   .next/                        Run npm run build after install
 
 Restore:
-  See restore.sh in ~/homecontrolapp/scripts/
+  See restore.sh in /var/www/html/wordpress/app-frontend/scripts/
 EOF
 
 # ── 9. Fix ownership and create the archive ──────────────────────────────────

@@ -7,7 +7,7 @@
 #   - This archive copied to ~/ via: scp -i key.pem hca-backup-*.tar.gz administrator@<new-ip>:~/
 #
 # Run as: administrator@<server>
-#   bash ~/homecontrolapp/scripts/restore.sh ~/hca-backup-YYYYMMDD-HHMMSS.tar.gz
+#   bash /var/www/html/wordpress/app-frontend/scripts/restore.sh ~/hca-backup-YYYYMMDD-HHMMSS.tar.gz
 #
 # What it does:
 #   1. Extracts the archive
@@ -98,25 +98,28 @@ sudo rsync -a --quiet \
 sudo chown -R www-data:www-data /var/www/html/wordpress/wp-content
 
 # ── 4. App code ──────────────────────────────────────────────────────────────
-if [[ ! -d "$HOME/homecontrolapp/.git" ]]; then
+APP_DIR="/var/www/html/wordpress/app-frontend"
+if [[ ! -d "$APP_DIR/.git" ]]; then
   echo "==> Cloning app repo..."
-  git clone https://github.com/visualfoundry/homecontrolapp.git "$HOME/homecontrolapp"
+  sudo mkdir -p "$APP_DIR"
+  sudo chown "$USER":"$USER" "$APP_DIR"
+  git clone https://github.com/visualfoundry/homecontrolapp.git "$APP_DIR"
 else
   echo "==> App repo already cloned — pulling latest..."
-  git -C "$HOME/homecontrolapp" pull
+  git -C "$APP_DIR" pull
 fi
 
 # ── 5. Environment files ─────────────────────────────────────────────────────
 echo "==> Restoring env files..."
-cp "$SRC/app/next-app.env.local" "$HOME/homecontrolapp/next-app/.env.local"
+cp "$SRC/app/next-app.env.local" "$APP_DIR/next-app/.env.local"
 
 if [[ -f "$SRC/app/home-control-services.env" ]]; then
   cp "$SRC/app/home-control-services.env" \
-     "$HOME/homecontrolapp/home-control-services/.env"
+     "$APP_DIR/home-control-services/.env"
 fi
 
 if [[ -f "$SRC/app/ecosystem.config.js" ]]; then
-  cp "$SRC/app/ecosystem.config.js" "$HOME/homecontrolapp/ecosystem.config.js"
+  cp "$SRC/app/ecosystem.config.js" "$APP_DIR/ecosystem.config.js"
 fi
 
 # ── 6. Apache config ─────────────────────────────────────────────────────────
@@ -156,27 +159,31 @@ else
 fi
 
 # ── 9. WordPress theme ───────────────────────────────────────────────────────
-echo "==> Linking WordPress theme..."
-WP_THEME_SRC="$HOME/homecontrolapp"
+# The theme lives in the website repo (github.com/visualfoundry/homecontrol) at
+# wp-content/themes/homecontrolapp. css/main.css is built, not committed: run
+# bin/push.sh from the Mac afterwards to ship it.
+echo "==> Installing WordPress theme from the website repo..."
 WP_THEME_DST="/var/www/html/wordpress/wp-content/themes/homecontrolapp"
-if [[ ! -e "$WP_THEME_DST" ]]; then
-  sudo ln -s "$WP_THEME_SRC" "$WP_THEME_DST"
-  sudo chown -h www-data:www-data "$WP_THEME_DST"
-fi
+THEME_TMP="$(mktemp -d)"
+git clone --depth 1 https://github.com/visualfoundry/homecontrol.git "$THEME_TMP"
+sudo rm -rf "$WP_THEME_DST"
+sudo cp -r "$THEME_TMP/wp-content/themes/homecontrolapp" "$WP_THEME_DST"
+sudo chown -R www-data:www-data "$WP_THEME_DST"
+rm -rf "$THEME_TMP"
 
 # ── 10. Install dependencies and build ──────────────────────────────────────
 echo "==> Installing home-control-services dependencies..."
-cd "$HOME/homecontrolapp/home-control-services"
+cd "$APP_DIR/home-control-services"
 npm install
 
 echo "==> Installing and building Next.js app..."
-cd "$HOME/homecontrolapp/next-app"
+cd "$APP_DIR/next-app"
 npm install
 npm run build
 
 # ── 11. Start services ───────────────────────────────────────────────────────
 echo "==> Starting PM2 services..."
-cd "$HOME/homecontrolapp"
+cd "$APP_DIR"
 pm2 delete all 2>/dev/null || true
 pm2 start ecosystem.config.js
 pm2 save
