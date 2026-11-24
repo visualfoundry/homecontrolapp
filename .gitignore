@@ -1,9 +1,4 @@
-# WordPress theme build output
 node_modules/
-css/main.css
-css/main.css.map
-scss/main.css
-scss/main.css.map
 
 # Next.js
 next-app/.next/

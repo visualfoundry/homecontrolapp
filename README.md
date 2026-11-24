@@ -19,7 +19,6 @@ homecontrolapp/
 ├── home-control-services/  State aggregator (Express + TypeScript)
 │   ├── src/                Poller, EISY client, state store, SSE stream
 │   └── devices.json        Device map exported from WP (see below)
-├── scss/                   WordPress theme styles (compiled → css/main.css)
 └── server.md               Server setup, Apache config, SSL, deployment
 ```
 
@@ -144,19 +143,9 @@ npm run export-devices
 
 ---
 
-## WordPress theme (SCSS)
+## WordPress theme
 
-The Genesis child theme styles live in `scss/` and compile to `css/main.css`:
-
-```bash
-# In the theme root (not next-app/)
-npm install
-npm run sass:watch   # watch + compile on save
-# or
-npm run build        # one-off compile
-```
-
-`css/main.css` is gitignored — it's compiled on the server from source.
+The WordPress theme (`homecontrolapp`: `functions.php`, `style.css`, `inc/`, the SCSS build) is **not** in this repo. It lives in the website repo, `github.com/visualfoundry/homecontrol`, at `wp-content/themes/homecontrolapp/`, and is deployed by that repo's `bin/push.sh`. Until 2026-11-24 it shared this repo, as a symlink; its earlier history is still here.
 
 ---
 
