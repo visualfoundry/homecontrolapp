@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { PORT, EISY_URLS, POLL_MS, NEXT_APP_URL, HCA_INTERNAL_KEY, HUE_ENABLED, ZIGBEE_ENABLED } from './config.js';
 import { startZigbee } from './zigbee.js';
+import { isBatterySilent, startBatteryCheck } from './battery-check.js';
 import { startHueBridge, openLinkWindow, linkStatus } from './hue-bridge.js';
 import { getNodeStatus, getVariables, sendNodeCommand, setVariable } from './eisy-client.js';
 import { applyPatch, getSnapshot, subscribe } from './state-store.js';
@@ -554,7 +555,8 @@ async function pollEisy(eisyIdx: number): Promise<void> {
     // Patch lowBattery directly onto the linked variable state (the contact-sensor's stateId).
     if (entry.class === 'contact-battery') {
       const isLow = (props.get('ST') ?? 0) > 0;
-      if (entry.linkedStateId) applyPatch(entry.linkedStateId, { lowBattery: isLow });
+      // A door sensor WordPress's daily check found silent is flat even if it never said so.
+      if (entry.linkedStateId) applyPatch(entry.linkedStateId, { lowBattery: isLow || isBatterySilent(entry.linkedStateId) });
       continue;
     }
 
@@ -600,6 +602,10 @@ async function pollEisy(eisyIdx: number): Promise<void> {
       // reporting after their entries were removed from devices.json. The
       // alert bookkeeping below already treats undefined as "has not
       // reported" and skips such sensors, so unmapped is now visibly unknown.
+    }
+    // Same for motion sensors, including those with no battery sub-node at all.
+    if (entry.class === 'motion-sensor' && isBatterySilent(stateId)) {
+      (state as Record<string, unknown>).lowBattery = true;
     }
     applyPatch(stateId, state);
   }
@@ -930,3 +936,6 @@ if (ZIGBEE_ENABLED) {
     console.error('[zigbee] presence bridge failed to start — state service continues without it:', e);
   }
 }
+
+// Silent-battery report from WordPress (daily check; see battery-check.ts).
+startBatteryCheck();

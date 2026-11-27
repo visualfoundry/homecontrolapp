@@ -51,3 +51,10 @@ export const NEXT_APP_URL = process.env.NEXT_APP_URL ?? 'http://localhost:3000';
 
 /** Shared secret for internal server-to-server calls (same value as HCA_INTERNAL_KEY in Next.js). */
 export const HCA_INTERNAL_KEY = process.env.HCA_INTERNAL_KEY ?? '';
+
+/**
+ * WordPress base URL, for the daily battery-check report
+ * (GET {base}/wp-json/hca/v1/battery-check). Falls back to WP_GRAPHQL_URL minus
+ * "/graphql"; set it explicitly on the server (http://localhost).
+ */
+export const WP_BASE_URL = (process.env.WP_BASE_URL ?? WP_GRAPHQL_URL.replace(/\/graphql\/?$/, '')).replace(/\/$/, '');
